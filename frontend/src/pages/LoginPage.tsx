@@ -2,6 +2,22 @@ import { useState, type FormEvent } from "react";
 import { Navigate } from "react-router-dom";
 import { getApiErrorMessage } from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import type { Perfil } from "../api/types";
+
+/**
+ * HU-001 CA-01: "el sistema lo autentica y lo redirige a la vista
+ * correspondiente a su rol". Mesero y Cajero caen directo en la pantalla
+ * donde arranca su trabajo del día; Administrador no tiene una única
+ * pantalla "principal" (su rol es transversal a todo el sistema), así que
+ * se queda en Inicio. "Inicio" sigue existiendo y accesible por el menú
+ * para los tres perfiles; esto solo cambia a dónde aterrizas justo después
+ * de iniciar sesión.
+ */
+function vistaInicialPorPerfil(perfil: Perfil): string {
+  if (perfil === "MESERO") return "/mesas";
+  if (perfil === "CAJERO") return "/inventario";
+  return "/";
+}
 
 export function LoginPage() {
   const { usuario, iniciarSesion } = useAuth();
@@ -11,7 +27,7 @@ export function LoginPage() {
   const [enviando, setEnviando] = useState(false);
 
   if (usuario) {
-    return <Navigate to="/" replace />;
+    return <Navigate to={vistaInicialPorPerfil(usuario.perfil)} replace />;
   }
 
   async function handleSubmit(e: FormEvent) {

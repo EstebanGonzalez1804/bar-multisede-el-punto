@@ -153,6 +153,17 @@ a criterio técnico del proveedor:
   sede (p. ej. dos Meseros vendiendo el último trago a la vez) nunca dejan el
   inventario en un valor negativo ni pierden una actualización.
 
+- **Redirección post-login por rol (corrección sobre HU-001 CA-01).**
+  El criterio de aceptación exige que, al iniciar sesión, "el sistema ... lo
+  redirige a la vista correspondiente a su rol" — y la implementación
+  original de Sprint 1 mandaba a los tres perfiles al mismo "Inicio"
+  genérico. Se corrigió durante la validación de Sprint 3: Mesero aterriza
+  en `Mesas` (donde abre pedidos) y Cajero en `Inventario` (su tarea más
+  recurrente); Administrador se queda en `Inicio`, porque su rol es
+  transversal y no tiene una única pantalla "principal". "Inicio" sigue
+  existiendo y accesible desde el menú para los tres perfiles — esto solo
+  cambia dónde aterrizas justo después de iniciar sesión.
+
 ## Estructura del repositorio
 
 ```
