@@ -94,6 +94,7 @@ export function SedesPage() {
           <table>
             <thead>
               <tr>
+                <th>Código</th>
                 <th>Nombre</th>
                 <th>Dirección</th>
               </tr>
@@ -101,6 +102,7 @@ export function SedesPage() {
             <tbody>
               {sedes.map((sede) => (
                 <tr key={sede.idSede}>
+                  <td>{sede.codigoSede}</td>
                   <td>{sede.nombre}</td>
                   <td>{sede.direccion}</td>
                 </tr>

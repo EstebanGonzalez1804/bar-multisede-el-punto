@@ -13,6 +13,10 @@ export function Layout() {
             Inicio
           </NavLink>
           {usuario?.perfil === "ADMINISTRADOR" && <NavLink to="/sedes">Sedes</NavLink>}
+          {usuario?.perfil === "ADMINISTRADOR" && <NavLink to="/usuarios">Usuarios</NavLink>}
+          <NavLink to="/mesas">Mesas</NavLink>
+          <NavLink to="/tipos-producto">Tipos de producto</NavLink>
+          <NavLink to="/productos">Productos</NavLink>
           <NavLink to="/cambiar-password">Mi contraseña</NavLink>
         </nav>
         <div className="topbar-user">

@@ -162,9 +162,25 @@ h1, h2, h3 {
   font-size: 0.95rem;
 }
 
-.field input:focus {
+.field input:focus,
+.field select:focus {
   outline: 2px solid var(--color-accent);
   outline-offset: 1px;
+}
+
+.field select {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  background: #fff;
+}
+
+.field-hint {
+  color: var(--color-text-muted);
+  font-size: 0.8rem;
+  margin-top: 0.25rem;
 }
 
 .btn-primary {
@@ -275,4 +291,83 @@ th {
   margin-bottom: 0;
   flex: 1;
   min-width: 180px;
+}
+
+/* ---------- Badges de estado ---------- */
+
+.badge {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.badge-success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.badge-muted {
+  background: #eceff1;
+  color: var(--color-text-muted);
+}
+
+.badge-danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+/* ---------- Acciones en tabla ---------- */
+
+.table-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.btn-link:hover {
+  color: var(--color-primary);
+}
+
+.btn-link.danger {
+  color: var(--color-danger);
+}
+
+.btn-link:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  text-decoration: none;
+}
+
+.row-subform {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin: 0.5rem 0 1rem;
+}
+
+.toolbar {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.toolbar .field {
+  margin-bottom: 0;
+  min-width: 160px;
 }

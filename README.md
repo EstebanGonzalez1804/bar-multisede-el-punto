@@ -52,7 +52,11 @@ Contraseña:        ElPunto#2026
    createdb barmultisede
    psql barmultisede -f database/migrations/001_sprint1_fundaciones.sql
    psql barmultisede -f database/migrations/002_seed_inicial.sql
+   psql barmultisede -f database/migrations/003_sprint2_administracion_catalogo.sql
    ```
+   (Con Docker Compose esto no es necesario: el backend aplica automáticamente
+   cualquier migración nueva al arrancar, cada vez — ver
+   `backend/src/db/migrate.ts`.)
 2. Backend:
    ```bash
    cd backend
@@ -123,7 +127,7 @@ a criterio técnico del proveedor:
 | Sprint | Alcance | Estado |
 |--------|---------|--------|
 | 1 | Fundaciones de acceso y estructura (HU-001 a 006, 010, 041) | ✅ Completado |
-| 2 | Usuarios, mesas y catálogo (HU-007 a 009, 011 a 017) | ⏳ Pendiente |
+| 2 | Usuarios, mesas y catálogo (HU-007 a 009, 011 a 017) | 🔧 Código completo — verificar con `docker compose up --build` |
 | 3 | Proveedores, inventario e inicio de pedidos (HU-018 a 026) | ⏳ Pendiente |
 
 Detalle completo de cada Historia de Usuario: ver `Historias_de_Usuario_Bar_Multisede.md`

@@ -4,6 +4,10 @@ import { env } from "./config/env";
 import { errorHandler } from "./middlewares/errorHandler";
 import { authRouter } from "./modules/auth/auth.routes";
 import { sedesRouter } from "./modules/sedes/sedes.routes";
+import { usuariosRouter } from "./modules/usuarios/usuarios.routes";
+import { mesasRouter } from "./modules/mesas/mesas.routes";
+import { tiposProductoRouter } from "./modules/tipos-producto/tipos-producto.routes";
+import { productosRouter } from "./modules/productos/productos.routes";
 
 export function createApp() {
   const app = express();
@@ -17,6 +21,10 @@ export function createApp() {
 
   app.use("/api/auth", authRouter);
   app.use("/api/sedes", sedesRouter);
+  app.use("/api/usuarios", usuariosRouter);
+  app.use("/api/mesas", mesasRouter);
+  app.use("/api/tipos-producto", tiposProductoRouter);
+  app.use("/api/productos", productosRouter);
 
   // 404 para cualquier ruta no reconocida.
   app.use((req, res) => {

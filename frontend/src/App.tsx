@@ -5,7 +5,11 @@ import { AuthProvider } from "./context/AuthContext";
 import { CambiarPasswordPage } from "./pages/CambiarPasswordPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
+import { MesasPage } from "./pages/MesasPage";
+import { ProductosPage } from "./pages/ProductosPage";
 import { SedesPage } from "./pages/SedesPage";
+import { TiposProductoPage } from "./pages/TiposProductoPage";
+import { UsuariosPage } from "./pages/UsuariosPage";
 
 export function App() {
   return (
@@ -31,6 +35,20 @@ export function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="usuarios"
+            element={
+              <ProtectedRoute perfilesPermitidos={["ADMINISTRADOR"]}>
+                <UsuariosPage />
+              </ProtectedRoute>
+            }
+          />
+          {/* HU-011/HU-013/HU-017: el catálogo y las mesas los puede consultar
+              cualquier perfil autenticado; cada página oculta las acciones de
+              creación/edición cuando el usuario no es Administrador. */}
+          <Route path="mesas" element={<MesasPage />} />
+          <Route path="tipos-producto" element={<TiposProductoPage />} />
+          <Route path="productos" element={<ProductosPage />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

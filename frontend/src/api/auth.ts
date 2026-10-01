@@ -29,3 +29,13 @@ export async function cambiarPasswordPropia(
 ): Promise<void> {
   await apiClient.put("/auth/password", { passwordActual, passwordNueva });
 }
+
+/** HU-005 — Cambio de contraseña de un tercero, solo Administrador. */
+export async function cambiarPasswordDeTercero(idUsuario: number, passwordNueva: string): Promise<void> {
+  await apiClient.put(`/auth/usuarios/${idUsuario}/password`, { passwordNueva });
+}
+
+/** HU-004 — Desbloqueo de usuario, solo Administrador. */
+export async function desbloquearUsuario(idUsuario: number): Promise<void> {
+  await apiClient.post(`/auth/usuarios/${idUsuario}/desbloquear`);
+}
