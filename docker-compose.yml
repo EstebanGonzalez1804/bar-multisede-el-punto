@@ -1,0 +1,61 @@
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: barmultisede
+      POSTGRES_PASSWORD: barmultisede
+      POSTGRES_DB: barmultisede
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      # Las migraciones NO se montan aquí como scripts de initdb: las aplica
+      # el propio backend al arrancar (backend/src/db/migrate.ts), de forma
+      # idempotente y en cada arranque — así un sprint nuevo (un archivo
+      # .sql más en database/migrations/) se aplica solo con reiniciar el
+      # contenedor del backend, sin tener que recrear el volumen de datos.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U barmultisede -d barmultisede"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PORT: 4000
+      NODE_ENV: production
+      DATABASE_URL: postgresql://barmultisede:barmultisede@db:5432/barmultisede
+      JWT_SECRET: cambia-este-valor-por-un-secreto-largo-y-aleatorio
+      JWT_EXPIRES_IN: 8h
+      LOGIN_MAX_INTENTOS_FALLIDOS: 3
+      SESION_INACTIVIDAD_MINUTOS: 3
+      CORS_ORIGIN: http://localhost:5173
+    ports:
+      - "4000:4000"
+    volumes:
+      # El Dockerfile del backend solo copia backend/dist al construir la
+      # imagen; database/migrations vive en la raíz del repo, así que se
+      # monta aquí en la ruta que backend/src/db/migrate.ts espera
+      # (3 niveles arriba de dist/db/ dentro del contenedor == "/").
+      - ./database/migrations:/database/migrations:ro
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: http://localhost:4000/api
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "5173:80"
+
+volumes:
+  db_data:

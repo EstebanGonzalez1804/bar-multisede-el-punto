@@ -1,0 +1,22 @@
+# Dependencias
+node_modules/
+
+# Builds
+dist/
+build/
+
+# Variables de entorno (nunca se versionan — usar .env.example como plantilla)
+.env
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor / SO
+.vscode/
+.idea/
+.DS_Store
+
+# Postgres (si se usa un volumen montado localmente fuera de Docker)
+*.pgdata/
