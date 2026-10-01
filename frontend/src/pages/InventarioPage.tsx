@@ -212,6 +212,7 @@ export function InventarioPage() {
         ) : items.length === 0 ? (
           <p className="empty-state">No hay productos para mostrar.</p>
         ) : (
+          <div className="table-scroll">
           <table>
             <thead>
               <tr>
@@ -255,6 +256,7 @@ export function InventarioPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

@@ -356,6 +356,7 @@ export function UsuariosPage() {
         ) : usuarios.length === 0 ? (
           <p className="empty-state">No hay usuarios que coincidan con la búsqueda.</p>
         ) : (
+          <div className="table-scroll">
           <table>
             <thead>
               <tr>
@@ -457,6 +458,7 @@ export function UsuariosPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

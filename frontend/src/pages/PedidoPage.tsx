@@ -172,6 +172,7 @@ export function PedidoPage() {
         {pedido.lineas.length === 0 ? (
           <p className="empty-state">Aún no se ha registrado ningún producto en este pedido.</p>
         ) : (
+          <div className="table-scroll">
           <table>
             <thead>
               <tr>
@@ -202,6 +203,7 @@ export function PedidoPage() {
               </tr>
             </tfoot>
           </table>
+          </div>
         )}
       </div>
     </div>

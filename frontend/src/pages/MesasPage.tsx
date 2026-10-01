@@ -204,7 +204,7 @@ export function MesasPage() {
       <div className="panel">
         <div className="panel-header">
           <h2 style={{ margin: 0 }}>Mesas</h2>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <div className="live-indicator">
               <span className="live-dot" />
               <span>En vivo · se actualiza sola</span>
@@ -281,7 +281,7 @@ export function MesasPage() {
         )}
 
         {!cargando && mesas.length > 0 && (
-          <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
+          <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
             <span className="legend-chip">
               <span className="legend-dot" style={{ background: "var(--color-success)" }} />
               Libre · {libres}

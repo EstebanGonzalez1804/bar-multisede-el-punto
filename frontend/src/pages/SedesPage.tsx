@@ -91,6 +91,7 @@ export function SedesPage() {
         ) : sedes.length === 0 ? (
           <p className="empty-state">Aún no hay sedes registradas.</p>
         ) : (
+          <div className="table-scroll">
           <table>
             <thead>
               <tr>
@@ -109,6 +110,7 @@ export function SedesPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

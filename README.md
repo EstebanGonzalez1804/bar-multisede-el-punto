@@ -188,6 +188,24 @@ a criterio técnico del proveedor:
   (CA de HU-020/HU-022) — no se inventó un tercer estado "stock bajo" con un
   umbral numérico que el documento aprobado no define.
 
+- **Interfaz responsive (requerimiento del cliente desde el inicio del
+  proyecto, implementado durante la validación de Sprint 3).** La barra
+  lateral se vuelve un panel que entra/sale ("off-canvas") con botón de
+  menú en pantallas angostas (celular/tablet, `max-width: 900px`), en vez
+  de quedar fija y angosta encima del contenido. Las tablas de todos los
+  listados (Usuarios, Productos, Tipos de producto, Sedes, Proveedores,
+  Recepciones, Inventario, historial de precios, líneas de pedido) se
+  envuelven en un contenedor con scroll horizontal propio en vez de
+  reconstruir cada una como tarjetas — es el patrón estándar para datos
+  tabulares densos en pantallas angostas, y evita reescribir siete páginas
+  con el riesgo de regresión que eso implica para una mejora que no cambia
+  ninguna regla de negocio. Los formularios en línea (`toolbar`,
+  `inline-form`) y los encabezados de panel se apilan verticalmente en vez
+  de desbordar o encimarse. El login pasa de dos columnas a una sola
+  columna apilada por debajo de 820px. Las grillas de Mesas y del Dashboard
+  ya eran fluidas (`grid-template-columns: repeat(auto-fit/auto-fill, ...)`)
+  y no necesitaron cambios adicionales.
+
 ## Estructura del repositorio
 
 ```

@@ -1,10 +1,21 @@
-import { NavLink, Outlet } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Icon, ICONS } from "./icons";
 import { ETIQUETAS_PERFIL } from "../api/types";
 
 export function Layout() {
   const { usuario, cerrarSesion } = useAuth();
+  // Responsive: en pantallas angostas (celular/tablet) la barra lateral se
+  // comporta como un panel que entra/sale (off-canvas), controlado por este
+  // botón. En desktop (ver styles.css, @media min-width) estos elementos ni
+  // siquiera se muestran y el sidebar queda fijo, como siempre.
+  const [menuAbierto, setMenuAbierto] = useState(false);
+  const location = useLocation();
+
+  useEffect(() => {
+    setMenuAbierto(false);
+  }, [location.pathname]);
 
   function inicialesDe(nombre: string | undefined): string {
     if (!nombre) return "";
@@ -15,7 +26,24 @@ export function Layout() {
 
   return (
     <div className="app-shell">
-      <aside className="sidebar">
+      <header className="topbar">
+        <button
+          type="button"
+          className="sidebar-toggle"
+          aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
+          onClick={() => setMenuAbierto((abierto) => !abierto)}
+        >
+          <Icon path={menuAbierto ? ICONS.close : ICONS.menu} size={22} strokeWidth={2} />
+        </button>
+        <div className="topbar-title">
+          <Icon path={ICONS.tumbler} size={18} strokeWidth={2} />
+          El Punto
+        </div>
+      </header>
+
+      {menuAbierto && <div className="sidebar-overlay" onClick={() => setMenuAbierto(false)} />}
+
+      <aside className={`sidebar${menuAbierto ? " open" : ""}`}>
         <div className="sidebar-brand">
           <div className="sidebar-brand-mark">
             <Icon path={ICONS.tumbler} size={18} strokeWidth={2} />

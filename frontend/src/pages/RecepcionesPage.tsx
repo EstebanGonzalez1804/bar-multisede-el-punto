@@ -309,6 +309,7 @@ export function RecepcionesPage() {
         ) : recepciones.length === 0 ? (
           <p className="empty-state">No hay recepciones registradas con estos filtros.</p>
         ) : (
+          <div className="table-scroll">
           <table>
             <thead>
               <tr>
@@ -355,6 +356,7 @@ export function RecepcionesPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

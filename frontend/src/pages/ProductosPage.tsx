@@ -326,6 +326,7 @@ export function ProductosPage() {
         ) : productos.length === 0 ? (
           <p className="empty-state">No hay productos que coincidan con la búsqueda.</p>
         ) : (
+          <div className="table-scroll">
           <table>
             <thead>
               <tr>
@@ -386,6 +387,7 @@ export function ProductosPage() {
                         ) : historial.length === 0 ? (
                           <p className="empty-state">Sin historial de precios.</p>
                         ) : (
+                          <div className="table-scroll">
                           <table>
                             <thead>
                               <tr>
@@ -404,6 +406,7 @@ export function ProductosPage() {
                               ))}
                             </tbody>
                           </table>
+                          </div>
                         )}
                       </td>
                     </tr>
@@ -412,6 +415,7 @@ export function ProductosPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

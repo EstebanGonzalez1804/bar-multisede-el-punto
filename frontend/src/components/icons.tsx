@@ -53,4 +53,6 @@ export const ICONS = {
     "M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 9v-1a6 6 0 0 1 6-6h2a6 6 0 0 1 6 6v1M17 8a3 3 0 1 0 0-6",
   arrowRight: "M5 12h14m-6-6 6 6-6 6",
   rebuild: "M4 4v6h6M20 20v-6h-6M4 10a8 8 0 0 1 14-4.9M20 14a8 8 0 0 1-14 4.9",
+  menu: "M3 6h18M3 12h18M3 18h18",
+  close: "M6 6l12 12M18 6 6 18",
 };

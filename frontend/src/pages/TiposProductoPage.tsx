@@ -153,6 +153,7 @@ export function TiposProductoPage() {
         ) : tipos.length === 0 ? (
           <p className="empty-state">Aún no hay tipos de producto registrados.</p>
         ) : (
+          <div className="table-scroll">
           <table>
             <thead>
               <tr>
@@ -208,6 +209,7 @@ export function TiposProductoPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

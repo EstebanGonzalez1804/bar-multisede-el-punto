@@ -157,6 +157,7 @@ export function ProveedoresPage() {
         ) : proveedores.length === 0 ? (
           <p className="empty-state">Aún no hay proveedores registrados.</p>
         ) : (
+          <div className="table-scroll">
           <table>
             <thead>
               <tr>
@@ -181,6 +182,7 @@ export function ProveedoresPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>
