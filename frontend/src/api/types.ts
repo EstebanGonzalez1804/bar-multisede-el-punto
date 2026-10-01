@@ -43,6 +43,9 @@ export interface Mesa {
 export interface TipoProducto {
   idTipoProducto: number;
   nombre: string;
+  // 3 letras derivadas automáticamente del nombre (ej. "Aguardiente" -> "AGU");
+  // de aquí sale el segmento central del código de producto (PDT-AGU-001).
+  abreviacion: string;
   creadoEn: string;
 }
 

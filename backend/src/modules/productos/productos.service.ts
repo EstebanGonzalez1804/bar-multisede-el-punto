@@ -1,6 +1,7 @@
 import type { Pool, PoolClient } from "pg";
 import { pool, withTransaction } from "../../config/db";
 import { ApiError } from "../../utils/ApiError";
+import { siguienteConsecutivo } from "../../utils/secuencia";
 import { registrarEvento } from "../../utils/trazabilidad";
 import type { JwtPayload } from "../../types/auth";
 
@@ -71,23 +72,39 @@ async function obtenerProductoConTipo(idProducto: number, ejecutor: Queryable): 
 }
 
 interface DatosCrearProducto {
-  codigo: string;
   nombre: string;
   idTipoProducto: number;
   valorCompra: number;
   valorVenta: number;
 }
 
+/**
+ * Genera el código del producto bajo la estructura fija
+ * `PDT-[abreviación del tipo]-[consecutivo]` (ej. "PDT-AGU-001") — ajuste
+ * acordado con el cliente sobre HU-014 (ver migración 004): el código deja
+ * de ser un campo que escribe el Administrador y pasa a generarse igual que
+ * el de usuarios (HU-007), para garantizar unicidad sin depender de que no
+ * se repita a mano. El consecutivo es atómico y está acotado por
+ * abreviación de tipo (ver utils/secuencia.ts).
+ */
+async function generarCodigoProducto(abreviacionTipo: string, client: PoolClient): Promise<string> {
+  const clave = `PDT-${abreviacionTipo}`;
+  const n = await siguienteConsecutivo(clave, client);
+  return `${clave}-${String(n).padStart(3, "0")}`;
+}
+
 /** HU-014 — Creación de productos (catálogo único y global, CA-04). */
 export async function crearProducto(admin: JwtPayload, datos: DatosCrearProducto): Promise<Producto> {
   return withTransaction(async (client) => {
-    const { rows: tipoRows } = await client.query(
-      `SELECT id_tipo_producto FROM tipo_producto WHERE id_tipo_producto = $1`,
+    const { rows: tipoRows } = await client.query<{ abreviacion: string }>(
+      `SELECT abreviacion FROM tipo_producto WHERE id_tipo_producto = $1`,
       [datos.idTipoProducto]
     );
     if (!tipoRows[0]) {
       throw ApiError.notFound("El tipo de producto indicado no existe.");
     }
+
+    const codigo = await generarCodigoProducto(tipoRows[0].abreviacion, client);
 
     let idProducto: number;
     try {
@@ -95,12 +112,14 @@ export async function crearProducto(admin: JwtPayload, datos: DatosCrearProducto
         `INSERT INTO producto (codigo, nombre, id_tipo_producto, valor_compra, valor_venta)
          VALUES ($1, $2, $3, $4, $5)
          RETURNING id_producto`,
-        [datos.codigo, datos.nombre, datos.idTipoProducto, datos.valorCompra, datos.valorVenta]
+        [codigo, datos.nombre, datos.idTipoProducto, datos.valorCompra, datos.valorVenta]
       );
       idProducto = rows[0].id_producto;
     } catch (err) {
       if (esViolacionUnicidad(err)) {
-        throw ApiError.conflict("Ya existe un producto con ese código.");
+        // Solo podría pasar si un producto anterior (de antes de este
+        // ajuste) ya tenía escrito a mano justo este mismo código.
+        throw ApiError.conflict("Se generó un código que ya existe; intenta guardar de nuevo.");
       }
       throw err;
     }
@@ -118,7 +137,7 @@ export async function crearProducto(admin: JwtPayload, datos: DatosCrearProducto
         tipoEvento: "PRODUCTO_CREADO",
         entidadAfectada: "PRODUCTO",
         idAfectado: idProducto,
-        detalle: { codigo: datos.codigo },
+        detalle: { codigo },
       },
       client
     );

@@ -189,6 +189,48 @@ export async function inactivarMesa(admin: JwtPayload, idMesa: number): Promise<
 }
 
 /**
+ * Reactivación de una mesa inactivada por error — ajuste acordado con el
+ * cliente sobre HU-012 (ver migración 004): el documento aprobado solo
+ * define el camino de "inactivar" (CA-01/CA-02), sin ningún CA de vuelta,
+ * a diferencia de HU-008 (usuarios, CA-03) y HU-016 (productos, CA-04), que
+ * sí la contemplan. Mismo control de acceso que inactivar (CA-03 HU-012):
+ * solo Administrador. Una mesa reactivada vuelve siempre a LIBRE (nunca
+ * pudo quedar INACTIVA estando OCUPADA, ver inactivarMesa).
+ */
+export async function activarMesa(admin: JwtPayload, idMesa: number): Promise<Mesa> {
+  return withTransaction(async (client) => {
+    const { rows } = await client.query<{ id_mesa: number; id_sede: number; estado: string }>(
+      `SELECT id_mesa, id_sede, estado FROM mesa WHERE id_mesa = $1 FOR UPDATE`,
+      [idMesa]
+    );
+    const mesa = rows[0];
+    if (!mesa) {
+      throw ApiError.notFound("Mesa no encontrada.");
+    }
+    if (mesa.estado !== "INACTIVA") {
+      throw ApiError.conflict("Solo se puede activar una mesa que esté inactiva.", "MESA_NO_ACTIVABLE");
+    }
+
+    await client.query(`UPDATE mesa SET estado = 'LIBRE', actualizado_en = now() WHERE id_mesa = $1`, [
+      idMesa,
+    ]);
+
+    await registrarEvento(
+      {
+        idUsuario: admin.idUsuario,
+        tipoEvento: "MESA_ACTIVADA",
+        entidadAfectada: "MESA",
+        idAfectado: idMesa,
+        idSede: mesa.id_sede,
+      },
+      client
+    );
+
+    return obtenerMesaConSede(idMesa, client);
+  });
+}
+
+/**
  * HU-011 — Listado de mesas. `idSedeEfectiva` ya viene resuelto por
  * `resolveSedeScope` en el controller: null = sin restricción (Administrador
  * sin filtro), número = acotado a esa sede (Cajero/Mesero, siempre; o

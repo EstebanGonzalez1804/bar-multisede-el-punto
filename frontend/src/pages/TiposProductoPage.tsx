@@ -157,6 +157,7 @@ export function TiposProductoPage() {
             <thead>
               <tr>
                 <th>Nombre</th>
+                <th>Abreviación</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -165,6 +166,9 @@ export function TiposProductoPage() {
                 <Fragment key={tipo.idTipoProducto}>
                   <tr>
                     <td>{tipo.nombre}</td>
+                    <td>
+                      <span className="badge badge-muted">{tipo.abreviacion}</span>
+                    </td>
                     <td>
                       <div className="table-actions">
                         <button className="btn-link" onClick={() => void toggleDetalle(tipo)}>
@@ -180,7 +184,7 @@ export function TiposProductoPage() {
                   </tr>
                   {expandidoId === tipo.idTipoProducto && (
                     <tr>
-                      <td colSpan={2}>
+                      <td colSpan={3}>
                         {cargandoDetalle ? (
                           <p className="empty-state">Cargando productos...</p>
                         ) : detalle && detalle.productos.length > 0 ? (

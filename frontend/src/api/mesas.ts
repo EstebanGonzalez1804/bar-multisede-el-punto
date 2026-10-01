@@ -27,3 +27,8 @@ export async function inactivarMesa(idMesa: number): Promise<Mesa> {
   const { data } = await apiClient.post<{ mesa: Mesa }>(`/mesas/${idMesa}/inactivar`);
   return data.mesa;
 }
+
+export async function activarMesa(idMesa: number): Promise<Mesa> {
+  const { data } = await apiClient.post<{ mesa: Mesa }>(`/mesas/${idMesa}/activar`);
+  return data.mesa;
+}

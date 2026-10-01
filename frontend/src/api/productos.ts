@@ -19,8 +19,9 @@ export async function obtenerHistorialPrecios(idProducto: number): Promise<Histo
   return data.historial;
 }
 
+// El código ya no lo escribe el Administrador: el backend lo genera a
+// partir de la abreviación del tipo de producto (ej. "PDT-AGU-001").
 export interface DatosCrearProducto {
-  codigo: string;
   nombre: string;
   idTipoProducto: number;
   valorCompra: number;

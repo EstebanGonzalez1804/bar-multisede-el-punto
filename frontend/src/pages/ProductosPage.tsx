@@ -6,7 +6,6 @@ import { useAuth } from "../context/AuthContext";
 import type { Estado, HistorialPrecio, Producto, TipoProducto } from "../api/types";
 
 interface FormularioProducto {
-  codigo: string;
   nombre: string;
   idTipoProducto: string;
   valorCompra: string;
@@ -14,7 +13,6 @@ interface FormularioProducto {
 }
 
 const FORMULARIO_VACIO: FormularioProducto = {
-  codigo: "",
   nombre: "",
   idTipoProducto: "",
   valorCompra: "",
@@ -95,7 +93,6 @@ export function ProductosPage() {
 
   function abrirEdicion(producto: Producto) {
     setFormulario({
-      codigo: producto.codigo,
       nombre: producto.nombre,
       idTipoProducto: String(producto.idTipoProducto),
       valorCompra: producto.valorCompra,
@@ -117,10 +114,6 @@ export function ProductosPage() {
     e.preventDefault();
     setError(null);
 
-    if (editandoId === null && !formulario.codigo.trim()) {
-      setError("El código es obligatorio.");
-      return;
-    }
     if (!formulario.nombre.trim()) {
       setError("El nombre es obligatorio.");
       return;
@@ -140,7 +133,6 @@ export function ProductosPage() {
     try {
       if (editandoId === null) {
         await productosApi.crearProducto({
-          codigo: formulario.codigo.trim(),
           nombre: formulario.nombre.trim(),
           idTipoProducto: Number(formulario.idTipoProducto),
           valorCompra,
@@ -258,18 +250,6 @@ export function ProductosPage() {
           <form className="row-subform" onSubmit={handleSubmitFormulario}>
             <h3 style={{ marginTop: 0 }}>{editandoId === null ? "Nuevo producto" : "Editar producto"}</h3>
             <div className="inline-form">
-              {editandoId === null && (
-                <div className="field">
-                  <label htmlFor="codigo">Código</label>
-                  <input
-                    id="codigo"
-                    type="text"
-                    value={formulario.codigo}
-                    onChange={(e) => setFormulario((f) => ({ ...f, codigo: e.target.value }))}
-                    placeholder="PRD-001"
-                  />
-                </div>
-              )}
               <div className="field">
                 <label htmlFor="nombreProducto">Nombre</label>
                 <input
@@ -320,7 +300,12 @@ export function ProductosPage() {
                 />
               </div>
             </div>
-            {editandoId !== null && (
+            {editandoId === null ? (
+              <p className="field-hint">
+                El código se genera automáticamente a partir del tipo de producto (ej. tipo "Aguardiente" → código
+                PDT-AGU-001).
+              </p>
+            ) : (
               <p className="field-hint">
                 Si cambias los valores de compra o venta, se registrará un nuevo historial de precios.
               </p>

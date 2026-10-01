@@ -136,6 +136,20 @@ export function MesasPage() {
     }
   }
 
+  async function handleActivar(mesa: Mesa) {
+    setAccionEnCurso(mesa.idMesa);
+    setError(null);
+    try {
+      await mesasApi.activarMesa(mesa.idMesa);
+      setMensaje(`Mesa ${mesa.identificador} activada (queda en estado LIBRE).`);
+      await cargarMesas();
+    } catch (err) {
+      setError(getApiErrorMessage(err, "No se pudo activar la mesa."));
+    } finally {
+      setAccionEnCurso(null);
+    }
+  }
+
   function badgeClase(estado: Mesa["estado"]) {
     if (estado === "LIBRE") return "badge-success";
     if (estado === "OCUPADA") return "badge-danger";
@@ -249,7 +263,15 @@ export function MesasPage() {
                         >
                           Editar
                         </button>
-                        {mesa.estado !== "INACTIVA" && (
+                        {mesa.estado === "INACTIVA" ? (
+                          <button
+                            className="btn-link"
+                            onClick={() => void handleActivar(mesa)}
+                            disabled={accionEnCurso === mesa.idMesa}
+                          >
+                            Activar
+                          </button>
+                        ) : (
                           <button
                             className="btn-link danger"
                             onClick={() => void handleInactivar(mesa)}

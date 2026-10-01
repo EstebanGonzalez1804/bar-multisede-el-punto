@@ -14,3 +14,4 @@ mesasRouter.get("/", mesasController.getMesas);
 mesasRouter.post("/", requireRole("ADMINISTRADOR"), mesasController.postMesa);
 mesasRouter.put("/:idMesa", requireRole("ADMINISTRADOR"), mesasController.putMesa);
 mesasRouter.post("/:idMesa/inactivar", requireRole("ADMINISTRADOR"), mesasController.postInactivarMesa);
+mesasRouter.post("/:idMesa/activar", requireRole("ADMINISTRADOR"), mesasController.postActivarMesa);

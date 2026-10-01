@@ -2,9 +2,8 @@ import { z } from "zod";
 
 const valorMonetario = z.number().nonnegative("El valor no puede ser negativo.");
 
-/** HU-014 — Creación de productos. */
+/** HU-014 — Creación de productos (el código se genera en el servidor, no lo digita el Administrador). */
 export const crearProductoSchema = z.object({
-  codigo: z.string().min(1, "El código es obligatorio.").max(30),
   nombre: z.string().min(1, "El nombre es obligatorio.").max(120),
   idTipoProducto: z.number().int().positive(),
   valorCompra: valorMonetario,

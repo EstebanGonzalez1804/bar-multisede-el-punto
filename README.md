@@ -109,6 +109,23 @@ a criterio técnico del proveedor:
   definida en la Propuesta ni en el Documento de Arquitectura, y el polling
   cumple el criterio de aceptación sin invertir en infraestructura adicional
   no acordada.
+- **Reactivación de mesas (ajuste sobre HU-012, migración 004).** El
+  documento aprobado solo definía "inactivar" una mesa, sin camino de
+  vuelta — a diferencia de HU-008 (usuarios) y HU-016 (productos), que sí
+  reactivan. El cliente pidió agregar "Activar" por consistencia operativa
+  (una mesa inactivada por error quedaba inactivable para siempre); se
+  agregó con el mismo control de acceso que exige CA-03 de HU-012 (solo
+  Administrador). Reactivar siempre deja la mesa en estado LIBRE.
+- **Código de producto autogenerado (ajuste sobre HU-014, migración 004).**
+  El mockup aprobado listaba "código" como campo que digitaba el
+  Administrador. El cliente pidió que se genere igual que el código de
+  usuario (HU-007): `PDT-[abreviación del tipo de producto]-[consecutivo]`
+  (ej. `PDT-AGU-001` para el tipo "Aguardiente"). La abreviación de 3 letras
+  se deriva automáticamente del nombre del tipo al crearlo (sin tildes, con
+  desambiguación por ventana deslizante si colisiona) y es inmutable: si el
+  tipo se renombra después, la abreviación no cambia, para no alterar el
+  significado de códigos ya generados. Los productos creados antes de este
+  ajuste conservan su código original escrito a mano.
 
 ## Estructura del repositorio
 

@@ -42,3 +42,10 @@ export const postInactivarMesa = asyncHandler(async (req: Request, res: Response
   const mesa = await mesasService.inactivarMesa(req.usuarioActual, idMesa);
   res.status(200).json({ mesa });
 });
+
+export const postActivarMesa = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  const idMesa = parseIdMesa(req);
+  const mesa = await mesasService.activarMesa(req.usuarioActual, idMesa);
+  res.status(200).json({ mesa });
+});
