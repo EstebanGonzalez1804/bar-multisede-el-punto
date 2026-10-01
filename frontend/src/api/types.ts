@@ -1,6 +1,12 @@
 export type Perfil = "ADMINISTRADOR" | "CAJERO" | "MESERO";
 export type Estado = "ACTIVO" | "INACTIVO";
 
+export const ETIQUETAS_PERFIL: Record<Perfil, string> = {
+  ADMINISTRADOR: "Administrador",
+  CAJERO: "Cajero",
+  MESERO: "Mesero",
+};
+
 export interface UsuarioAutenticado {
   idUsuario: number;
   codigoUsuario: string;

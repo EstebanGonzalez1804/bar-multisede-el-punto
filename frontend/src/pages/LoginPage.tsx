@@ -2,6 +2,7 @@ import { useState, type FormEvent } from "react";
 import { Navigate } from "react-router-dom";
 import { getApiErrorMessage } from "../api/client";
 import { useAuth } from "../context/AuthContext";
+import { Icon, ICONS } from "../components/icons";
 import type { Perfil } from "../api/types";
 
 /**
@@ -48,41 +49,99 @@ export function LoginPage() {
   }
 
   return (
-    <div className="login-page">
-      <div className="login-card">
-        <h1>El Punto</h1>
-        <p className="login-subtitle">Gestión operativa — inicia sesión para continuar</p>
+    <div className="login-shell">
+      <div className="login-hero">
+        <div className="login-hero-glow" />
+        <svg
+          width="220"
+          height="220"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="#ffffff"
+          strokeWidth="0.6"
+          className="login-hero-watermark"
+          aria-hidden="true"
+        >
+          <path d={ICONS.tumbler} />
+        </svg>
 
-        {error && <div className="alert alert-error">{error}</div>}
+        <div className="login-hero-brand">
+          <div className="login-hero-badge">
+            <Icon path={ICONS.tumbler} size={20} strokeWidth={2} />
+          </div>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 19 }}>El Punto</div>
+        </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="field">
-            <label htmlFor="codigoUsuario">Código de usuario</label>
-            <input
-              id="codigoUsuario"
-              type="text"
-              autoComplete="username"
-              value={codigoUsuario}
-              onChange={(e) => setCodigoUsuario(e.target.value)}
-              placeholder="SE01-CAJ-001"
-              required
-            />
+        <div>
+          <div className="login-hero-headline">El control de toda tu barra, en una sola pantalla.</div>
+          <p className="login-hero-sub">Mesas, inventario y pedidos de todas tus sedes, en tiempo real.</p>
+          <div className="login-hero-roles">
+            <div className="login-hero-role">
+              <Icon path={ICONS.usuarios} size={16} strokeWidth={2.2} />
+              Administrador
+            </div>
+            <div className="login-hero-role">
+              <Icon path={ICONS.inventario} size={16} strokeWidth={2.2} />
+              Cajero
+            </div>
+            <div className="login-hero-role">
+              <Icon path={ICONS.mesas} size={16} strokeWidth={2.2} />
+              Mesero
+            </div>
           </div>
-          <div className="field">
-            <label htmlFor="password">Contraseña</label>
-            <input
-              id="password"
-              type="password"
-              autoComplete="current-password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+        </div>
+
+        <div className="login-hero-footer">NOVATECH · Plataforma de Gestión Operativa</div>
+      </div>
+
+      <div className="login-form-side">
+        <div className="login-card">
+          <h1>Inicia sesión</h1>
+          <p className="login-subtitle">Ingresa con tu código de usuario y contraseña.</p>
+
+          {error && <div className="alert alert-error">{error}</div>}
+
+          <form onSubmit={handleSubmit}>
+            <div className="field">
+              <label htmlFor="codigoUsuario">Código de usuario</label>
+              <div className="field-with-icon">
+                <Icon path={ICONS.usuarios} size={16} strokeWidth={2} />
+                <input
+                  id="codigoUsuario"
+                  type="text"
+                  autoComplete="username"
+                  value={codigoUsuario}
+                  onChange={(e) => setCodigoUsuario(e.target.value)}
+                  placeholder="SE01-CAJ-001"
+                  required
+                />
+              </div>
+            </div>
+            <div className="field">
+              <label htmlFor="password">Contraseña</label>
+              <div className="field-with-icon">
+                <Icon path={ICONS.password} size={16} strokeWidth={2} />
+                <input
+                  id="password"
+                  type="password"
+                  autoComplete="current-password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+            <button type="submit" className="btn-primary" disabled={enviando}>
+              {enviando ? "Ingresando..." : "Ingresar"}
+              {!enviando && <Icon path={ICONS.arrowRight} size={16} strokeWidth={2.3} />}
+            </button>
+          </form>
+
+          <div className="login-note">
+            <Icon path={ICONS.warning} size={15} strokeWidth={2.1} />
+            <span>Tu sesión se cierra sola tras 3 minutos sin actividad, por seguridad.</span>
           </div>
-          <button type="submit" className="btn-primary" disabled={enviando}>
-            {enviando ? "Ingresando..." : "Ingresar"}
-          </button>
-        </form>
+        </div>
       </div>
     </div>
   );

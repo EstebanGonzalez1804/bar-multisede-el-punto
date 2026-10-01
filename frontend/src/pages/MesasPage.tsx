@@ -5,6 +5,7 @@ import * as mesasApi from "../api/mesas";
 import * as pedidosApi from "../api/pedidos";
 import * as sedesApi from "../api/sedes";
 import { useAuth } from "../context/AuthContext";
+import { Icon, ICONS } from "../components/icons";
 import type { Mesa, Sede } from "../api/types";
 
 /** HU-024 CA-01/CA-05 — "tiempo real" vía polling: refresca sin bloquear la
@@ -195,16 +196,25 @@ export function MesasPage() {
     return "badge-muted";
   }
 
+  const libres = mesas.filter((m) => m.estado === "LIBRE").length;
+  const ocupadas = mesas.filter((m) => m.estado === "OCUPADA").length;
+
   return (
     <div>
       <div className="panel">
         <div className="panel-header">
           <h2 style={{ margin: 0 }}>Mesas</h2>
-          {esAdministrador && !mostrarFormulario && (
-            <button className="btn-secondary" onClick={abrirCreacion}>
-              + Nueva mesa
-            </button>
-          )}
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div className="live-indicator">
+              <span className="live-dot" />
+              <span>En vivo · se actualiza sola</span>
+            </div>
+            {esAdministrador && !mostrarFormulario && (
+              <button className="btn-secondary" onClick={abrirCreacion}>
+                + Nueva mesa
+              </button>
+            )}
+          </div>
         </div>
 
         {error && <div className="alert alert-error">{error}</div>}
@@ -270,50 +280,74 @@ export function MesasPage() {
           </form>
         )}
 
+        {!cargando && mesas.length > 0 && (
+          <div style={{ display: "flex", gap: 10, marginBottom: 18 }}>
+            <span className="legend-chip">
+              <span className="legend-dot" style={{ background: "var(--color-success)" }} />
+              Libre · {libres}
+            </span>
+            <span className="legend-chip">
+              <span className="legend-dot" style={{ background: "var(--color-danger)" }} />
+              Ocupada · {ocupadas}
+            </span>
+          </div>
+        )}
+
         {cargando ? (
           <p className="empty-state">Cargando...</p>
         ) : mesas.length === 0 ? (
           <p className="empty-state">No hay mesas registradas.</p>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Identificador</th>
-                <th>Sede</th>
-                <th>Estado</th>
-                {(esAdministrador || esMesero) && <th>Acciones</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {mesas.map((mesa) => (
-                <tr key={mesa.idMesa}>
-                  <td>{mesa.identificador}</td>
-                  <td>{mesa.nombreSede}</td>
-                  <td>
-                    <span className={`badge ${badgeClase(mesa.estado)}`}>{mesa.estado}</span>
-                  </td>
-                  {esMesero && (
-                    <td>
-                      {mesa.estado === "LIBRE" && (
-                        <button
-                          className="btn-link"
-                          onClick={() => void handleAbrirPedido(mesa)}
-                          disabled={accionEnCurso === mesa.idMesa}
-                        >
-                          Abrir pedido
-                        </button>
-                      )}
-                      {mesa.estado === "OCUPADA" && (
-                        <button className="btn-link" onClick={() => navigate(`/pedidos/mesa/${mesa.idMesa}`)}>
-                          Ver pedido
-                        </button>
-                      )}
-                      {mesa.estado === "INACTIVA" && <span className="empty-state">—</span>}
-                    </td>
-                  )}
-                  {esAdministrador && (
-                    <td>
-                      <div className="table-actions">
+          <div className="mesas-grid">
+            {mesas.map((mesa) => {
+              const libre = mesa.estado === "LIBRE";
+              const ocupada = mesa.estado === "OCUPADA";
+              const barColor = libre
+                ? "var(--color-success)"
+                : ocupada
+                  ? "var(--color-danger)"
+                  : "var(--color-border)";
+              return (
+                <div className="mesa-card" key={mesa.idMesa}>
+                  <div className="mesa-card-bar" style={{ background: barColor }} />
+                  <div className="mesa-card-body">
+                    <div className="mesa-card-top">
+                      <div>
+                        <div className="mesa-card-title">{mesa.identificador}</div>
+                        <div className="mesa-card-meta">{mesa.nombreSede}</div>
+                      </div>
+                      <span className={`badge ${badgeClase(mesa.estado)}`}>{mesa.estado}</span>
+                    </div>
+
+                    {esMesero && (
+                      <>
+                        <div className="mesa-card-info">
+                          {libre ? "Disponible para un nuevo pedido" : ocupada ? "Pedido en curso" : "Mesa inactiva"}
+                        </div>
+                        {libre && (
+                          <button
+                            className="mesa-card-btn libre"
+                            onClick={() => void handleAbrirPedido(mesa)}
+                            disabled={accionEnCurso === mesa.idMesa}
+                          >
+                            <Icon path={ICONS.plus} size={15} strokeWidth={2.2} />
+                            Abrir pedido
+                          </button>
+                        )}
+                        {ocupada && (
+                          <button
+                            className="mesa-card-btn ocupada"
+                            onClick={() => navigate(`/pedidos/mesa/${mesa.idMesa}`)}
+                          >
+                            <Icon path={ICONS.receipt} size={15} strokeWidth={2.2} />
+                            Ver pedido
+                          </button>
+                        )}
+                      </>
+                    )}
+
+                    {esAdministrador && (
+                      <div className="mesa-card-actions">
                         <button
                           className="btn-link"
                           onClick={() => abrirEdicion(mesa)}
@@ -340,12 +374,12 @@ export function MesasPage() {
                           </button>
                         )}
                       </div>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>
