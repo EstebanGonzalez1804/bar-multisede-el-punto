@@ -10,6 +10,10 @@ import { ProductosPage } from "./pages/ProductosPage";
 import { SedesPage } from "./pages/SedesPage";
 import { TiposProductoPage } from "./pages/TiposProductoPage";
 import { UsuariosPage } from "./pages/UsuariosPage";
+import { ProveedoresPage } from "./pages/ProveedoresPage";
+import { RecepcionesPage } from "./pages/RecepcionesPage";
+import { InventarioPage } from "./pages/InventarioPage";
+import { PedidoPage } from "./pages/PedidoPage";
 
 export function App() {
   return (
@@ -49,6 +53,36 @@ export function App() {
           <Route path="mesas" element={<MesasPage />} />
           <Route path="tipos-producto" element={<TiposProductoPage />} />
           <Route path="productos" element={<ProductosPage />} />
+
+          {/* Sprint 3 — HU-018 a HU-026. Proveedores/Recepciones: Administrador
+              y Cajero (CA explícitas); Inventario: consulta abierta a todos
+              (HU-020 CA-04), ajuste acotado en la propia página. Pedido: solo
+              Mesero (ver pedidos.routes.ts). */}
+          <Route
+            path="proveedores"
+            element={
+              <ProtectedRoute perfilesPermitidos={["ADMINISTRADOR", "CAJERO"]}>
+                <ProveedoresPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="recepciones"
+            element={
+              <ProtectedRoute perfilesPermitidos={["ADMINISTRADOR", "CAJERO"]}>
+                <RecepcionesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="inventario" element={<InventarioPage />} />
+          <Route
+            path="pedidos/mesa/:idMesa"
+            element={
+              <ProtectedRoute perfilesPermitidos={["MESERO"]}>
+                <PedidoPage />
+              </ProtectedRoute>
+            }
+          />
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />

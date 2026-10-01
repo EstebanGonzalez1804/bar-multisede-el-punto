@@ -17,6 +17,13 @@ export function Layout() {
           <NavLink to="/mesas">Mesas</NavLink>
           <NavLink to="/tipos-producto">Tipos de producto</NavLink>
           <NavLink to="/productos">Productos</NavLink>
+          {(usuario?.perfil === "ADMINISTRADOR" || usuario?.perfil === "CAJERO") && (
+            <NavLink to="/proveedores">Proveedores</NavLink>
+          )}
+          {(usuario?.perfil === "ADMINISTRADOR" || usuario?.perfil === "CAJERO") && (
+            <NavLink to="/recepciones">Recepciones</NavLink>
+          )}
+          <NavLink to="/inventario">Inventario</NavLink>
           <NavLink to="/cambiar-password">Mi contraseña</NavLink>
         </nav>
         <div className="topbar-user">

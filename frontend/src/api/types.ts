@@ -75,6 +75,87 @@ export interface HistorialPrecio {
   idUsuarioRegistro: number | null;
 }
 
+export interface Proveedor {
+  idProveedor: number;
+  nombre: string;
+  informacionContacto: string;
+  creadoEn: string;
+  actualizadoEn: string;
+}
+
+export interface LineaRecepcion {
+  idProducto: number;
+  codigoProducto: string;
+  nombreProducto: string;
+  cantidad: number;
+}
+
+export interface Recepcion {
+  idRecepcion: number;
+  idProveedor: number;
+  nombreProveedor: string;
+  idSede: number;
+  nombreSede: string;
+  idUsuario: number;
+  nombreUsuario: string;
+  fechaRecepcion: string;
+  creadoEn: string;
+  lineas: LineaRecepcion[];
+}
+
+export interface ItemInventario {
+  idProducto: number;
+  codigoProducto: string;
+  nombreProducto: string;
+  nombreTipoProducto: string;
+  estadoProducto: Estado;
+  idSede: number;
+  nombreSede: string;
+  cantidadDisponible: number;
+}
+
+export type MotivoAjuste = "PERDIDA" | "DANO" | "ROTURA" | "DIFERENCIA_FISICA" | "ERROR_REGISTRO" | "OTRO";
+
+export const MOTIVOS_AJUSTE: { value: MotivoAjuste; label: string }[] = [
+  { value: "PERDIDA", label: "Pérdida" },
+  { value: "DANO", label: "Daño" },
+  { value: "ROTURA", label: "Rotura" },
+  { value: "DIFERENCIA_FISICA", label: "Diferencia física" },
+  { value: "ERROR_REGISTRO", label: "Error de registro" },
+  { value: "OTRO", label: "Otro" },
+];
+
+export type EstadoPedido = "ABIERTO" | "CERRADO";
+export type EstadoPago = "PENDIENTE" | "PARCIAL" | "PAGADO";
+
+export interface LineaPedido {
+  idDetallePedido: number;
+  idProducto: number;
+  codigoProducto: string;
+  nombreProducto: string;
+  cantidad: number;
+  // Viajan como string, igual que Producto.valorVenta/valorCompra.
+  precioVentaCongelado: string;
+  precioCompraCongelado: string;
+  creadoEn: string;
+}
+
+export interface Pedido {
+  idPedido: number;
+  identificadorPedido: string;
+  idMesa: number;
+  identificadorMesa: string;
+  idSede: number;
+  nombreSede: string;
+  idUsuarioMesero: number;
+  nombreMesero: string;
+  estadoPedido: EstadoPedido;
+  estadoPago: EstadoPago;
+  fechaApertura: string;
+  fechaCierre: string | null;
+  lineas: LineaPedido[];
+}
+
 export interface ApiErrorBody {
   error: {
     code: string;

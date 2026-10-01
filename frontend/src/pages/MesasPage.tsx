@@ -1,9 +1,15 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useNavigate } from "react-router-dom";
 import { getApiErrorMessage } from "../api/client";
 import * as mesasApi from "../api/mesas";
+import * as pedidosApi from "../api/pedidos";
 import * as sedesApi from "../api/sedes";
 import { useAuth } from "../context/AuthContext";
 import type { Mesa, Sede } from "../api/types";
+
+/** HU-024 CA-01/CA-05 — "tiempo real" vía polling: refresca sin bloquear la
+ * pantalla mientras el Mesero/Administrador la tienen abierta. */
+const INTERVALO_POLLING_MS = 6000;
 
 interface FormularioMesa {
   idSede: string;
@@ -14,7 +20,9 @@ const FORMULARIO_VACIO: FormularioMesa = { idSede: "", identificador: "" };
 
 export function MesasPage() {
   const { usuario } = useAuth();
+  const navigate = useNavigate();
   const esAdministrador = usuario?.perfil === "ADMINISTRADOR";
+  const esMesero = usuario?.perfil === "MESERO";
 
   const [mesas, setMesas] = useState<Mesa[]>([]);
   const [sedes, setSedes] = useState<Sede[]>([]);
@@ -32,19 +40,27 @@ export function MesasPage() {
   const [guardando, setGuardando] = useState(false);
   const [accionEnCurso, setAccionEnCurso] = useState<number | null>(null);
 
-  async function cargarMesas() {
-    setCargando(true);
-    setError(null);
-    try {
-      const idSede = filtroSede ? Number(filtroSede) : undefined;
-      const data = await mesasApi.listarMesas(idSede);
-      setMesas(data);
-    } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudieron cargar las mesas."));
-    } finally {
-      setCargando(false);
-    }
-  }
+  const cargarMesas = useCallback(
+    async (silencioso = false) => {
+      if (!silencioso) setCargando(true);
+      setError(null);
+      try {
+        const idSede = filtroSede ? Number(filtroSede) : undefined;
+        const data = await mesasApi.listarMesas(idSede);
+        setMesas(data);
+      } catch (err) {
+        // En el refresco silencioso de fondo no interrumpimos con un error
+        // visible si ya había datos en pantalla; solo se reporta si falla
+        // la carga inicial.
+        if (!silencioso) {
+          setError(getApiErrorMessage(err, "No se pudieron cargar las mesas."));
+        }
+      } finally {
+        if (!silencioso) setCargando(false);
+      }
+    },
+    [filtroSede]
+  );
 
   useEffect(() => {
     void cargarMesas();
@@ -58,6 +74,29 @@ export function MesasPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // HU-024 — estado de mesas en tiempo real vía polling, mientras no haya un
+  // formulario o una acción en curso (para no pisarle una edición al usuario).
+  useEffect(() => {
+    const intervalo = setInterval(() => {
+      if (!mostrarFormulario && accionEnCurso === null) {
+        void cargarMesas(true);
+      }
+    }, INTERVALO_POLLING_MS);
+    return () => clearInterval(intervalo);
+  }, [cargarMesas, mostrarFormulario, accionEnCurso]);
+
+  async function handleAbrirPedido(mesa: Mesa) {
+    setAccionEnCurso(mesa.idMesa);
+    setError(null);
+    try {
+      await pedidosApi.abrirPedido(mesa.idMesa);
+      navigate(`/pedidos/mesa/${mesa.idMesa}`);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "No se pudo abrir el pedido."));
+      setAccionEnCurso(null);
+    }
+  }
 
   function handleFiltrar(e: FormEvent) {
     e.preventDefault();
@@ -242,7 +281,7 @@ export function MesasPage() {
                 <th>Identificador</th>
                 <th>Sede</th>
                 <th>Estado</th>
-                {esAdministrador && <th>Acciones</th>}
+                {(esAdministrador || esMesero) && <th>Acciones</th>}
               </tr>
             </thead>
             <tbody>
@@ -253,6 +292,25 @@ export function MesasPage() {
                   <td>
                     <span className={`badge ${badgeClase(mesa.estado)}`}>{mesa.estado}</span>
                   </td>
+                  {esMesero && (
+                    <td>
+                      {mesa.estado === "LIBRE" && (
+                        <button
+                          className="btn-link"
+                          onClick={() => void handleAbrirPedido(mesa)}
+                          disabled={accionEnCurso === mesa.idMesa}
+                        >
+                          Abrir pedido
+                        </button>
+                      )}
+                      {mesa.estado === "OCUPADA" && (
+                        <button className="btn-link" onClick={() => navigate(`/pedidos/mesa/${mesa.idMesa}`)}>
+                          Ver pedido
+                        </button>
+                      )}
+                      {mesa.estado === "INACTIVA" && <span className="empty-state">—</span>}
+                    </td>
+                  )}
                   {esAdministrador && (
                     <td>
                       <div className="table-actions">

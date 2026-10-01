@@ -126,6 +126,32 @@ a criterio técnico del proveedor:
   tipo se renombra después, la abreviación no cambia, para no alterar el
   significado de códigos ya generados. Los productos creados antes de este
   ajuste conservan su código original escrito a mano.
+- **Identificador de pedido sin relleno de ceros (HU-025 CA-03).** A
+  diferencia del código de usuario y de producto (que sí rellenan a 3
+  dígitos), el documento aprobado es explícito en que el consecutivo del
+  pedido no tiene longitud fija: `{código de sede}-{consecutivo}`, ej.
+  `SE01-1`, `SE01-2`, ..., `SE01-137`. Usa el mismo contador atómico
+  (`SECUENCIA_CODIGO`) que los demás códigos, con una clave propia por sede
+  (`PEDIDO-{código de sede}`).
+- **HU-025 y HU-026 (apertura de pedido y registro de productos) se
+  restringen a Mesero exclusivamente.** Son las únicas dos historias de
+  Sprint 3 cuyo documento aprobado no incluye ningún criterio de aceptación
+  que otorgue la acción a otro perfil (a diferencia de HU-019/HU-020/HU-021/
+  HU-022, que sí son explícitas sobre qué hace cada perfil). Se interpreta de
+  forma literal: solo "Como Mesero" puede abrir pedidos o registrarles
+  productos, igual que HU-023 y HU-024.
+- **INVENTARIO no se pre-crea para todo el catálogo.** La fila
+  producto+sede solo se crea la primera vez que recibe un movimiento
+  (recepción, ajuste o venta); antes de eso, una consulta de existencia
+  simplemente devuelve 0 (vía `LEFT JOIN` con `COALESCE`), sin necesidad de
+  sembrar miles de filas en cero cada vez que se crea un producto o una sede
+  nueva.
+- **Todo movimiento de inventario pasa por una única función
+  (`aplicarMovimientoInventario`)**, compartida entre recepciones, ajustes y
+  el descuento por venta (HU-026). Bloquea la fila con `FOR UPDATE` antes de
+  escribir, así que dos operaciones concurrentes sobre el mismo producto y
+  sede (p. ej. dos Meseros vendiendo el último trago a la vez) nunca dejan el
+  inventario en un valor negativo ni pierden una actualización.
 
 ## Estructura del repositorio
 
@@ -144,8 +170,8 @@ a criterio técnico del proveedor:
 | Sprint | Alcance | Estado |
 |--------|---------|--------|
 | 1 | Fundaciones de acceso y estructura (HU-001 a 006, 010, 041) | ✅ Completado |
-| 2 | Usuarios, mesas y catálogo (HU-007 a 009, 011 a 017) | 🔧 Código completo — verificar con `docker compose up --build` |
-| 3 | Proveedores, inventario e inicio de pedidos (HU-018 a 026) | ⏳ Pendiente |
+| 2 | Usuarios, mesas y catálogo (HU-007 a 009, 011 a 017) | ✅ Completado |
+| 3 | Proveedores, inventario y pedidos (HU-018 a 026) | 🔧 Código completo — verificar con `docker compose up --build` |
 
 Detalle completo de cada Historia de Usuario: ver `Historias_de_Usuario_Bar_Multisede.md`
 y `Product_Backlog_Bar_Multisede.docx` en los entregables del proyecto.
