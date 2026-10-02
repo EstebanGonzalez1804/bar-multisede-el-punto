@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Icon, ICONS } from "./icons";
+import { LogoMark, LogoWordmark } from "./Logo";
 import { ETIQUETAS_PERFIL } from "../api/types";
 
 export function Layout() {
@@ -36,8 +37,8 @@ export function Layout() {
           <Icon path={menuAbierto ? ICONS.close : ICONS.menu} size={22} strokeWidth={2} />
         </button>
         <div className="topbar-title">
-          <Icon path={ICONS.tumbler} size={18} strokeWidth={2} />
-          El Punto
+          <LogoMark size={22} />
+          <LogoWordmark size={20} />
         </div>
       </header>
 
@@ -45,13 +46,8 @@ export function Layout() {
 
       <aside className={`sidebar${menuAbierto ? " open" : ""}`}>
         <div className="sidebar-brand">
-          <div className="sidebar-brand-mark">
-            <Icon path={ICONS.tumbler} size={18} strokeWidth={2} />
-          </div>
-          <div>
-            <div className="sidebar-brand-name">El Punto</div>
-            <div className="sidebar-brand-sub">Gestión operativa</div>
-          </div>
+          <LogoMark size={26} />
+          <LogoWordmark size={24} />
         </div>
 
         <nav className="sidebar-nav">

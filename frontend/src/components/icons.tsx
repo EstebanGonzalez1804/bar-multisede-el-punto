@@ -21,8 +21,8 @@ export function Icon({ path, size = 18, strokeWidth = 1.8, className }: IconProp
       fill="none"
       stroke="currentColor"
       strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      strokeLinecap="square"
+      strokeLinejoin="miter"
       className={className}
       aria-hidden="true"
     >

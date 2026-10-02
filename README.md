@@ -165,28 +165,41 @@ a criterio técnico del proveedor:
   cambia dónde aterrizas justo después de iniciar sesión.
 
 - **Rediseño visual de la interfaz (pedido explícito del cliente, sin HU
-  nueva — ninguna regla de negocio cambió).** La paleta azul corporativa del
-  primer entregable se reemplazó por una paleta cálida ("de bar"): fondo
-  tipo pergamino, barra lateral en espresso/carbón con acento ámbar, y
-  tipografía Fraunces (títulos) + Inter (resto de la interfaz) en vez de un
-  sans-serif genérico. El menú pasó de una barra superior a una barra
-  lateral con iconos dibujados a mano (sin librería de iconos: el entorno
-  donde se escribe este código no tiene salida a `npm install`, así que
-  cualquier dependencia nueva no se puede validar hasta que el cliente corre
-  `docker compose up --build`). La pantalla "Inicio" pasó de ser un saludo
-  vacío a mostrar 3 indicadores reales (mesas ocupadas, productos agotados,
-  recepciones del día) y 2 paneles (mesas ocupadas ahora, productos
-  agotados) — todo con datos de los endpoints que ya existían, sin agregar
-  ninguno nuevo. Deliberadamente **no** se agregó un panel de "actividad
-  reciente" con los datos de trazabilidad (HU-041): esa tabla hoy no tiene
-  ningún endpoint de lectura expuesto al frontend, y agregar uno solo para
-  esta mejora visual se consideró fuera del alcance pedido — queda como
-  posible ajuste futuro si se quiere ese panel con datos reales en vez de
-  omitirlo o inventar datos. Mesas pasó de tabla a tarjetas visuales por
-  mesa (mismo dato, mejor lectura de un vistazo); Inventario conserva
-  exactamente la misma lógica binaria Agotado/Disponible que ya existía
-  (CA de HU-020/HU-022) — no se inventó un tercer estado "stock bajo" con un
-  umbral numérico que el documento aprobado no define.
+  nueva — ninguna regla de negocio cambió).** El menú pasó de una barra
+  superior a una barra lateral con iconos dibujados a mano (sin librería de
+  iconos: el entorno donde se escribe este código no tiene salida a
+  `npm install`, así que cualquier dependencia nueva no se puede validar
+  hasta que el cliente corre `docker compose up --build`). La pantalla
+  "Inicio" pasó de ser un saludo vacío a mostrar 3 indicadores reales (mesas
+  ocupadas, productos agotados, recepciones del día) y 2 paneles (mesas
+  ocupadas ahora, productos agotados) — todo con datos de los endpoints que
+  ya existían, sin agregar ninguno nuevo. Deliberadamente **no** se agregó
+  un panel de "actividad reciente" con los datos de trazabilidad (HU-041):
+  esa tabla hoy no tiene ningún endpoint de lectura expuesto al frontend, y
+  agregar uno solo para esta mejora visual se consideró fuera del alcance
+  pedido — queda como posible ajuste futuro si se quiere ese panel con datos
+  reales en vez de omitirlo o inventar datos. Mesas pasó de tabla a tarjetas
+  visuales por mesa (mismo dato, mejor lectura de un vistazo); Inventario
+  conserva exactamente la misma lógica binaria Agotado/Disponible que ya
+  existía (CA de HU-020/HU-022) — no se inventó un tercer estado "stock
+  bajo" con un umbral numérico que el documento aprobado no define.
+
+  **Segunda iteración visual (sobre mockups aprobados por el cliente,
+  guiados por el logo real de "El Punto").** La paleta azul corporativa
+  original, y luego la paleta cálida ("de bar") de la primera iteración,
+  se reemplazaron por los colores del logo real del cliente: verde botella
+  (`#173A33`, marca/navegación/acción principal — también el tratamiento
+  de una mesa `OCUPADA`, que es su estado normal de trabajo y ya no se
+  pinta en rojo/peligro) y latón (`#C8962E`, reservado solo al logo y a la
+  sección activa del menú — "un acento, un lugar"); el rojo/ladrillo queda
+  reservado exclusivamente a agotado/bloqueado/errores. Fraunces + Inter se
+  reemplazaron por una sola familia (Archivo, variable) para títulos y
+  texto. El set de iconos pasó de trazo redondeado a trazo cuadrado/miter,
+  y la marca de la barra lateral y de Login ahora es una versión vectorial
+  simplificada del logo real (vaso con hielo y estrella, dentro de un
+  anillo) en vez de un ícono genérico de vaso. Ningún dato, ruta ni regla de
+  negocio cambió: es exclusivamente paleta, tipografía, iconografía y la
+  marca.
 
 - **Interfaz responsive (requerimiento del cliente desde el inicio del
   proyecto, implementado durante la validación de Sprint 3).** La barra

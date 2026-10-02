@@ -191,8 +191,12 @@ export function MesasPage() {
   }
 
   function badgeClase(estado: Mesa["estado"]) {
+    // Ocupada es el estado normal de trabajo de una mesa, no un error: su
+    // badge usa un tratamiento propio legible sobre la tarjeta en verde
+    // botella (ver .badge-ocupada en styles.css), no el rojo de "danger"
+    // que queda reservado a agotado/bloqueado/errores.
     if (estado === "LIBRE") return "badge-success";
-    if (estado === "OCUPADA") return "badge-danger";
+    if (estado === "OCUPADA") return "badge-ocupada";
     return "badge-muted";
   }
 
@@ -283,11 +287,11 @@ export function MesasPage() {
         {!cargando && mesas.length > 0 && (
           <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
             <span className="legend-chip">
-              <span className="legend-dot" style={{ background: "var(--color-success)" }} />
+              <span className="legend-dot" style={{ background: "var(--color-success-bg)", border: "1.5px solid var(--color-primary)" }} />
               Libre · {libres}
             </span>
             <span className="legend-chip">
-              <span className="legend-dot" style={{ background: "var(--color-danger)" }} />
+              <span className="legend-dot" style={{ background: "var(--color-primary)" }} />
               Ocupada · {ocupadas}
             </span>
           </div>
@@ -303,12 +307,12 @@ export function MesasPage() {
               const libre = mesa.estado === "LIBRE";
               const ocupada = mesa.estado === "OCUPADA";
               const barColor = libre
-                ? "var(--color-success)"
+                ? "var(--color-primary)"
                 : ocupada
-                  ? "var(--color-danger)"
+                  ? "var(--color-primary)"
                   : "var(--color-border)";
               return (
-                <div className="mesa-card" key={mesa.idMesa}>
+                <div className={`mesa-card${ocupada ? " ocupada" : ""}`} key={mesa.idMesa}>
                   <div className="mesa-card-bar" style={{ background: barColor }} />
                   <div className="mesa-card-body">
                     <div className="mesa-card-top">

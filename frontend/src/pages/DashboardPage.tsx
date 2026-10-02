@@ -73,7 +73,7 @@ export function DashboardPage() {
         <>
           <div className="kpi-grid">
             <div className="kpi-card">
-              <div className="kpi-card-icon" style={{ background: "#f1e7d8", color: "#6b4a2e" }}>
+              <div className="kpi-card-icon" style={{ background: "#e3ece8", color: "#173a33" }}>
                 <Icon path={ICONS.mesas} size={19} strokeWidth={1.9} />
               </div>
               <div className="kpi-card-value">
@@ -83,7 +83,7 @@ export function DashboardPage() {
             </div>
 
             <div className="kpi-card">
-              <div className="kpi-card-icon" style={{ background: "#f8e9e6", color: "#9c3b3b" }}>
+              <div className="kpi-card-icon" style={{ background: "#f6e0da", color: "#8e2f1e" }}>
                 <Icon path={ICONS.warning} size={19} strokeWidth={1.9} />
               </div>
               <div className="kpi-card-value">{agotados.length}</div>
@@ -91,7 +91,7 @@ export function DashboardPage() {
             </div>
 
             <div className="kpi-card">
-              <div className="kpi-card-icon" style={{ background: "#eef3e2", color: "#5f7a3a" }}>
+              <div className="kpi-card-icon" style={{ background: "#f5e7c8", color: "#6e4a05" }}>
                 <Icon path={ICONS.recepciones} size={19} strokeWidth={1.9} />
               </div>
               <div className="kpi-card-value">{recepcionesHoy ?? "—"}</div>

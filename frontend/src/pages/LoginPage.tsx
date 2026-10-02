@@ -3,6 +3,7 @@ import { Navigate } from "react-router-dom";
 import { getApiErrorMessage } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { Icon, ICONS } from "../components/icons";
+import { LogoMark, LogoWordmark } from "../components/Logo";
 import type { Perfil } from "../api/types";
 
 /**
@@ -51,25 +52,21 @@ export function LoginPage() {
   return (
     <div className="login-shell">
       <div className="login-hero">
-        <div className="login-hero-glow" />
         <svg
-          width="220"
-          height="220"
-          viewBox="0 0 24 24"
+          width="460"
+          height="460"
+          viewBox="0 0 28 28"
           fill="none"
-          stroke="#ffffff"
-          strokeWidth="0.6"
-          className="login-hero-watermark"
           aria-hidden="true"
+          className="login-hero-watermark"
         >
-          <path d={ICONS.tumbler} />
+          <circle cx="14" cy="14" r="12" stroke="#ffffff" strokeWidth="0.5" />
+          <path d="M10.2 13 L17.8 13 L16.3 21 L11.7 21 Z" stroke="#ffffff" strokeWidth="0.5" />
         </svg>
 
         <div className="login-hero-brand">
-          <div className="login-hero-badge">
-            <Icon path={ICONS.tumbler} size={20} strokeWidth={2} />
-          </div>
-          <div style={{ fontFamily: "var(--font-display)", fontWeight: 700, fontSize: 19 }}>El Punto</div>
+          <LogoMark size={40} />
+          <LogoWordmark size={34} />
         </div>
 
         <div>
@@ -90,6 +87,7 @@ export function LoginPage() {
             </div>
           </div>
         </div>
+
 
         <div className="login-hero-footer">NOVATECH · Plataforma de Gestión Operativa</div>
       </div>

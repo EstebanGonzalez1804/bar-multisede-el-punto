@@ -1,31 +1,41 @@
-@import url("https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,600;0,700;0,800;1,600&family=Inter:wght@400;500;600;700;800&display=swap");
-
 :root {
-  /* Paleta cálida "de bar" — espresso/carbón + ámbar/cobre, sobre fondo
-     tipo pergamino. Reemplaza la paleta azul corporativa original (ver
-     mockups de referencia aprobados en el canvas de diseño). */
-  --color-primary: #c2793a; /* ámbar — acento principal */
-  --color-primary-dark: #a35f27;
-  --color-ink: #1c130d; /* carbón/espresso — sidebar, botones oscuros */
-  --color-accent: #c2793a;
-  --color-bg: #f6f1e7; /* pergamino */
-  --color-surface: #fffaf2;
-  --color-border: #ecdfc8;
-  --color-text: #241a14;
-  --color-text-muted: #7a6b5a;
-  --color-danger: #9c3b3b;
-  --color-danger-bg: #f8e9e6;
-  --color-success: #5f7a3a;
-  --color-success-bg: #eef3e2;
-  --color-warning: #9c6b1f;
-  --color-warning-bg: #f7ecd8;
-  --color-info: #a35f27;
-  --color-info-bg: #f3e3da;
-  --radius: 10px;
-  --radius-lg: 16px;
-  --shadow: 0 1px 3px rgba(36, 26, 20, 0.09);
-  --font-display: "Fraunces", Georgia, serif;
-  --font-body: "Inter", system-ui, -apple-system, sans-serif;
+  /* Paleta "verde botella + latón", con base en el logo real del cliente
+     (ver canvas de mockups aprobado, tablero "Sistema"). El latón queda
+     reservado para la marca y la sección activa — "un acento, un lugar" —
+     el resto del sistema se apoya en verde botella, piedra y tinta. */
+  --color-primary: #173a33; /* verde botella — marca, nav, acción principal */
+  --color-primary-dark: #0f2b25;
+  --color-ink: #173a33;
+  --color-accent-brass: #c8962e; /* latón — solo logo y sección activa */
+  --color-bg: #edefea; /* piedra */
+  --color-surface: #ffffff;
+  --color-border: #d8dcd5;
+  --color-text: #1b1f1d;
+  --color-text-muted: #545c58;
+  --color-danger: #8e2f1e; /* ladrillo — agotado/bloqueado/errores */
+  --color-danger-bg: #f6e0da;
+  --color-success: #173a33; /* verde botella — mesa ocupada, estado normal */
+  --color-success-bg: #e3ece8; /* verde botella claro — abierto/pagado */
+  --color-warning: #6e4a05;
+  --color-warning-bg: #f5e7c8; /* latón claro — por cobrar/pago pendiente */
+  --color-info: #173a33;
+  --color-info-bg: #e3ece8;
+  --radius: 4px;
+  --radius-lg: 6px;
+  --shadow: 0 1px 0 #d8dcd5, 0 1px 3px rgba(16, 32, 28, 0.06);
+  --font-display: "Archivo", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Archivo", "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Tratamiento condensado para wordmark y cifras grandes, igual que en los
+   mockups (familia variable Archivo, eje "wdth"). */
+.cond {
+  font-stretch: 72%;
+  font-variation-settings: "wdth" 72;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
 }
 
 * {
@@ -68,8 +78,7 @@ h3 {
   width: 240px;
   flex-shrink: 0;
   background: var(--color-ink);
-  background-image: radial-gradient(420px 220px at 20% -10%, rgba(194, 121, 58, 0.18), transparent 70%);
-  color: #e9ddc8;
+  color: #c6d3cd;
   display: flex;
   flex-direction: column;
   padding: 22px 0;
@@ -80,31 +89,6 @@ h3 {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.sidebar-brand-mark {
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--color-primary);
-  color: var(--color-ink);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.sidebar-brand-name {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 16px;
-  line-height: 1.2;
-  color: #fdf3e4;
-}
-
-.sidebar-brand-sub {
-  font-size: 11px;
-  color: #a8947a;
 }
 
 .sidebar-nav {
@@ -125,18 +109,28 @@ h3 {
   font-size: 13.5px;
   font-weight: 500;
   text-decoration: none;
-  color: #c3b296;
+  color: #9fb3aa;
 }
 
 .sidebar-nav a:hover {
   background: rgba(255, 255, 255, 0.08);
-  color: #fdf3e4;
+  color: #f2f5f1;
 }
 
 .sidebar-nav a.active {
-  background: rgba(194, 121, 58, 0.26);
-  color: #fdf3e4;
+  background: rgba(255, 255, 255, 0.1);
+  color: #f2f5f1;
   font-weight: 700;
+}
+
+.sidebar-nav a.active::after {
+  content: "";
+  margin-left: auto;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-accent-brass);
+  flex-shrink: 0;
 }
 
 .sidebar-footer {
@@ -162,14 +156,14 @@ h3 {
   justify-content: center;
   font-weight: 700;
   font-size: 12px;
-  color: #fdf3e4;
+  color: #f2f5f1;
   flex-shrink: 0;
 }
 
 .sidebar-user-name {
   font-size: 12.5px;
   font-weight: 600;
-  color: #fdf3e4;
+  color: #f2f5f1;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -177,7 +171,7 @@ h3 {
 
 .sidebar-user-role {
   font-size: 11px;
-  color: #a8947a;
+  color: #9fb3aa;
 }
 
 .btn-logout {
@@ -188,7 +182,7 @@ h3 {
   margin-top: 12px;
   background: transparent;
   border: 1px solid rgba(255, 255, 255, 0.18);
-  color: #e9ddc8;
+  color: #c6d3cd;
   border-radius: var(--radius);
   padding: 7px 10px;
   cursor: pointer;
@@ -216,7 +210,7 @@ h3 {
   align-items: center;
   gap: 14px;
   background: var(--color-ink);
-  color: #fdf3e4;
+  color: #f2f5f1;
   padding: 0 14px;
 }
 
@@ -229,7 +223,7 @@ h3 {
   border-radius: 9px;
   background: rgba(255, 255, 255, 0.08);
   border: none;
-  color: #fdf3e4;
+  color: #f2f5f1;
   cursor: pointer;
   flex-shrink: 0;
 }
@@ -346,31 +340,21 @@ h3 {
 
 .login-hero {
   flex: 1.1;
-  background: linear-gradient(160deg, #1c130d 0%, #3b2415 55%, #7a4a22 100%);
+  background: var(--color-ink);
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   padding: 56px;
   position: relative;
   overflow: hidden;
-  color: #fdf3e4;
-}
-
-.login-hero-glow {
-  position: absolute;
-  right: -140px;
-  top: -100px;
-  width: 460px;
-  height: 460px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(194, 121, 58, 0.35), transparent 70%);
+  color: #f2f5f1;
 }
 
 .login-hero-watermark {
   position: absolute;
-  right: 40px;
-  bottom: -30px;
-  opacity: 0.1;
+  right: -60px;
+  bottom: -60px;
+  opacity: 0.08;
 }
 
 .login-hero-brand {
@@ -378,17 +362,6 @@ h3 {
   align-items: center;
   gap: 12px;
   position: relative;
-}
-
-.login-hero-badge {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  background: var(--color-primary);
-  color: var(--color-ink);
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
 .login-hero-headline {
@@ -403,7 +376,7 @@ h3 {
 
 .login-hero-sub {
   font-size: 14.5px;
-  color: #e3c9a8;
+  color: #c7d6cf;
   margin-top: 12px;
   max-width: 380px;
   line-height: 1.5;
@@ -424,16 +397,16 @@ h3 {
   gap: 8px;
   font-size: 13px;
   font-weight: 600;
-  color: #fdf3e4;
+  color: #f2f5f1;
 }
 
 .login-hero-role svg {
-  color: #e3a86a;
+  color: #9fb6ac;
 }
 
 .login-hero-footer {
   font-size: 12px;
-  color: #c3a378;
+  color: #9fb3aa;
   position: relative;
 }
 
@@ -537,7 +510,7 @@ h3 {
 
 .field-with-icon:focus-within {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(194, 121, 58, 0.14);
+  box-shadow: 0 0 0 3px rgba(23, 58, 51, 0.14);
 }
 
 .field-with-icon svg {
@@ -581,7 +554,7 @@ h3 {
 .btn-primary {
   width: 100%;
   background: var(--color-ink);
-  color: #fdf3e4;
+  color: #f2f5f1;
   border: none;
   border-radius: var(--radius);
   padding: 0.7rem 1rem;
@@ -595,7 +568,7 @@ h3 {
 }
 
 .btn-primary:hover {
-  background: #2a1b10;
+  background: var(--color-primary-dark);
 }
 
 .btn-primary:disabled {
@@ -626,13 +599,13 @@ h3 {
 .alert-error {
   background: var(--color-danger-bg);
   color: var(--color-danger);
-  border: 1px solid #ecc8c2;
+  border: 1px solid #e6c2b8;
 }
 
 .alert-success {
   background: var(--color-success-bg);
   color: var(--color-success);
-  border: 1px solid #cfdcbb;
+  border: 1px solid #c5d6cf;
 }
 
 /* ---------- Tarjetas / paneles ---------- */
@@ -679,7 +652,7 @@ th {
 }
 
 tbody tr:hover {
-  background: #fdf9f0;
+  background: #f3f5f1;
 }
 
 .empty-state {
@@ -706,7 +679,7 @@ tbody tr:hover {
 .badge {
   display: inline-block;
   padding: 0.2rem 0.6rem;
-  border-radius: 999px;
+  border-radius: 3px;
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -718,13 +691,21 @@ tbody tr:hover {
 }
 
 .badge-muted {
-  background: #ece3d2;
+  background: #e4e7e1;
   color: var(--color-text-muted);
 }
 
 .badge-danger {
   background: var(--color-danger-bg);
   color: var(--color-danger);
+}
+
+/* Mesa ocupada: estado normal de trabajo, no un error — se usa solo sobre
+   la tarjeta ya llena en verde botella (.mesa-card.ocupada), nunca junto
+   a badge-danger. */
+.badge-ocupada {
+  background: rgba(242, 245, 241, 0.16);
+  color: #f2f5f1;
 }
 
 .badge-warning {
@@ -811,7 +792,7 @@ tbody tr:hover {
 .kpi-card-icon {
   width: 38px;
   height: 38px;
-  border-radius: 10px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -857,7 +838,7 @@ tbody tr:hover {
   align-items: center;
   gap: 12px;
   padding: 13px 22px;
-  border-bottom: 1px solid #f3ead8;
+  border-bottom: 1px solid #e4e7e1;
 }
 
 .dashboard-panel-row:last-child {
@@ -880,8 +861,20 @@ tbody tr:hover {
   overflow: hidden;
 }
 
+/* Ocupada es el estado normal de trabajo de una mesa (no un error): se
+   distingue con la tarjeta llena en verde botella, no con rojo/ladrillo
+   (ese color queda reservado a agotado/bloqueado/errores). */
+.mesa-card.ocupada {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
 .mesa-card-bar {
   height: 6px;
+}
+
+.mesa-card.ocupada .mesa-card-bar {
+  display: none;
 }
 
 .mesa-card-body {
@@ -901,6 +894,10 @@ tbody tr:hover {
   font-weight: 700;
 }
 
+.mesa-card.ocupada .mesa-card-title {
+  color: #f2f5f1;
+}
+
 .mesa-card-meta {
   display: flex;
   align-items: center;
@@ -910,11 +907,19 @@ tbody tr:hover {
   margin-top: 3px;
 }
 
+.mesa-card.ocupada .mesa-card-meta {
+  color: rgba(242, 245, 241, 0.75);
+}
+
 .mesa-card-info {
   font-size: 12.5px;
   color: var(--color-text-muted);
   margin-bottom: 14px;
   min-height: 16px;
+}
+
+.mesa-card.ocupada .mesa-card-info {
+  color: rgba(242, 245, 241, 0.75);
 }
 
 .mesa-card-btn {
@@ -923,7 +928,7 @@ tbody tr:hover {
   align-items: center;
   justify-content: center;
   gap: 7px;
-  border-radius: 9px;
+  border-radius: var(--radius);
   padding: 9px;
   font-size: 13px;
   font-weight: 700;
@@ -931,15 +936,15 @@ tbody tr:hover {
 }
 
 .mesa-card-btn.libre {
-  background: var(--color-success);
-  color: #fff;
-  border: none;
+  background: var(--color-success-bg);
+  color: var(--color-primary-dark);
+  border: 1.5px solid var(--color-primary);
 }
 
 .mesa-card-btn.ocupada {
-  background: var(--color-surface);
-  color: var(--color-primary-dark);
-  border: 1.5px solid var(--color-primary);
+  background: transparent;
+  color: #f2f5f1;
+  border: 1.5px solid rgba(242, 245, 241, 0.5);
 }
 
 .mesa-card-btn:disabled {
@@ -952,6 +957,14 @@ tbody tr:hover {
   gap: 10px;
   margin-top: 10px;
   font-size: 12.5px;
+}
+
+.mesa-card.ocupada .mesa-card-actions .btn-link {
+  color: #f2f5f1;
+}
+
+.mesa-card.ocupada .mesa-card-actions .btn-link.danger {
+  color: #f3b9a8;
 }
 
 .live-indicator {
@@ -968,13 +981,13 @@ tbody tr:hover {
 
 @keyframes ep-pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(95, 122, 58, 0.45);
+    box-shadow: 0 0 0 0 rgba(23, 58, 51, 0.45);
   }
   70% {
-    box-shadow: 0 0 0 7px rgba(95, 122, 58, 0);
+    box-shadow: 0 0 0 7px rgba(23, 58, 51, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(95, 122, 58, 0);
+    box-shadow: 0 0 0 0 rgba(23, 58, 51, 0);
   }
 }
 
