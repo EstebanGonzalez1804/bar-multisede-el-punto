@@ -10,6 +10,7 @@ export interface Proveedor {
   idProveedor: number;
   nombre: string;
   informacionContacto: string;
+  estado: "ACTIVO" | "INACTIVO";
   creadoEn: string;
   actualizadoEn: string;
 }
@@ -18,6 +19,7 @@ interface ProveedorRow {
   id_proveedor: number;
   nombre: string;
   informacion_contacto: string;
+  estado: "ACTIVO" | "INACTIVO";
   creado_en: string;
   actualizado_en: string;
 }
@@ -27,6 +29,7 @@ function mapRow(row: ProveedorRow): Proveedor {
     idProveedor: row.id_proveedor,
     nombre: row.nombre,
     informacionContacto: row.informacion_contacto,
+    estado: row.estado,
     creadoEn: row.creado_en,
     actualizadoEn: row.actualizado_en,
   };
@@ -113,4 +116,45 @@ export async function modificarProveedor(
 export async function listarProveedores(): Promise<Proveedor[]> {
   const { rows } = await pool.query<ProveedorRow>(`SELECT * FROM proveedor ORDER BY nombre`);
   return rows.map(mapRow);
+}
+
+/**
+ * Inactivación de proveedores (ajuste acordado con el cliente; reemplaza la
+ * restricción original "no se eliminan ni inactivan"). Un proveedor inactivo
+ * conserva su historial de recepciones, pero no aparece al registrar nuevas.
+ */
+export async function cambiarEstadoProveedor(
+  admin: JwtPayload,
+  idProveedor: number,
+  estado: "ACTIVO" | "INACTIVO"
+): Promise<Proveedor> {
+  return withTransaction(async (client) => {
+    const { rows } = await client.query<{ estado: string }>(
+      `SELECT estado FROM proveedor WHERE id_proveedor = $1 FOR UPDATE`,
+      [idProveedor]
+    );
+    if (!rows[0]) {
+      throw ApiError.notFound("Proveedor no encontrado.");
+    }
+    if (rows[0].estado === estado) {
+      throw ApiError.conflict(`El proveedor ya está en estado ${estado}.`);
+    }
+
+    await client.query(`UPDATE proveedor SET estado = $1, actualizado_en = now() WHERE id_proveedor = $2`, [
+      estado,
+      idProveedor,
+    ]);
+
+    await registrarEvento(
+      {
+        idUsuario: admin.idUsuario,
+        tipoEvento: estado === "ACTIVO" ? "PROVEEDOR_ACTIVADO" : "PROVEEDOR_INACTIVADO",
+        entidadAfectada: "PROVEEDOR",
+        idAfectado: idProveedor,
+      },
+      client
+    );
+
+    return obtenerProveedor(idProveedor, client);
+  });
 }

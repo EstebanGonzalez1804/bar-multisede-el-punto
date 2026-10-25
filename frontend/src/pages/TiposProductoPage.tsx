@@ -2,7 +2,7 @@ import { Fragment, useEffect, useState, type FormEvent } from "react";
 import { getApiErrorMessage } from "../api/client";
 import * as tiposProductoApi from "../api/tiposProducto";
 import { useAuth } from "../context/AuthContext";
-import type { TipoProducto, TipoProductoConProductos } from "../api/types";
+import type { Estado, TipoProducto, TipoProductoConProductos } from "../api/types";
 
 export function TiposProductoPage() {
   const { usuario } = useAuth();
@@ -39,6 +39,18 @@ export function TiposProductoPage() {
   useEffect(() => {
     void cargarTipos();
   }, []);
+
+  async function handleCambiarEstado(tipo: TipoProducto) {
+    const nuevoEstado: Estado = tipo.estado === "ACTIVO" ? "INACTIVO" : "ACTIVO";
+    setError(null);
+    try {
+      await tiposProductoApi.cambiarEstadoTipoProducto(tipo.idTipoProducto, nuevoEstado);
+      setMensaje(nuevoEstado === "ACTIVO" ? "Tipo de producto activado." : "Tipo de producto inactivado.");
+      await cargarTipos();
+    } catch (err) {
+      setError(getApiErrorMessage(err, "No se pudo cambiar el estado del tipo de producto."));
+    }
+  }
 
   function abrirCreacion() {
     setNombre("");
@@ -159,6 +171,7 @@ export function TiposProductoPage() {
               <tr>
                 <th>Nombre</th>
                 <th>Abreviación</th>
+                <th>Estado</th>
                 <th>Acciones</th>
               </tr>
             </thead>
@@ -171,6 +184,11 @@ export function TiposProductoPage() {
                       <span className="badge badge-muted">{tipo.abreviacion}</span>
                     </td>
                     <td>
+                      <span className={`badge ${tipo.estado === "ACTIVO" ? "badge-success" : "badge-muted"}`}>
+                        {tipo.estado}
+                      </span>
+                    </td>
+                    <td>
                       <div className="table-actions">
                         <button className="btn-link" onClick={() => void toggleDetalle(tipo)}>
                           {expandidoId === tipo.idTipoProducto ? "Ocultar productos" : "Ver productos"}
@@ -180,12 +198,20 @@ export function TiposProductoPage() {
                             Editar
                           </button>
                         )}
+                        {esAdministrador && (
+                          <button
+                            className={`btn-link ${tipo.estado === "ACTIVO" ? "danger" : ""}`}
+                            onClick={() => void handleCambiarEstado(tipo)}
+                          >
+                            {tipo.estado === "ACTIVO" ? "Inactivar" : "Activar"}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
                   {expandidoId === tipo.idTipoProducto && (
                     <tr>
-                      <td colSpan={3}>
+                      <td colSpan={4}>
                         {cargandoDetalle ? (
                           <p className="empty-state">Cargando productos...</p>
                         ) : detalle && detalle.productos.length > 0 ? (

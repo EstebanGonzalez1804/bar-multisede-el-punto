@@ -255,7 +255,7 @@ export function MesasPage() {
                   onChange={(e) => setFormulario((f) => ({ ...f, idSede: e.target.value }))}
                 >
                   <option value="">Selecciona una sede</option>
-                  {sedes.map((s) => (
+                  {sedes.filter((x) => x.estado === "ACTIVO").map((s) => (
                     <option key={s.idSede} value={s.idSede}>
                       {s.codigoSede} — {s.nombre}
                     </option>

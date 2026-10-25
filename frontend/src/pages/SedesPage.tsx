@@ -9,6 +9,7 @@ export function SedesPage() {
   const [nombre, setNombre] = useState("");
   const [direccion, setDireccion] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [mensaje, setMensaje] = useState<string | null>(null);
   const [guardando, setGuardando] = useState(false);
 
   async function cargarSedes() {
@@ -26,6 +27,23 @@ export function SedesPage() {
   useEffect(() => {
     void cargarSedes();
   }, []);
+
+  async function handleCambiarEstado(sede: Sede) {
+    setError(null);
+    setMensaje(null);
+    try {
+      if (sede.estado === "ACTIVO") {
+        await sedesApi.inactivarSede(sede.idSede);
+        setMensaje("Sede inactivada. Su historial se conserva.");
+      } else {
+        await sedesApi.activarSede(sede.idSede);
+        setMensaje("Sede activada.");
+      }
+      await cargarSedes();
+    } catch (err) {
+      setError(getApiErrorMessage(err, "No se pudo cambiar el estado de la sede."));
+    }
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -55,6 +73,7 @@ export function SedesPage() {
       <div className="panel">
         <h2>Nueva sede</h2>
         {error && <div className="alert alert-error">{error}</div>}
+        {mensaje && !error && <div className="alert alert-success">{mensaje}</div>}
         <form className="inline-form" onSubmit={handleSubmit}>
           <div className="field">
             <label htmlFor="nombre">Nombre</label>
@@ -98,6 +117,8 @@ export function SedesPage() {
                 <th>Código</th>
                 <th>Nombre</th>
                 <th>Dirección</th>
+                <th>Estado</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -106,6 +127,19 @@ export function SedesPage() {
                   <td>{sede.codigoSede}</td>
                   <td>{sede.nombre}</td>
                   <td>{sede.direccion}</td>
+                  <td>
+                    <span className={`badge ${sede.estado === "ACTIVO" ? "badge-success" : "badge-muted"}`}>
+                      {sede.estado}
+                    </span>
+                  </td>
+                  <td>
+                    <button
+                      className={`btn-link ${sede.estado === "ACTIVO" ? "danger" : ""}`}
+                      onClick={() => void handleCambiarEstado(sede)}
+                    >
+                      {sede.estado === "ACTIVO" ? "Inactivar" : "Activar"}
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>

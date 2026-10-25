@@ -4,3 +4,7 @@ import { z } from "zod";
 export const datosTipoProductoSchema = z.object({
   nombre: z.string().min(1, "El nombre del tipo de producto es obligatorio.").max(80),
 });
+
+export const cambiarEstadoTipoProductoSchema = z.object({
+  estado: z.enum(["ACTIVO", "INACTIVO"]),
+});

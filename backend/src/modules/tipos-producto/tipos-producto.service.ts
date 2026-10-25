@@ -9,6 +9,7 @@ export interface TipoProducto {
   nombre: string;
   /** 3 letras, derivadas del nombre al crear el tipo — ver generarAbreviacion(). */
   abreviacion: string;
+  estado: "ACTIVO" | "INACTIVO";
   creadoEn: string;
 }
 
@@ -16,16 +17,18 @@ interface TipoProductoRow {
   id_tipo_producto: number;
   nombre: string;
   abreviacion: string;
+  estado: "ACTIVO" | "INACTIVO";
   creado_en: string;
 }
 
-const COLUMNAS = "id_tipo_producto, nombre, abreviacion, creado_en";
+const COLUMNAS = "id_tipo_producto, nombre, abreviacion, estado, creado_en";
 
 function mapRow(row: TipoProductoRow): TipoProducto {
   return {
     idTipoProducto: row.id_tipo_producto,
     nombre: row.nombre,
     abreviacion: row.abreviacion,
+    estado: row.estado,
     creadoEn: row.creado_en,
   };
 }
@@ -193,4 +196,45 @@ export async function obtenerTipoProductoConProductos(idTipoProducto: number): P
       estado: p.estado,
     })),
   };
+}
+
+/**
+ * Inactivación de tipos de producto (ajuste acordado con el cliente). Un tipo
+ * inactivo no se puede usar para crear productos nuevos; sus productos
+ * existentes siguen funcionando con normalidad.
+ */
+export async function cambiarEstadoTipoProducto(
+  admin: JwtPayload,
+  idTipoProducto: number,
+  estado: "ACTIVO" | "INACTIVO"
+): Promise<TipoProducto> {
+  return withTransaction(async (client) => {
+    const { rows } = await client.query<{ estado: string }>(
+      `SELECT estado FROM tipo_producto WHERE id_tipo_producto = $1 FOR UPDATE`,
+      [idTipoProducto]
+    );
+    if (!rows[0]) {
+      throw ApiError.notFound("Tipo de producto no encontrado.");
+    }
+    if (rows[0].estado === estado) {
+      throw ApiError.conflict(`El tipo de producto ya está en estado ${estado}.`);
+    }
+
+    const { rows: actualizados } = await client.query<TipoProductoRow>(
+      `UPDATE tipo_producto SET estado = $1 WHERE id_tipo_producto = $2 RETURNING ${COLUMNAS}`,
+      [estado, idTipoProducto]
+    );
+
+    await registrarEvento(
+      {
+        idUsuario: admin.idUsuario,
+        tipoEvento: estado === "ACTIVO" ? "TIPO_PRODUCTO_ACTIVADO" : "TIPO_PRODUCTO_INACTIVADO",
+        entidadAfectada: "TIPO_PRODUCTO",
+        idAfectado: idTipoProducto,
+      },
+      client
+    );
+
+    return mapRow(actualizados[0]);
+  });
 }

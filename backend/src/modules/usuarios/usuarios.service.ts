@@ -3,6 +3,7 @@ import { pool, withTransaction } from "../../config/db";
 import { ApiError } from "../../utils/ApiError";
 import { hashPassword } from "../../utils/password";
 import { siguienteConsecutivo } from "../../utils/secuencia";
+import { exigirSedeActiva } from "../../utils/estadoEntidad";
 import { registrarEvento } from "../../utils/trazabilidad";
 import type { JwtPayload, Perfil } from "../../types/auth";
 
@@ -125,13 +126,11 @@ export async function crearUsuario(
   return withTransaction(async (client) => {
     let codigoSede: string | null = null;
     if (datos.idSede !== null) {
+      await exigirSedeActiva(datos.idSede, client);
       const { rows } = await client.query<{ codigo_sede: string }>(
         `SELECT codigo_sede FROM sede WHERE id_sede = $1`,
         [datos.idSede]
       );
-      if (!rows[0]) {
-        throw ApiError.notFound("La sede indicada no existe.");
-      }
       codigoSede = rows[0].codigo_sede;
     }
 
@@ -171,21 +170,17 @@ export async function modificarUsuario(
   validarSedeSegunPerfil(datos.idSede, datos.perfil);
 
   return withTransaction(async (client) => {
-    const { rows: existentes } = await client.query<{ id_usuario: number }>(
-      `SELECT id_usuario FROM usuario WHERE id_usuario = $1 FOR UPDATE`,
+    const { rows: existentes } = await client.query<{ id_usuario: number; id_sede: number | null }>(
+      `SELECT id_usuario, id_sede FROM usuario WHERE id_usuario = $1 FOR UPDATE`,
       [idUsuario]
     );
     if (!existentes[0]) {
       throw ApiError.notFound("Usuario no encontrado.");
     }
 
-    if (datos.idSede !== null) {
-      const { rows: sedeRows } = await client.query(`SELECT id_sede FROM sede WHERE id_sede = $1`, [
-        datos.idSede,
-      ]);
-      if (!sedeRows[0]) {
-        throw ApiError.notFound("La sede indicada no existe.");
-      }
+    // Solo se exige sede activa si el usuario se reasigna a otra sede.
+    if (datos.idSede !== null && datos.idSede !== existentes[0].id_sede) {
+      await exigirSedeActiva(datos.idSede, client);
     }
 
     await client.query(

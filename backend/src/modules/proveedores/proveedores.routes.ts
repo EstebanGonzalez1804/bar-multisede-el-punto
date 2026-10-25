@@ -14,3 +14,6 @@ proveedoresRouter.get("/", requireRole("ADMINISTRADOR", "CAJERO"), proveedoresCo
 // HU-018 CA-02 — solo Administrador crea o modifica proveedores.
 proveedoresRouter.post("/", requireRole("ADMINISTRADOR"), proveedoresController.postProveedor);
 proveedoresRouter.put("/:idProveedor", requireRole("ADMINISTRADOR"), proveedoresController.putProveedor);
+
+// Ajuste del cliente: los proveedores también se inactivan/activan.
+proveedoresRouter.put("/:idProveedor/estado", requireRole("ADMINISTRADOR"), proveedoresController.putEstadoProveedor);

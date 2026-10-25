@@ -59,6 +59,16 @@ export function Layout() {
             <Icon path={ICONS.mesas} />
             <span>Mesas</span>
           </NavLink>
+          <NavLink to="/pedidos">
+            <Icon path={ICONS.pedidos} />
+            <span>Pedidos</span>
+          </NavLink>
+          {(usuario?.perfil === "ADMINISTRADOR" || usuario?.perfil === "CAJERO") && (
+            <NavLink to="/cobros">
+              <Icon path={ICONS.cobros} />
+              <span>Cobros</span>
+            </NavLink>
+          )}
           <NavLink to="/inventario">
             <Icon path={ICONS.inventario} />
             <span>Inventario</span>
@@ -83,6 +93,12 @@ export function Layout() {
             <Icon path={ICONS.tiposProducto} />
             <span>Tipos de producto</span>
           </NavLink>
+          {(usuario?.perfil === "ADMINISTRADOR" || usuario?.perfil === "CAJERO") && (
+            <NavLink to="/reportes">
+              <Icon path={ICONS.reportes} />
+              <span>Reportes</span>
+            </NavLink>
+          )}
           {usuario?.perfil === "ADMINISTRADOR" && (
             <NavLink to="/usuarios">
               <Icon path={ICONS.usuarios} />
@@ -93,6 +109,12 @@ export function Layout() {
             <NavLink to="/sedes">
               <Icon path={ICONS.sedes} />
               <span>Sedes</span>
+            </NavLink>
+          )}
+          {usuario?.perfil === "ADMINISTRADOR" && (
+            <NavLink to="/trazabilidad">
+              <Icon path={ICONS.trazabilidad} />
+              <span>Trazabilidad</span>
             </NavLink>
           )}
           <NavLink to="/cambiar-password">

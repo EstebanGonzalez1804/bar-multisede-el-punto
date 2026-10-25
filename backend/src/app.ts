@@ -12,6 +12,8 @@ import { proveedoresRouter } from "./modules/proveedores/proveedores.routes";
 import { recepcionesRouter } from "./modules/recepciones/recepciones.routes";
 import { inventarioRouter } from "./modules/inventario/inventario.routes";
 import { pedidosRouter } from "./modules/pedidos/pedidos.routes";
+import { reportesRouter } from "./modules/reportes/reportes.routes";
+import { trazabilidadRouter } from "./modules/trazabilidad/trazabilidad.routes";
 
 export function createApp() {
   const app = express();
@@ -33,6 +35,8 @@ export function createApp() {
   app.use("/api/recepciones", recepcionesRouter);
   app.use("/api/inventario", inventarioRouter);
   app.use("/api/pedidos", pedidosRouter);
+  app.use("/api/reportes", reportesRouter);
+  app.use("/api/trazabilidad", trazabilidadRouter);
 
   // 404 para cualquier ruta no reconocida.
   app.use((req, res) => {

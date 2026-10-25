@@ -2,6 +2,7 @@ import type { Pool, PoolClient } from "pg";
 import { pool, withTransaction } from "../../config/db";
 import { ApiError } from "../../utils/ApiError";
 import { siguienteConsecutivo } from "../../utils/secuencia";
+import { exigirTipoProductoActivo } from "../../utils/estadoEntidad";
 import { registrarEvento } from "../../utils/trazabilidad";
 import type { JwtPayload } from "../../types/auth";
 
@@ -103,6 +104,7 @@ export async function crearProducto(admin: JwtPayload, datos: DatosCrearProducto
     if (!tipoRows[0]) {
       throw ApiError.notFound("El tipo de producto indicado no existe.");
     }
+    await exigirTipoProductoActivo(datos.idTipoProducto, client);
 
     const codigo = await generarCodigoProducto(tipoRows[0].abreviacion, client);
 
@@ -160,8 +162,13 @@ export async function modificarProducto(
   datos: DatosModificarProducto
 ): Promise<Producto> {
   return withTransaction(async (client) => {
-    const { rows } = await client.query<{ id_producto: number; valor_compra: string; valor_venta: string }>(
-      `SELECT id_producto, valor_compra, valor_venta FROM producto WHERE id_producto = $1 FOR UPDATE`,
+    const { rows } = await client.query<{
+      id_producto: number;
+      id_tipo_producto: number;
+      valor_compra: string;
+      valor_venta: string;
+    }>(
+      `SELECT id_producto, id_tipo_producto, valor_compra, valor_venta FROM producto WHERE id_producto = $1 FOR UPDATE`,
       [idProducto]
     );
     const actual = rows[0];
@@ -175,6 +182,10 @@ export async function modificarProducto(
     );
     if (!tipoRows[0]) {
       throw ApiError.notFound("El tipo de producto indicado no existe.");
+    }
+    // Solo se exige tipo activo si el producto cambia de tipo.
+    if (actual.id_tipo_producto !== datos.idTipoProducto) {
+      await exigirTipoProductoActivo(datos.idTipoProducto, client);
     }
 
     const cambioPrecio =
@@ -201,7 +212,14 @@ export async function modificarProducto(
         tipoEvento: cambioPrecio ? "PRODUCTO_PRECIO_MODIFICADO" : "PRODUCTO_MODIFICADO",
         entidadAfectada: "PRODUCTO",
         idAfectado: idProducto,
-        detalle: cambioPrecio ? { valorCompra: datos.valorCompra, valorVenta: datos.valorVenta } : null,
+        detalle: cambioPrecio
+          ? {
+              valorCompraAnterior: Number(actual.valor_compra),
+              valorVentaAnterior: Number(actual.valor_venta),
+              valorCompra: datos.valorCompra,
+              valorVenta: datos.valorVenta,
+            }
+          : null,
       },
       client
     );

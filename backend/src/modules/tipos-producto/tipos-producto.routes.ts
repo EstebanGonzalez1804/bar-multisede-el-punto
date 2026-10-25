@@ -19,3 +19,10 @@ tiposProductoRouter.put(
   requireRole("ADMINISTRADOR"),
   tiposProductoController.putTipoProducto
 );
+
+// Ajuste del cliente: los tipos de producto también se inactivan/activan.
+tiposProductoRouter.put(
+  "/:idTipoProducto/estado",
+  requireRole("ADMINISTRADOR"),
+  tiposProductoController.putEstadoTipoProducto
+);

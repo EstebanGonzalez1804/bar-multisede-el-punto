@@ -268,7 +268,7 @@ export function ProductosPage() {
                   onChange={(e) => setFormulario((f) => ({ ...f, idTipoProducto: e.target.value }))}
                 >
                   <option value="">Selecciona un tipo</option>
-                  {tipos.map((t) => (
+                  {tipos.filter((x) => x.estado === "ACTIVO").map((t) => (
                     <option key={t.idTipoProducto} value={t.idTipoProducto}>
                       {t.nombre}
                     </option>

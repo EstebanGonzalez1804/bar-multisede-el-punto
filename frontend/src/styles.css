@@ -1018,3 +1018,211 @@ tbody tr:hover {
   border-radius: 3px;
   display: inline-block;
 }
+
+/* ============================================================
+   Sprints 4 y 5 — pedidos, cuenta, cobro, reportes, trazabilidad
+   ============================================================ */
+
+.form-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+a.btn-primary {
+  display: inline-flex;
+  text-decoration: none;
+  width: auto;
+}
+
+a.btn-secondary {
+  display: inline-block;
+  text-decoration: none;
+}
+
+.alert-info {
+  background: var(--color-primary-soft, #e3ece8);
+  color: var(--color-ink);
+  border: 1px solid var(--color-border);
+}
+
+/* Resumen de cobro: el saldo pendiente siempre visible (HU-035 CA-01). */
+.cobro-resumen {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+}
+
+.cobro-resumen > div {
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.7rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.cobro-resumen strong {
+  font-size: 1.25rem;
+}
+
+.cobro-etiqueta {
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.cobro-saldo {
+  border-color: #c8962e !important;
+  background: var(--color-warning-bg, #f5e7c8) !important;
+}
+
+.cobro-saldo-ok {
+  border-color: var(--color-success) !important;
+  background: var(--color-success-bg) !important;
+}
+
+.modalidades {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.modalidad {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.8rem;
+  cursor: pointer;
+}
+
+.modalidad.activa {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft, #e3ece8);
+}
+
+.modalidad input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.modalidad-titulo {
+  font-weight: 700;
+}
+
+.modalidad-ayuda {
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+}
+
+.modalidad:focus-within {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
+/* Detalle de eventos de trazabilidad */
+.detalle-evento {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.8rem;
+}
+
+.detalle-clave {
+  color: var(--color-text-muted);
+}
+
+/* ---------- Tirilla de cuenta (80 mm) — HU-031 ---------- */
+
+.ticket-wrap {
+  display: flex;
+  justify-content: center;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+}
+
+.ticket {
+  width: 80mm;
+  max-width: 100%;
+  background: #fff;
+  color: #000;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.35;
+  padding: 10px 12px;
+  box-shadow: var(--shadow);
+}
+
+.ticket hr {
+  border: 0;
+  border-top: 1px dashed #000;
+  margin: 6px 0;
+}
+
+.ticket-title {
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.ticket-center {
+  text-align: center;
+}
+
+.ticket-right {
+  text-align: right;
+}
+
+.ticket-strong {
+  font-weight: 700;
+}
+
+.ticket-small {
+  font-size: 10px;
+}
+
+.ticket-total {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.ticket-line {
+  margin-bottom: 4px;
+}
+
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  body * {
+    visibility: hidden;
+  }
+
+  .ticket,
+  .ticket * {
+    visibility: visible;
+  }
+
+  .ticket {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+    box-shadow: none;
+    padding: 4mm;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+}

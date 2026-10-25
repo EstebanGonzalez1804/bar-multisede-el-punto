@@ -219,6 +219,50 @@ a criterio técnico del proveedor:
   ya eran fluidas (`grid-template-columns: repeat(auto-fit/auto-fill, ...)`)
   y no necesitaron cambios adicionales.
 
+- **Sprints 4 y 5 (HU-027 a HU-040), migración 006.**
+  - *Pedidos:* un pedido ABIERTO se cierra con confirmación (HU-028): pasa a
+    CERRADO, la cuenta queda PENDIENTE y la mesa sigue OCUPADA. Se puede
+    reabrir (HU-029) solo si no tiene ningún pago, y desde el primer pago
+    (aunque sea parcial) ya no se puede reabrir ni agregarle productos
+    (HU-027 CA-03, HU-038). Nunca se editan ni eliminan líneas ya registradas.
+  - *Cuenta (HU-031):* se genera al cerrar; vista previa en tirilla de 80 mm,
+    impresión con `@media print` y PDF generado en el servidor (`pdfkit`).
+    Se rotula "documento interno · no es factura electrónica".
+  - *Pagos (HU-033 a 038):* un solo endpoint (`POST /api/pedidos/:id/pagos`)
+    con tres modalidades — pago completo (uno o varios métodos que sumen el
+    saldo exacto), abono por monto y pago por productos (se eligen líneas de
+    la cuenta y el valor se calcula solo). Los importes se calculan en
+    centavos enteros. Las vueltas en efectivo se muestran al cajero pero NO
+    se almacenan (HU-033 CA-02). Al llegar el saldo a 0 el pedido pasa a
+    PAGADO y la mesa a LIBRE en la misma transacción (HU-037). Los pagos son
+    inmutables: no hay endpoint de edición/anulación y un trigger de
+    PostgreSQL (`trg_pago_inmutable`) bloquea cualquier UPDATE/DELETE
+    (HU-038 CA-03). El pago por productos opera por línea del pedido (cada
+    registro de producto se asigna completo a un solo pago).
+  - *Consultas:* `GET /api/pedidos` (HU-030, acotado por sede según perfil) y
+    `GET /api/pedidos/pendientes-pago` (HU-032: incluye pagos parciales con su
+    saldo). Cobros: Cajero y Administrador.
+  - *Reporte de ventas (HU-039):* cuenta como venta cada producto de un pedido
+    pagado por completo; la fecha es la del último pago (hora de Colombia) y
+    la ganancia usa los precios congelados en cada línea del pedido. Exporta
+    únicamente a `.xlsx` (`exceljs`). Administrador (todas las sedes o una) y
+    Cajero (su sede); el Mesero no accede.
+  - *Trazabilidad (HU-040):* pantalla exclusiva del Administrador con filtros
+    por usuario, sede, tipo de evento y fechas. Los cambios de precio ahora
+    registran el valor anterior y el nuevo (HU-040 CA-04); los ajustes de
+    inventario ya los registraban.
+  - *Inactivar todo (ajuste del cliente tras el primer avance):* sedes,
+    proveedores y tipos de producto ahora también se inactivan/activan, igual
+    que usuarios, productos y mesas; **reemplaza el CA-04 original de HU-010**
+    ("no existe inactivación de sedes"). Nada se elimina. Una sede no se puede
+    inactivar si tiene mesas ocupadas o pedidos sin pagar por completo; una
+    sede inactiva no admite mesas, usuarios, recepciones ni pedidos nuevos.
+    Un proveedor inactivo no aparece al registrar recepciones; un tipo de
+    producto inactivo no se puede usar para crear productos nuevos (sus
+    productos existentes siguen funcionando).
+  - Nuevas dependencias del backend: `pdfkit`, `exceljs`, `@types/pdfkit`
+    (se instalan con `docker compose up --build` o `npm install`).
+
 ## Estructura del repositorio
 
 ```
@@ -237,7 +281,9 @@ a criterio técnico del proveedor:
 |--------|---------|--------|
 | 1 | Fundaciones de acceso y estructura (HU-001 a 006, 010, 041) | ✅ Completado |
 | 2 | Usuarios, mesas y catálogo (HU-007 a 009, 011 a 017) | ✅ Completado |
-| 3 | Proveedores, inventario y pedidos (HU-018 a 026) | 🔧 Código completo — verificar con `docker compose up --build` |
+| 3 | Proveedores, inventario y pedidos (HU-018 a 026) | ✅ Completado |
+| 4 | Cierre de pedidos, cuenta y pagos (HU-027 a 034) | 🔧 Código completo — verificar con `docker compose up --build` |
+| 5 | División de cuenta, irreversibilidad, reportes y trazabilidad (HU-035 a 040) | 🔧 Código completo — verificar con `docker compose up --build` |
 
 Detalle completo de cada Historia de Usuario: ver `Historias_de_Usuario_Bar_Multisede.md`
 y `Product_Backlog_Bar_Multisede.docx` en los entregables del proyecto.

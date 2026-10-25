@@ -1,6 +1,7 @@
 import type { Pool, PoolClient } from "pg";
 import { pool, withTransaction } from "../../config/db";
 import { ApiError } from "../../utils/ApiError";
+import { exigirSedeActiva } from "../../utils/estadoEntidad";
 import { registrarEvento } from "../../utils/trazabilidad";
 import type { JwtPayload } from "../../types/auth";
 
@@ -61,12 +62,7 @@ interface DatosMesa {
 /** HU-011 CA-01 — Creación de mesas (estado inicial: LIBRE). */
 export async function crearMesa(admin: JwtPayload, datos: DatosMesa): Promise<Mesa> {
   return withTransaction(async (client) => {
-    const { rows: sedeRows } = await client.query(`SELECT id_sede FROM sede WHERE id_sede = $1`, [
-      datos.idSede,
-    ]);
-    if (!sedeRows[0]) {
-      throw ApiError.notFound("La sede indicada no existe.");
-    }
+    await exigirSedeActiva(datos.idSede, client);
 
     let idMesa: number;
     try {
@@ -103,19 +99,18 @@ export async function crearMesa(admin: JwtPayload, datos: DatosMesa): Promise<Me
  */
 export async function modificarMesa(admin: JwtPayload, idMesa: number, datos: DatosMesa): Promise<Mesa> {
   return withTransaction(async (client) => {
-    const { rows: existentes } = await client.query<{ id_mesa: number }>(
-      `SELECT id_mesa FROM mesa WHERE id_mesa = $1 FOR UPDATE`,
+    const { rows: existentes } = await client.query<{ id_mesa: number; id_sede: number }>(
+      `SELECT id_mesa, id_sede FROM mesa WHERE id_mesa = $1 FOR UPDATE`,
       [idMesa]
     );
     if (!existentes[0]) {
       throw ApiError.notFound("Mesa no encontrada.");
     }
 
-    const { rows: sedeRows } = await client.query(`SELECT id_sede FROM sede WHERE id_sede = $1`, [
-      datos.idSede,
-    ]);
-    if (!sedeRows[0]) {
-      throw ApiError.notFound("La sede indicada no existe.");
+    // Solo se exige sede activa cuando la mesa cambia de sede; editar el
+    // identificador de una mesa de una sede inactiva sigue permitido.
+    if (existentes[0].id_sede !== datos.idSede) {
+      await exigirSedeActiva(datos.idSede, client);
     }
 
     try {
@@ -210,6 +205,7 @@ export async function activarMesa(admin: JwtPayload, idMesa: number): Promise<Me
     if (mesa.estado !== "INACTIVA") {
       throw ApiError.conflict("Solo se puede activar una mesa que esté inactiva.", "MESA_NO_ACTIVABLE");
     }
+    await exigirSedeActiva(mesa.id_sede, client);
 
     await client.query(`UPDATE mesa SET estado = 'LIBRE', actualizado_en = now() WHERE id_mesa = $1`, [
       idMesa,

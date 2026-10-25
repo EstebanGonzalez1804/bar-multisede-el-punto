@@ -6,6 +6,9 @@ import * as pedidosApi from "../api/pedidos";
 import type { ItemInventario, Pedido } from "../api/types";
 
 /**
+ * HU-027/HU-028/HU-029 — adición de productos, cierre con confirmación y
+ * reapertura excepcional (solo si no hay pagos registrados, HU-038).
+ *
  * HU-025 (apertura, ya resuelta por MesasPage antes de llegar aquí) +
  * HU-026 (registro de productos) + HU-023 (bloqueo de agotados).
  *
@@ -27,6 +30,8 @@ export function PedidoPage() {
   const [idProductoNuevo, setIdProductoNuevo] = useState("");
   const [cantidadNueva, setCantidadNueva] = useState("1");
   const [guardando, setGuardando] = useState(false);
+  const [confirmandoCierre, setConfirmandoCierre] = useState(false);
+  const [procesando, setProcesando] = useState(false);
 
   const cargar = useCallback(async () => {
     setCargando(true);
@@ -86,6 +91,41 @@ export function PedidoPage() {
     }
   }
 
+  // HU-028: cierre con confirmación previa. La mesa sigue OCUPADA hasta el pago.
+  async function handleCerrarPedido() {
+    if (!pedido) return;
+    setError(null);
+    setMensaje(null);
+    setProcesando(true);
+    try {
+      const actualizado = await pedidosApi.cerrarPedido(pedido.idPedido);
+      setPedido(actualizado);
+      setConfirmandoCierre(false);
+      setMensaje("Pedido cerrado. La cuenta quedó generada y pendiente de pago.");
+    } catch (err) {
+      setError(getApiErrorMessage(err, "No se pudo cerrar el pedido."));
+    } finally {
+      setProcesando(false);
+    }
+  }
+
+  // HU-029: reapertura excepcional (solo pedidos cerrados sin ningún pago).
+  async function handleReabrirPedido() {
+    if (!pedido) return;
+    setError(null);
+    setMensaje(null);
+    setProcesando(true);
+    try {
+      const actualizado = await pedidosApi.reabrirPedido(pedido.idPedido);
+      setPedido(actualizado);
+      setMensaje("Pedido reabierto. Ya puedes agregar nuevos productos; al cerrarlo de nuevo la cuenta se actualiza.");
+    } catch (err) {
+      setError(getApiErrorMessage(err, "No se pudo reabrir el pedido."));
+    } finally {
+      setProcesando(false);
+    }
+  }
+
   if (cargando) {
     return (
       <div className="panel">
@@ -110,12 +150,18 @@ export function PedidoPage() {
     0
   );
 
+  const abierto = pedido.estadoPedido === "ABIERTO";
+  const sinPagos = pedido.pagos.length === 0;
+
   return (
     <div>
       <div className="panel">
         <div className="panel-header">
           <h2 style={{ margin: 0 }}>
-            Pedido {pedido.identificadorPedido} · Mesa {pedido.identificadorMesa}
+            Pedido {pedido.identificadorPedido} · Mesa {pedido.identificadorMesa}{" "}
+            <span className={`badge ${abierto ? "badge-success" : "badge-muted"}`}>
+              {abierto ? "ABIERTO" : "CERRADO"}
+            </span>
           </h2>
           <Link to="/mesas" className="btn-secondary">
             Volver a Mesas
@@ -125,6 +171,15 @@ export function PedidoPage() {
         {error && <div className="alert alert-error">{error}</div>}
         {mensaje && !error && <div className="alert alert-success">{mensaje}</div>}
 
+        {!abierto && (
+          <div className="alert alert-info">
+            {pedido.estadoPago === "PARCIAL"
+              ? `Este pedido ya tiene pagos registrados y un saldo pendiente de $${pedido.saldoPendiente.toLocaleString("es-CO")}. No se puede reabrir ni modificar.`
+              : "El pedido está cerrado y su cuenta está pendiente de pago. Si el cliente pide algo más antes de pagar, puedes reabrirlo."}
+          </div>
+        )}
+
+        {abierto && (
         <form className="row-subform" onSubmit={handleAgregarProducto}>
           <h3 style={{ marginTop: 0 }}>Agregar producto</h3>
           <div className="inline-form">
@@ -167,6 +222,7 @@ export function PedidoPage() {
             </button>
           </div>
         </form>
+        )}
 
         <h3>Productos del pedido</h3>
         {pedido.lineas.length === 0 ? (
@@ -203,6 +259,41 @@ export function PedidoPage() {
               </tr>
             </tfoot>
           </table>
+          </div>
+        )}
+
+        <div className="form-actions" style={{ marginTop: "1rem" }}>
+          {abierto && pedido.lineas.length > 0 && !confirmandoCierre && (
+            <button type="button" className="btn-primary" style={{ width: "auto" }} onClick={() => setConfirmandoCierre(true)}>
+              Cerrar pedido
+            </button>
+          )}
+          {!abierto && (
+            <Link to={`/cuenta/${pedido.idPedido}`} className="btn-primary" style={{ width: "auto" }}>
+              Ver cuenta
+            </Link>
+          )}
+          {!abierto && sinPagos && (
+            <button type="button" className="btn-secondary" disabled={procesando} onClick={() => void handleReabrirPedido()}>
+              {procesando ? "Reabriendo..." : "Reabrir pedido"}
+            </button>
+          )}
+        </div>
+
+        {abierto && confirmandoCierre && (
+          <div className="alert alert-info" style={{ marginTop: "1rem" }}>
+            <p style={{ margin: "0 0 0.75rem" }}>
+              ¿Cerrar el pedido y generar la cuenta por ${totalPedido.toLocaleString("es-CO")}? La mesa seguirá
+              ocupada hasta que se complete el pago.
+            </p>
+            <div className="form-actions">
+              <button type="button" className="btn-primary" style={{ width: "auto" }} disabled={procesando} onClick={() => void handleCerrarPedido()}>
+                {procesando ? "Cerrando..." : "Confirmar cierre"}
+              </button>
+              <button type="button" className="btn-secondary" onClick={() => setConfirmandoCierre(false)}>
+                Cancelar
+              </button>
+            </div>
           </div>
         )}
       </div>

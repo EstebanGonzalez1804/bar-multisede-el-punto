@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { ApiError } from "../../utils/ApiError";
-import { datosProveedorSchema } from "./proveedores.schemas";
+import { cambiarEstadoProveedorSchema, datosProveedorSchema } from "./proveedores.schemas";
 import * as proveedoresService from "./proveedores.service";
 
 function parseIdProveedor(req: Request): number {
@@ -29,5 +29,13 @@ export const putProveedor = asyncHandler(async (req: Request, res: Response) => 
   const idProveedor = parseIdProveedor(req);
   const datos = datosProveedorSchema.parse(req.body);
   const proveedor = await proveedoresService.modificarProveedor(req.usuarioActual, idProveedor, datos);
+  res.status(200).json({ proveedor });
+});
+
+export const putEstadoProveedor = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  const idProveedor = parseIdProveedor(req);
+  const { estado } = cambiarEstadoProveedorSchema.parse(req.body);
+  const proveedor = await proveedoresService.cambiarEstadoProveedor(req.usuarioActual, idProveedor, estado);
   res.status(200).json({ proveedor });
 });

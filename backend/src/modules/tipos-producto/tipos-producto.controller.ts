@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
 import { asyncHandler } from "../../utils/asyncHandler";
 import { ApiError } from "../../utils/ApiError";
-import { datosTipoProductoSchema } from "./tipos-producto.schemas";
+import { cambiarEstadoTipoProductoSchema, datosTipoProductoSchema } from "./tipos-producto.schemas";
 import * as tiposProductoService from "./tipos-producto.service";
 
 function parseIdTipoProducto(req: Request): number {
@@ -35,5 +35,13 @@ export const putTipoProducto = asyncHandler(async (req: Request, res: Response) 
   const id = parseIdTipoProducto(req);
   const { nombre } = datosTipoProductoSchema.parse(req.body);
   const tipoProducto = await tiposProductoService.modificarTipoProducto(req.usuarioActual, id, nombre);
+  res.status(200).json({ tipoProducto });
+});
+
+export const putEstadoTipoProducto = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  const id = parseIdTipoProducto(req);
+  const { estado } = cambiarEstadoTipoProductoSchema.parse(req.body);
+  const tipoProducto = await tiposProductoService.cambiarEstadoTipoProducto(req.usuarioActual, id, estado);
   res.status(200).json({ tipoProducto });
 });

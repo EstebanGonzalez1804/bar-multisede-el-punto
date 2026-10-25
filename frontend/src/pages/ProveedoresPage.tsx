@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { getApiErrorMessage } from "../api/client";
 import * as proveedoresApi from "../api/proveedores";
 import { useAuth } from "../context/AuthContext";
-import type { Proveedor } from "../api/types";
+import type { Estado, Proveedor } from "../api/types";
 
 interface FormularioProveedor {
   nombre: string;
@@ -42,6 +42,18 @@ export function ProveedoresPage() {
   useEffect(() => {
     void cargarProveedores();
   }, []);
+
+  async function handleCambiarEstado(proveedor: Proveedor) {
+    const nuevoEstado: Estado = proveedor.estado === "ACTIVO" ? "INACTIVO" : "ACTIVO";
+    setError(null);
+    try {
+      await proveedoresApi.cambiarEstadoProveedor(proveedor.idProveedor, nuevoEstado);
+      setMensaje(nuevoEstado === "ACTIVO" ? "Proveedor activado." : "Proveedor inactivado.");
+      await cargarProveedores();
+    } catch (err) {
+      setError(getApiErrorMessage(err, "No se pudo cambiar el estado del proveedor."));
+    }
+  }
 
   function abrirCreacion() {
     setFormulario(FORMULARIO_VACIO);
@@ -163,6 +175,7 @@ export function ProveedoresPage() {
               <tr>
                 <th>Nombre</th>
                 <th>Contacto</th>
+                <th>Estado</th>
                 {esAdministrador && <th>Acciones</th>}
               </tr>
             </thead>
@@ -171,11 +184,24 @@ export function ProveedoresPage() {
                 <tr key={p.idProveedor}>
                   <td>{p.nombre}</td>
                   <td>{p.informacionContacto}</td>
+                  <td>
+                    <span className={`badge ${p.estado === "ACTIVO" ? "badge-success" : "badge-muted"}`}>
+                      {p.estado}
+                    </span>
+                  </td>
                   {esAdministrador && (
                     <td>
-                      <button className="btn-link" onClick={() => abrirEdicion(p)}>
-                        Editar
-                      </button>
+                      <div className="table-actions">
+                        <button className="btn-link" onClick={() => abrirEdicion(p)}>
+                          Editar
+                        </button>
+                        <button
+                          className={`btn-link ${p.estado === "ACTIVO" ? "danger" : ""}`}
+                          onClick={() => void handleCambiarEstado(p)}
+                        >
+                          {p.estado === "ACTIVO" ? "Inactivar" : "Activar"}
+                        </button>
+                      </div>
                     </td>
                   )}
                 </tr>

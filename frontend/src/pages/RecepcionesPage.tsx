@@ -181,7 +181,7 @@ export function RecepcionesPage() {
                   onChange={(e) => setIdProveedorNueva(e.target.value)}
                 >
                   <option value="">Selecciona un proveedor</option>
-                  {proveedores.map((p) => (
+                  {proveedores.filter((x) => x.estado === "ACTIVO").map((p) => (
                     <option key={p.idProveedor} value={p.idProveedor}>
                       {p.nombre}
                     </option>
@@ -193,7 +193,7 @@ export function RecepcionesPage() {
                   <label htmlFor="sedeNueva">Sede</label>
                   <select id="sedeNueva" value={idSedeNueva} onChange={(e) => setIdSedeNueva(e.target.value)}>
                     <option value="">Selecciona una sede</option>
-                    {sedes.map((s) => (
+                    {sedes.filter((x) => x.estado === "ACTIVO").map((s) => (
                       <option key={s.idSede} value={s.idSede}>
                         {s.codigoSede} — {s.nombre}
                       </option>

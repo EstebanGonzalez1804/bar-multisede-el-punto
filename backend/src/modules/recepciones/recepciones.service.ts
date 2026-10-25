@@ -2,6 +2,7 @@ import type { Pool, PoolClient } from "pg";
 import { pool, withTransaction } from "../../config/db";
 import { ApiError } from "../../utils/ApiError";
 import { aplicarMovimientoInventario } from "../../utils/inventario";
+import { exigirProveedorActivo, exigirSedeActiva } from "../../utils/estadoEntidad";
 import { registrarEvento } from "../../utils/trazabilidad";
 import type { JwtPayload } from "../../types/auth";
 
@@ -74,20 +75,8 @@ interface DatosRecepcion {
  */
 export async function crearRecepcion(usuario: JwtPayload, datos: DatosRecepcion): Promise<Recepcion> {
   return withTransaction(async (client) => {
-    const { rows: proveedorRows } = await client.query(
-      `SELECT id_proveedor FROM proveedor WHERE id_proveedor = $1`,
-      [datos.idProveedor]
-    );
-    if (!proveedorRows[0]) {
-      throw ApiError.notFound("El proveedor indicado no existe.");
-    }
-
-    const { rows: sedeRows } = await client.query(`SELECT id_sede FROM sede WHERE id_sede = $1`, [
-      datos.idSede,
-    ]);
-    if (!sedeRows[0]) {
-      throw ApiError.notFound("La sede indicada no existe.");
-    }
+    await exigirProveedorActivo(datos.idProveedor, client);
+    await exigirSedeActiva(datos.idSede, client);
 
     const { rows: recepcionRows } = await client.query<{ id_recepcion: number }>(
       `INSERT INTO recepcion_mercancia (id_proveedor, id_sede, id_usuario, fecha_recepcion)

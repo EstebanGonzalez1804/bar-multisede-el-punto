@@ -1,4 +1,6 @@
+import type { Pool, PoolClient } from "pg";
 import { pool, withTransaction } from "../../config/db";
+import { ApiError } from "../../utils/ApiError";
 import { siguienteConsecutivo } from "../../utils/secuencia";
 import { registrarEvento } from "../../utils/trazabilidad";
 import type { JwtPayload } from "../../types/auth";
@@ -8,6 +10,7 @@ export interface Sede {
   codigoSede: string;
   nombre: string;
   direccion: string;
+  estado: "ACTIVO" | "INACTIVO";
   creadoEn: string;
 }
 
@@ -16,6 +19,7 @@ function mapRow(row: {
   codigo_sede: string;
   nombre: string;
   direccion: string;
+  estado: "ACTIVO" | "INACTIVO";
   creado_en: string;
 }): Sede {
   return {
@@ -23,6 +27,7 @@ function mapRow(row: {
     codigoSede: row.codigo_sede,
     nombre: row.nombre,
     direccion: row.direccion,
+    estado: row.estado,
     creadoEn: row.creado_en,
   };
 }
@@ -41,7 +46,7 @@ export async function crearSede(admin: JwtPayload, nombre: string, direccion: st
 
     const { rows } = await client.query(
       `INSERT INTO sede (codigo_sede, nombre, direccion) VALUES ($1, $2, $3)
-       RETURNING id_sede, codigo_sede, nombre, direccion, creado_en`,
+       RETURNING id_sede, codigo_sede, nombre, direccion, estado, creado_en`,
       [codigoSede, nombre, direccion]
     );
     const sede = mapRow(rows[0]);
@@ -63,12 +68,104 @@ export async function crearSede(admin: JwtPayload, nombre: string, direccion: st
 }
 
 /**
- * Listado de sedes. No hay inactivación de sedes (HU-010 CA-04), así que
- * no existe filtro de estado: todas las sedes están siempre disponibles.
+ * Listado de sedes. Incluye el estado: las pantallas de gestión muestran
+ * todas (activas e inactivas) y los selectores de operaciones nuevas filtran
+ * solo las ACTIVO.
  */
 export async function listarSedes(): Promise<Sede[]> {
   const { rows } = await pool.query(
-    `SELECT id_sede, codigo_sede, nombre, direccion, creado_en FROM sede ORDER BY nombre`
+    `SELECT id_sede, codigo_sede, nombre, direccion, estado, creado_en FROM sede ORDER BY nombre`
   );
   return rows.map(mapRow);
+}
+
+async function obtenerSede(idSede: number, ejecutor: Pool | PoolClient): Promise<Sede> {
+  const { rows } = await ejecutor.query(
+    `SELECT id_sede, codigo_sede, nombre, direccion, estado, creado_en FROM sede WHERE id_sede = $1`,
+    [idSede]
+  );
+  if (!rows[0]) {
+    throw ApiError.notFound("Sede no encontrada.");
+  }
+  return mapRow(rows[0]);
+}
+
+/**
+ * Inactivación de sedes (ajuste acordado con el cliente; reemplaza el CA-04
+ * original de HU-010). No se elimina nada: la sede y su historial se conservan.
+ * Para no dejar operaciones a medias, no se puede inactivar una sede que tenga
+ * mesas ocupadas o pedidos sin pagar por completo.
+ */
+export async function inactivarSede(admin: JwtPayload, idSede: number): Promise<Sede> {
+  return withTransaction(async (client) => {
+    const { rows } = await client.query<{ estado: string }>(
+      `SELECT estado FROM sede WHERE id_sede = $1 FOR UPDATE`,
+      [idSede]
+    );
+    if (!rows[0]) {
+      throw ApiError.notFound("Sede no encontrada.");
+    }
+    if (rows[0].estado === "INACTIVO") {
+      throw ApiError.conflict("La sede ya está inactiva.", "SEDE_YA_INACTIVA");
+    }
+
+    const { rows: pendientes } = await client.query(
+      `SELECT 1 FROM pedido WHERE id_sede = $1 AND estado_pago <> 'PAGADO'
+       UNION ALL
+       SELECT 1 FROM mesa WHERE id_sede = $1 AND estado = 'OCUPADA'
+       LIMIT 1`,
+      [idSede]
+    );
+    if (pendientes.length > 0) {
+      throw ApiError.conflict(
+        "No se puede inactivar: la sede tiene mesas ocupadas o pedidos sin pagar por completo.",
+        "SEDE_NO_INACTIVABLE"
+      );
+    }
+
+    await client.query(`UPDATE sede SET estado = 'INACTIVO' WHERE id_sede = $1`, [idSede]);
+
+    await registrarEvento(
+      {
+        idUsuario: admin.idUsuario,
+        tipoEvento: "SEDE_INACTIVADA",
+        entidadAfectada: "SEDE",
+        idAfectado: idSede,
+        idSede,
+      },
+      client
+    );
+
+    return obtenerSede(idSede, client);
+  });
+}
+
+export async function activarSede(admin: JwtPayload, idSede: number): Promise<Sede> {
+  return withTransaction(async (client) => {
+    const { rows } = await client.query<{ estado: string }>(
+      `SELECT estado FROM sede WHERE id_sede = $1 FOR UPDATE`,
+      [idSede]
+    );
+    if (!rows[0]) {
+      throw ApiError.notFound("Sede no encontrada.");
+    }
+    if (rows[0].estado === "ACTIVO") {
+      throw ApiError.conflict("La sede ya está activa.", "SEDE_YA_ACTIVA");
+    }
+
+    await client.query(`UPDATE sede SET estado = 'ACTIVO' WHERE id_sede = $1`, [idSede]);
+
+    await registrarEvento(
+      {
+        idUsuario: admin.idUsuario,
+        tipoEvento: "SEDE_ACTIVADA",
+        entidadAfectada: "SEDE",
+        idAfectado: idSede,
+        idSede,
+      },
+      client
+    );
+
+    return obtenerSede(idSede, client);
+  });
 }

@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { TipoProducto, TipoProductoConProductos } from "./types";
+import type { Estado, TipoProducto, TipoProductoConProductos } from "./types";
 
 export async function listarTiposProducto(): Promise<TipoProducto[]> {
   const { data } = await apiClient.get<{ tiposProducto: TipoProducto[] }>("/tipos-producto");
@@ -22,5 +22,13 @@ export async function modificarTipoProducto(idTipoProducto: number, nombre: stri
   const { data } = await apiClient.put<{ tipoProducto: TipoProducto }>(`/tipos-producto/${idTipoProducto}`, {
     nombre,
   });
+  return data.tipoProducto;
+}
+
+export async function cambiarEstadoTipoProducto(idTipoProducto: number, estado: Estado): Promise<TipoProducto> {
+  const { data } = await apiClient.put<{ tipoProducto: TipoProducto }>(
+    `/tipos-producto/${idTipoProducto}/estado`,
+    { estado }
+  );
   return data.tipoProducto;
 }

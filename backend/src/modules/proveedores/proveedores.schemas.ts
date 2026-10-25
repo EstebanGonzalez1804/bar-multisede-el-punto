@@ -8,3 +8,7 @@ export const datosProveedorSchema = z.object({
     .min(1, "La información de contacto es obligatoria.")
     .max(255),
 });
+
+export const cambiarEstadoProveedorSchema = z.object({
+  estado: z.enum(["ACTIVO", "INACTIVO"]),
+});

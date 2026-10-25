@@ -20,6 +20,7 @@ export interface Sede {
   codigoSede: string;
   nombre: string;
   direccion: string;
+  estado: Estado;
   creadoEn: string;
 }
 
@@ -52,6 +53,7 @@ export interface TipoProducto {
   // 3 letras derivadas automáticamente del nombre (ej. "Aguardiente" -> "AGU");
   // de aquí sale el segmento central del código de producto (PDT-AGU-001).
   abreviacion: string;
+  estado: Estado;
   creadoEn: string;
 }
 
@@ -85,6 +87,7 @@ export interface Proveedor {
   idProveedor: number;
   nombre: string;
   informacionContacto: string;
+  estado: Estado;
   creadoEn: string;
   actualizadoEn: string;
 }
@@ -144,6 +147,85 @@ export interface LineaPedido {
   precioVentaCongelado: string;
   precioCompraCongelado: string;
   creadoEn: string;
+  /** Cubierta por un pago por productos (HU-036). */
+  pagada: boolean;
+}
+
+export type MetodoPago = "EFECTIVO" | "TARJETA_CREDITO" | "TARJETA_DEBITO";
+export type ModalidadPago = "TOTAL" | "ABONO" | "PRODUCTOS";
+
+export const ETIQUETAS_METODO: Record<MetodoPago, string> = {
+  EFECTIVO: "Efectivo",
+  TARJETA_CREDITO: "Tarjeta de crédito",
+  TARJETA_DEBITO: "Tarjeta débito",
+};
+
+export interface PagoRegistrado {
+  idPago: number;
+  metodo: MetodoPago;
+  valor: number;
+  modalidad: ModalidadPago;
+  nombreUsuario: string;
+  fechaHora: string;
+}
+
+export interface ResumenPedido {
+  idPedido: number;
+  identificadorPedido: string;
+  idMesa: number;
+  identificadorMesa: string;
+  idSede: number;
+  nombreSede: string;
+  estadoPedido: EstadoPedido;
+  estadoPago: EstadoPago;
+  fechaApertura: string;
+  total: number;
+  saldoPendiente: number;
+}
+
+export interface LineaPagoEntrada {
+  metodo: MetodoPago;
+  valor: number;
+  valorEntregado?: number;
+}
+
+export interface RegistrarPagoEntrada {
+  modalidad: ModalidadPago;
+  lineas: LineaPagoEntrada[];
+  idsDetallePedido?: number[];
+}
+
+export interface FilaReporteVentas {
+  fecha: string;
+  codigoProducto: string;
+  nombreProducto: string;
+  cantidadVendida: number;
+  valorCompra: number;
+  valorVenta: number;
+  ganancia: number;
+  idSede: number;
+  nombreSede: string;
+}
+
+export interface ReporteVentas {
+  desde: string;
+  hasta: string;
+  filas: FilaReporteVentas[];
+  totales: { unidadesVendidas: number; costosCompra: number; ventas: number; gananciaTotal: number };
+}
+
+export interface EventoTrazabilidad {
+  idEvento: number;
+  idUsuario: number | null;
+  codigoUsuario: string | null;
+  nombreUsuario: string | null;
+  tipoEvento: string;
+  entidadAfectada: string;
+  idAfectado: string | null;
+  idSede: number | null;
+  nombreSede: string | null;
+  fechaHora: string;
+  detalle: Record<string, unknown> | null;
 }
 
 export interface Pedido {
@@ -160,6 +242,10 @@ export interface Pedido {
   fechaApertura: string;
   fechaCierre: string | null;
   lineas: LineaPedido[];
+  total: number;
+  totalPagado: number;
+  saldoPendiente: number;
+  pagos: PagoRegistrado[];
 }
 
 export interface ApiErrorBody {

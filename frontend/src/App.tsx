@@ -14,6 +14,12 @@ import { ProveedoresPage } from "./pages/ProveedoresPage";
 import { RecepcionesPage } from "./pages/RecepcionesPage";
 import { InventarioPage } from "./pages/InventarioPage";
 import { PedidoPage } from "./pages/PedidoPage";
+import { PedidosPage } from "./pages/PedidosPage";
+import { CuentaPage } from "./pages/CuentaPage";
+import { CobrosPage } from "./pages/CobrosPage";
+import { CobroPage } from "./pages/CobroPage";
+import { ReportesPage } from "./pages/ReportesPage";
+import { TrazabilidadPage } from "./pages/TrazabilidadPage";
 
 export function App() {
   return (
@@ -80,6 +86,45 @@ export function App() {
             element={
               <ProtectedRoute perfilesPermitidos={["MESERO"]}>
                 <PedidoPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Sprints 4 y 5 — HU-027 a HU-040. Pedidos y cuenta: todos los
+              perfiles (acotados por sede en el backend). Cobros: Cajero y
+              Administrador. Reportes: Administrador y Cajero (el Mesero no
+              accede, HU-039 CA-06). Trazabilidad: solo Administrador. */}
+          <Route path="pedidos" element={<PedidosPage />} />
+          <Route path="cuenta/:idPedido" element={<CuentaPage />} />
+          <Route
+            path="cobros"
+            element={
+              <ProtectedRoute perfilesPermitidos={["ADMINISTRADOR", "CAJERO"]}>
+                <CobrosPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="cobro/:idPedido"
+            element={
+              <ProtectedRoute perfilesPermitidos={["ADMINISTRADOR", "CAJERO"]}>
+                <CobroPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="reportes"
+            element={
+              <ProtectedRoute perfilesPermitidos={["ADMINISTRADOR", "CAJERO"]}>
+                <ReportesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="trazabilidad"
+            element={
+              <ProtectedRoute perfilesPermitidos={["ADMINISTRADOR"]}>
+                <TrazabilidadPage />
               </ProtectedRoute>
             }
           />

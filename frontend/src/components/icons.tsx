@@ -54,5 +54,9 @@ export const ICONS = {
   arrowRight: "M5 12h14m-6-6 6 6-6 6",
   rebuild: "M4 4v6h6M20 20v-6h-6M4 10a8 8 0 0 1 14-4.9M20 14a8 8 0 0 1-14 4.9",
   menu: "M3 6h18M3 12h18M3 18h18",
+  pedidos: "M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2V3Zm4 5h6m-6 4h6",
+  cobros: "M3 7h18v10H3V7Zm0 4h18M7 15h3",
+  reportes: "M4 20V10m6 10V4m6 16v-7m4 7H2",
+  trazabilidad: "M12 7v5l3 2M21 12a9 9 0 1 1-3-6.7M21 3v5h-5",
   close: "M6 6l12 12M18 6 6 18",
 };

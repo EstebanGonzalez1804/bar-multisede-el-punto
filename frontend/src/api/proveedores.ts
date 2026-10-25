@@ -1,5 +1,5 @@
 import { apiClient } from "./client";
-import type { Proveedor } from "./types";
+import type { Estado, Proveedor } from "./types";
 
 export async function listarProveedores(): Promise<Proveedor[]> {
   const { data } = await apiClient.get<{ proveedores: Proveedor[] }>("/proveedores");
@@ -18,5 +18,10 @@ export async function crearProveedor(datos: DatosProveedor): Promise<Proveedor> 
 
 export async function modificarProveedor(idProveedor: number, datos: DatosProveedor): Promise<Proveedor> {
   const { data } = await apiClient.put<{ proveedor: Proveedor }>(`/proveedores/${idProveedor}`, datos);
+  return data.proveedor;
+}
+
+export async function cambiarEstadoProveedor(idProveedor: number, estado: Estado): Promise<Proveedor> {
+  const { data } = await apiClient.put<{ proveedor: Proveedor }>(`/proveedores/${idProveedor}/estado`, { estado });
   return data.proveedor;
 }
