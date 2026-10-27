@@ -147,7 +147,9 @@ export interface LineaPedido {
   precioVentaCongelado: string;
   precioCompraCongelado: string;
   creadoEn: string;
-  /** Cubierta por un pago por productos (HU-036). */
+  /** Unidades ya cubiertas por pagos por productos (HU-036). */
+  cantidadPagada: number;
+  cantidadPendiente: number;
   pagada: boolean;
 }
 
@@ -192,7 +194,7 @@ export interface LineaPagoEntrada {
 export interface RegistrarPagoEntrada {
   modalidad: ModalidadPago;
   lineas: LineaPagoEntrada[];
-  idsDetallePedido?: number[];
+  productos?: Array<{ idProducto: number; cantidad: number }>;
 }
 
 export interface FilaReporteVentas {

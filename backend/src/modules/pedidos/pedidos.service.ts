@@ -18,7 +18,10 @@ export interface LineaPedido {
   precioVentaCongelado: string;
   precioCompraCongelado: string;
   creadoEn: string;
-  /** Cubierta por un pago de la modalidad "por productos" (HU-036). */
+  /** Unidades de la línea ya cubiertas por pagos "por productos" (HU-036). */
+  cantidadPagada: number;
+  cantidadPendiente: number;
+  /** true cuando todas las unidades de la línea están cubiertas. */
   pagada: boolean;
 }
 
@@ -79,7 +82,7 @@ interface LineaRow {
   precio_venta_congelado: string;
   precio_compra_congelado: string;
   creado_en: string;
-  pagada: boolean;
+  cantidad_pagada: string;
 }
 
 interface PagoRow {
@@ -121,7 +124,9 @@ function mapPedido(row: PedidoRow, lineas: LineaRow[], pagos: PagoRow[]): Pedido
       precioVentaCongelado: l.precio_venta_congelado,
       precioCompraCongelado: l.precio_compra_congelado,
       creadoEn: l.creado_en,
-      pagada: l.pagada,
+      cantidadPagada: Number(l.cantidad_pagada),
+      cantidadPendiente: l.cantidad - Number(l.cantidad_pagada),
+      pagada: l.cantidad - Number(l.cantidad_pagada) <= 0,
     })),
     total: totalCent / 100,
     totalPagado: pagadoCent / 100,
@@ -156,7 +161,7 @@ export async function obtenerPedidoConLineas(idPedido: number, ejecutor: Queryab
   const { rows: lineaRows } = await ejecutor.query<LineaRow>(
     `SELECT d.id_detalle_pedido, d.id_producto, pr.codigo AS codigo_producto, pr.nombre AS nombre_producto,
             d.cantidad, d.precio_venta_congelado, d.precio_compra_congelado, d.creado_en,
-            EXISTS (SELECT 1 FROM pago_detalle_pedido pd WHERE pd.id_detalle_pedido = d.id_detalle_pedido) AS pagada
+            COALESCE((SELECT SUM(pd.cantidad) FROM pago_detalle_pedido pd WHERE pd.id_detalle_pedido = d.id_detalle_pedido), 0) AS cantidad_pagada
      FROM detalle_pedido d
      JOIN producto pr ON pr.id_producto = d.id_producto
      WHERE d.id_pedido = $1
@@ -575,8 +580,8 @@ export interface LineaPagoEntrada {
 export interface RegistrarPagoEntrada {
   modalidad: ModalidadPago;
   lineas: LineaPagoEntrada[];
-  /** Solo modalidad PRODUCTOS: líneas del pedido que cubre este pago (HU-036). */
-  idsDetallePedido?: number[];
+  /** Solo modalidad PRODUCTOS: producto y unidades que cubre este pago (HU-036). */
+  productos?: Array<{ idProducto: number; cantidad: number }>;
 }
 
 export interface ResultadoPago {
@@ -656,22 +661,42 @@ export async function registrarPago(
     }
     const sumaCent = entrada.lineas.reduce((acc, l) => acc + aCentavos(l.valor), 0);
 
-    let idsDetalle: number[] = [];
+    // Asignación de unidades a líneas del pedido (solo modalidad PRODUCTOS).
+    const asignaciones: Array<{ idDetallePedido: number; cantidad: number }> = [];
     if (entrada.modalidad === "PRODUCTOS") {
-      idsDetalle = Array.from(new Set(entrada.idsDetallePedido ?? []));
-      if (idsDetalle.length === 0) {
+      const pedidos = entrada.productos ?? [];
+      if (pedidos.length === 0) {
         throw ApiError.badRequest("Selecciona al menos un producto de la cuenta.");
       }
+      const idsVistos = new Set<number>();
       let esperadoCent = 0;
-      for (const id of idsDetalle) {
-        const linea = actual.lineas.find((l) => l.idDetallePedido === id);
-        if (!linea) {
+      for (const item of pedidos) {
+        if (idsVistos.has(item.idProducto)) {
+          throw ApiError.badRequest("Un producto no puede repetirse en la selección.");
+        }
+        idsVistos.add(item.idProducto);
+        const lineasProducto = actual.lineas.filter((l) => l.idProducto === item.idProducto);
+        if (lineasProducto.length === 0) {
           throw ApiError.badRequest("Alguno de los productos seleccionados no pertenece a este pedido.");
         }
-        if (linea.pagada) {
-          throw ApiError.conflict("Alguno de los productos seleccionados ya fue cubierto por otro pago.", "LINEA_YA_PAGADA");
+        const pendiente = lineasProducto.reduce((acc, l) => acc + l.cantidadPendiente, 0);
+        if (item.cantidad > pendiente) {
+          throw ApiError.conflict(
+            `Solo quedan ${pendiente} unidad(es) por pagar de ${lineasProducto[0].nombreProducto}.`,
+            "CANTIDAD_SUPERA_PENDIENTE"
+          );
         }
-        esperadoCent += linea.cantidad * aCentavos(linea.precioVentaCongelado);
+        // Se cubren primero las líneas más antiguas, cada una a su precio congelado.
+        let restante = item.cantidad;
+        for (const l of lineasProducto) {
+          if (restante === 0) break;
+          const tomar = Math.min(restante, l.cantidadPendiente);
+          if (tomar > 0) {
+            asignaciones.push({ idDetallePedido: l.idDetallePedido, cantidad: tomar });
+            esperadoCent += tomar * aCentavos(l.precioVentaCongelado);
+            restante -= tomar;
+          }
+        }
       }
       if (esperadoCent > saldoCent) {
         throw ApiError.conflict(
@@ -693,6 +718,12 @@ export async function registrarPago(
         );
       }
     } else {
+      // TOTAL: un único pago por el saldo exacto (un solo método).
+      if (entrada.lineas.length !== 1) {
+        throw ApiError.badRequest(
+          "El pago completo es un único pago con un solo método. Para combinar métodos o pagar por partes usa un abono."
+        );
+      }
       if (sumaCent < saldoCent) {
         throw ApiError.conflict(
           `El valor no cubre el total de la cuenta. Saldo pendiente restante: ${formatoPesos(saldoCent - sumaCent)}.`,
@@ -734,6 +765,9 @@ export async function registrarPago(
             metodo: l.metodo,
             valor: l.valor,
             modalidad: entrada.modalidad,
+            ...(entrada.modalidad === "PRODUCTOS" && l === entrada.lineas[0]
+              ? { productosCubiertos: entrada.productos }
+              : {}),
           },
         },
         client
@@ -741,11 +775,11 @@ export async function registrarPago(
     }
 
     if (entrada.modalidad === "PRODUCTOS" && primerPago !== null) {
-      for (const id of idsDetalle) {
-        await client.query(`INSERT INTO pago_detalle_pedido (id_pago, id_detalle_pedido) VALUES ($1, $2)`, [
-          primerPago,
-          id,
-        ]);
+      for (const a of asignaciones) {
+        await client.query(
+          `INSERT INTO pago_detalle_pedido (id_pago, id_detalle_pedido, cantidad) VALUES ($1, $2, $3)`,
+          [primerPago, a.idDetallePedido, a.cantidad]
+        );
       }
     }
 

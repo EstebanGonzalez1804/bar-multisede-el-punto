@@ -20,22 +20,63 @@ interface LineaForm {
 const METODOS: MetodoPago[] = ["EFECTIVO", "TARJETA_CREDITO", "TARJETA_DEBITO"];
 
 const MODALIDADES: { value: ModalidadPago; titulo: string; ayuda: string }[] = [
-  { value: "TOTAL", titulo: "Pago completo", ayuda: "Un método o varios combinados que sumen exactamente el saldo." },
-  { value: "ABONO", titulo: "Abono por monto", ayuda: "Cada cliente paga la parte que quiera del total." },
-  { value: "PRODUCTOS", titulo: "Por productos", ayuda: "Cada cliente paga exactamente lo que consumió." },
+  { value: "TOTAL", titulo: "Pago completo", ayuda: "Un único pago por todo el saldo pendiente." },
+  { value: "ABONO", titulo: "Abono por monto", ayuda: "El cliente paga el valor que quiera, hasta el saldo." },
+  { value: "PRODUCTOS", titulo: "Por productos", ayuda: "Eliges producto y cantidad; el valor se calcula solo." },
 ];
 
 const aCentavos = (v: string | number) => Math.round(Number(v) * 100);
+
+interface ProductoPendiente {
+  idProducto: number;
+  codigo: string;
+  nombre: string;
+  pendiente: number;
+  /** Líneas con unidades por pagar, de la más antigua a la más reciente (así las cubre el servidor). */
+  lineas: Array<{ pendiente: number; precioCent: number }>;
+}
+
+/** Agrupa las unidades por pagar de la cuenta por producto. */
+function productosPendientes(p: Pedido): ProductoPendiente[] {
+  const mapa = new Map<number, ProductoPendiente>();
+  for (const l of p.lineas) {
+    if (l.cantidadPendiente <= 0) continue;
+    const actual = mapa.get(l.idProducto) ?? {
+      idProducto: l.idProducto,
+      codigo: l.codigoProducto,
+      nombre: l.nombreProducto,
+      pendiente: 0,
+      lineas: [],
+    };
+    actual.pendiente += l.cantidadPendiente;
+    actual.lineas.push({ pendiente: l.cantidadPendiente, precioCent: aCentavos(l.precioVentaCongelado) });
+    mapa.set(l.idProducto, actual);
+  }
+  return Array.from(mapa.values());
+}
+
+/** Valor (en centavos) de `cantidad` unidades de un producto, igual que lo calcula el servidor. */
+function valorCentavos(prod: ProductoPendiente, cantidad: number): number {
+  let restante = cantidad;
+  let total = 0;
+  for (const l of prod.lineas) {
+    if (restante <= 0) break;
+    const tomar = Math.min(restante, l.pendiente);
+    total += tomar * l.precioCent;
+    restante -= tomar;
+  }
+  return total;
+}
 
 /**
  * HU-033 a HU-038 — Pantalla de cobro (Cajero / Administrador).
  *
  * - Muestra siempre el total, lo pagado y el SALDO PENDIENTE (HU-035 CA-01).
- * - Pago completo (HU-033/034): una o varias líneas método + valor que deben
- *   sumar el saldo exacto.
+ * - Pago completo (HU-033): un único pago, un solo método, por el saldo exacto
+ *   (el valor viene fijo).
  * - Abono por monto (HU-035): cualquier valor hasta el saldo.
- * - Por productos (HU-036): se marcan las líneas de la cuenta; el valor se
- *   calcula solo antes de confirmar.
+ * - Por productos (HU-036): el cajero elige producto y cantidad (ej. 1 de 2
+ *   botellas); el valor se calcula solo y se descuenta del saldo.
  * - Cuando el saldo llega a 0 el pedido queda PAGADO y la mesa LIBRE (HU-037).
  * - No hay ninguna acción para editar o anular un pago (HU-038).
  */
@@ -49,11 +90,12 @@ export function CobroPage() {
 
   const [modalidad, setModalidad] = useState<ModalidadPago>("TOTAL");
   const [lineas, setLineas] = useState<LineaForm[]>([{ metodo: "EFECTIVO", valor: "", entregado: "" }]);
-  const [seleccion, setSeleccion] = useState<number[]>([]);
+  // idProducto -> unidades que el cliente va a pagar ahora.
+  const [seleccion, setSeleccion] = useState<Record<number, number>>({});
   const [guardando, setGuardando] = useState(false);
 
   const preparar = useCallback((p: Pedido, mod: ModalidadPago) => {
-    setSeleccion([]);
+    setSeleccion({});
     setLineas([
       {
         metodo: "EFECTIVO",
@@ -79,14 +121,33 @@ export function CobroPage() {
     };
   }, [idPedido, preparar]);
 
-  const totalSeleccion = useMemo(() => {
-    if (!pedido) return 0;
-    return (
-      pedido.lineas
-        .filter((l) => seleccion.includes(l.idDetallePedido))
-        .reduce((acc, l) => acc + l.cantidad * aCentavos(l.precioVentaCongelado), 0) / 100
-    );
-  }, [pedido, seleccion]);
+  const pendientes = useMemo(() => (pedido ? productosPendientes(pedido) : []), [pedido]);
+
+  // Resumen por producto (todas las líneas del producto juntas) para la tabla.
+  const resumenProductos = useMemo(() => {
+    if (!pedido) return [];
+    const mapa = new Map<number, { idProducto: number; codigo: string; nombre: string; pedidas: number; pendiente: number; precios: Set<string> }>();
+    for (const l of pedido.lineas) {
+      const r = mapa.get(l.idProducto) ?? {
+        idProducto: l.idProducto,
+        codigo: l.codigoProducto,
+        nombre: l.nombreProducto,
+        pedidas: 0,
+        pendiente: 0,
+        precios: new Set<string>(),
+      };
+      r.pedidas += l.cantidad;
+      r.pendiente += l.cantidadPendiente;
+      r.precios.add(pesos(l.precioVentaCongelado));
+      mapa.set(l.idProducto, r);
+    }
+    return Array.from(mapa.values()).map((r) => ({ ...r, precios: Array.from(r.precios).join(" / ") }));
+  }, [pedido]);
+
+  const totalSeleccion = useMemo(
+    () => pendientes.reduce((acc, prod) => acc + valorCentavos(prod, seleccion[prod.idProducto] ?? 0), 0) / 100,
+    [pendientes, seleccion]
+  );
 
   function cambiarModalidad(mod: ModalidadPago) {
     setModalidad(mod);
@@ -94,16 +155,15 @@ export function CobroPage() {
     if (pedido) preparar(pedido, mod);
   }
 
-  function alternarProducto(id: number) {
-    if (!pedido) return;
-    const nueva = seleccion.includes(id) ? seleccion.filter((x) => x !== id) : [...seleccion, id];
+  function fijarCantidad(prod: ProductoPendiente, cantidad: number) {
+    const valida = Math.max(0, Math.min(prod.pendiente, Math.floor(cantidad) || 0));
+    const nueva = { ...seleccion, [prod.idProducto]: valida };
+    if (valida === 0) delete nueva[prod.idProducto];
     setSeleccion(nueva);
     // El valor se calcula automáticamente (HU-036 CA-01) cuando hay un único método.
     if (lineas.length === 1) {
       const total =
-        pedido.lineas
-          .filter((l) => nueva.includes(l.idDetallePedido))
-          .reduce((acc, l) => acc + l.cantidad * aCentavos(l.precioVentaCongelado), 0) / 100;
+        pendientes.reduce((acc, p) => acc + valorCentavos(p, nueva[p.idProducto] ?? 0), 0) / 100;
       setLineas([{ ...lineas[0], valor: total > 0 ? String(total) : "" }]);
     }
   }
@@ -139,8 +199,11 @@ export function CobroPage() {
       }
       entrada.push(item);
     }
-    if (modalidad === "PRODUCTOS" && seleccion.length === 0) {
-      setError("Selecciona al menos un producto de la cuenta.");
+    const productosElegidos = pendientes
+      .map((p) => ({ idProducto: p.idProducto, cantidad: seleccion[p.idProducto] ?? 0 }))
+      .filter((x) => x.cantidad > 0);
+    if (modalidad === "PRODUCTOS" && productosElegidos.length === 0) {
+      setError("Elige al menos un producto y la cantidad que va a pagar.");
       return;
     }
 
@@ -149,14 +212,14 @@ export function CobroPage() {
       const resultado = await pedidosApi.registrarPago(pedido.idPedido, {
         modalidad,
         lineas: entrada,
-        idsDetallePedido: modalidad === "PRODUCTOS" ? seleccion : undefined,
+        productos: modalidad === "PRODUCTOS" ? productosElegidos : undefined,
       });
       setPedido(resultado.pedido);
       preparar(resultado.pedido, modalidad);
       const vueltasTxt = resultado.vueltas > 0 ? ` Vueltas a entregar: ${pesos(resultado.vueltas)}.` : "";
       setMensaje(
         resultado.pedido.estadoPago === "PAGADO"
-          ? `Pago completo registrado. La cuenta quedó pagada y la mesa se liberó.${vueltasTxt}`
+          ? `Pago registrado. La cuenta quedó pagada y la mesa se liberó.${vueltasTxt}`
           : `Pago registrado. Saldo pendiente: ${pesos(resultado.pedido.saldoPendiente)}.${vueltasTxt}`
       );
     } catch (err) {
@@ -237,35 +300,75 @@ export function CobroPage() {
           <table>
             <thead>
               <tr>
-                {modalidad === "PRODUCTOS" && !pagado && <th>Cobrar</th>}
                 <th>Producto</th>
-                <th>Cantidad</th>
-                <th>Subtotal</th>
-                <th>Estado</th>
+                <th>Precio</th>
+                <th>Pedidos</th>
+                <th>Pagados</th>
+                <th>Por pagar</th>
+                {modalidad === "PRODUCTOS" && !pagado && cerrado && <th>Paga ahora</th>}
               </tr>
             </thead>
             <tbody>
-              {pedido.lineas.map((l) => (
-                <tr key={l.idDetallePedido}>
-                  {modalidad === "PRODUCTOS" && !pagado && (
+              {resumenProductos.map((r) => {
+                const prod = pendientes.find((x) => x.idProducto === r.idProducto);
+                const elegido = seleccion[r.idProducto] ?? 0;
+                return (
+                  <tr key={r.idProducto}>
                     <td>
-                      <input
-                        type="checkbox"
-                        aria-label={`Incluir ${l.nombreProducto}`}
-                        disabled={l.pagada}
-                        checked={seleccion.includes(l.idDetallePedido)}
-                        onChange={() => alternarProducto(l.idDetallePedido)}
-                      />
+                      {r.codigo} — {r.nombre}
                     </td>
-                  )}
-                  <td>
-                    {l.codigoProducto} — {l.nombreProducto}
-                  </td>
-                  <td>{l.cantidad}</td>
-                  <td>{pesos(Number(l.precioVentaCongelado) * l.cantidad)}</td>
-                  <td>{l.pagada ? <span className="badge badge-success">Pagado</span> : "—"}</td>
-                </tr>
-              ))}
+                    <td>{r.precios}</td>
+                    <td>{r.pedidas}</td>
+                    <td>
+                      {r.pedidas - r.pendiente > 0 ? (
+                        <span className="badge badge-success">{r.pedidas - r.pendiente}</span>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td>{r.pendiente}</td>
+                    {modalidad === "PRODUCTOS" && !pagado && cerrado && (
+                      <td>
+                        {prod ? (
+                          <div className="cantidad-selector">
+                            <button
+                              type="button"
+                              className="btn-secondary"
+                              aria-label={`Quitar una unidad de ${r.nombre}`}
+                              disabled={elegido === 0}
+                              onClick={() => fijarCantidad(prod, elegido - 1)}
+                            >
+                              −
+                            </button>
+                            <input
+                              type="number"
+                              min={0}
+                              max={prod.pendiente}
+                              aria-label={`Unidades de ${r.nombre} que paga ahora`}
+                              value={elegido}
+                              onChange={(e) => fijarCantidad(prod, Number(e.target.value))}
+                            />
+                            <button
+                              type="button"
+                              className="btn-secondary"
+                              aria-label={`Agregar una unidad de ${r.nombre}`}
+                              disabled={elegido >= prod.pendiente}
+                              onClick={() => fijarCantidad(prod, elegido + 1)}
+                            >
+                              +
+                            </button>
+                            <button type="button" className="btn-link" onClick={() => fijarCantidad(prod, prod.pendiente)}>
+                              Todas
+                            </button>
+                          </div>
+                        ) : (
+                          "—"
+                        )}
+                      </td>
+                    )}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -294,7 +397,13 @@ export function CobroPage() {
           <form onSubmit={handleSubmit}>
             {modalidad === "PRODUCTOS" && (
               <p className="field-hint">
-                Valor de los productos seleccionados: <strong>{pesos(totalSeleccion)}</strong>
+                Valor de los productos que paga ahora: <strong>{pesos(totalSeleccion)}</strong>
+                {totalSeleccion > 0 && (
+                  <>
+                    {" "}
+                    · Saldo después del pago: <strong>{pesos(Math.round((pedido.saldoPendiente - totalSeleccion) * 100) / 100)}</strong>
+                  </>
+                )}
               </p>
             )}
 
@@ -322,6 +431,7 @@ export function CobroPage() {
                     min={0}
                     step="any"
                     value={l.valor}
+                    readOnly={modalidad === "TOTAL"}
                     onChange={(e) => actualizarLinea(i, { valor: e.target.value })}
                   />
                 </div>
@@ -338,7 +448,7 @@ export function CobroPage() {
                     />
                   </div>
                 )}
-                {lineas.length > 1 && (
+                {modalidad !== "TOTAL" && lineas.length > 1 && (
                   <button
                     type="button"
                     className="btn-link danger"
@@ -350,7 +460,7 @@ export function CobroPage() {
               </div>
             ))}
 
-            {lineas.length < 6 && (
+            {modalidad !== "TOTAL" && lineas.length < 6 && (
               <button
                 type="button"
                 className="btn-link"
@@ -361,14 +471,7 @@ export function CobroPage() {
             )}
 
             <p className="field-hint" style={{ marginTop: "0.75rem" }}>
-              Suma de los métodos: <strong>{pesos(sumaLineas)}</strong>
-              {modalidad === "TOTAL" && sumaLineas !== pedido.saldoPendiente && (
-                <>
-                  {" "}
-                  · {sumaLineas < pedido.saldoPendiente ? "Falta" : "Sobra"}:{" "}
-                  <strong>{pesos(Math.abs(Math.round((pedido.saldoPendiente - sumaLineas) * 100) / 100))}</strong>
-                </>
-              )}
+              Valor a cobrar: <strong>{pesos(sumaLineas)}</strong>
               {vueltas > 0 && (
                 <>
                   {" "}

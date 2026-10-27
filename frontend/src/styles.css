@@ -1259,3 +1259,21 @@ a.btn-secondary {
     display: none !important;
   }
 }
+
+/* ---------- Selector de cantidad por producto (cobro por productos) ---------- */
+
+.cantidad-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.cantidad-selector input {
+  width: 4rem;
+  text-align: center;
+}
+
+.cantidad-selector .btn-secondary {
+  width: 2.1rem;
+  padding: 0.3rem 0;
+}

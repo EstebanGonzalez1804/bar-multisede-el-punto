@@ -217,6 +217,7 @@ const ETIQUETAS_DETALLE: Record<string, string> = {
   idProveedor: "N.º interno de proveedor",
   fechaRecepcion: "Fecha de recepción",
   lineas: "Productos recibidos",
+  productosCubiertos: "Productos cubiertos por el pago",
   productosInactivados: "Productos inactivados",
   idTipoProducto: "N.º interno de tipo",
 };
@@ -238,7 +239,7 @@ export function detalleLegible(ev: EventoTrazabilidad): Array<{ etiqueta: string
     else if (clave === "metodo") texto = METODOS[String(valor)] ?? String(valor);
     else if (clave === "modalidad") texto = MODALIDADES[String(valor)] ?? String(valor);
     else if (clave === "motivo") texto = MOTIVOS[String(valor)] ?? String(valor);
-    else if (Array.isArray(valor)) texto = `${valor.length} línea${valor.length === 1 ? "" : "s"}`;
+    else if (Array.isArray(valor)) texto = `${valor.length} producto${valor.length === 1 ? "" : "s"}`;
     else if (typeof valor === "object") texto = JSON.stringify(valor);
     else texto = String(valor);
     salida.push({ etiqueta: ETIQUETAS_DETALLE[clave] ?? clave, valor: texto });

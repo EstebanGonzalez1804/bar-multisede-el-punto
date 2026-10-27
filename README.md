@@ -219,6 +219,17 @@ a criterio técnico del proveedor:
   ya eran fluidas (`grid-template-columns: repeat(auto-fit/auto-fill, ...)`)
   y no necesitaron cambios adicionales.
 
+- **Cobro rediseñado (Oct 27, migración 007).**
+  - *Pago completo* ahora es un único pago, con un solo método y el valor fijo
+    en el saldo pendiente (ya no se puede editar ni combinar métodos).
+  - *Abono por monto* mantiene el valor libre hasta el saldo (se pueden
+    combinar métodos).
+  - *Por productos:* el cajero elige producto y cantidad (por ejemplo 1 de
+    2 botellas de ron); el valor se calcula con los precios congelados de la
+    cuenta, se muestra el saldo resultante y al confirmar se descuenta. El
+    servidor valida cantidades y valor, y cubre primero las líneas más
+    antiguas. `pago_detalle_pedido` guarda ahora la cantidad por línea.
+
 - **Ajustes tras la validación del avance (Oct 27).**
   - *Inactivar un tipo de producto* inactiva en la misma transacción todos
     sus productos activos (cada uno queda en trazabilidad). Reactivar el tipo

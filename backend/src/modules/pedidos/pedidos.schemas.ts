@@ -32,5 +32,12 @@ export const registrarPagoSchema = z.object({
     )
     .min(1, "Agrega al menos un método de pago con su valor.")
     .max(6),
-  idsDetallePedido: z.array(z.number().int().positive()).optional(),
+  productos: z
+    .array(
+      z.object({
+        idProducto: z.number().int().positive(),
+        cantidad: z.number().int().positive("La cantidad debe ser al menos 1."),
+      })
+    )
+    .optional(),
 });
