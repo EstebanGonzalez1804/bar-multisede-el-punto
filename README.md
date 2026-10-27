@@ -230,6 +230,47 @@ a criterio técnico del proveedor:
     servidor valida cantidades y valor, y cubre primero las líneas más
     antiguas. `pago_detalle_pedido` guarda ahora la cantidad por línea.
 
+- **Versión pulida tras la auditoría completa (Oct 27).** Revisión de todas
+  las pantallas en los tres perfiles, en escritorio, tablet y celular.
+  - *Errores corregidos:* el menú en celular vuelve a ocupar toda la altura
+    y su sombra ya no se ve con el menú cerrado; la fecha por defecto de una
+    recepción usa la hora de Colombia (antes, después de las 7 p. m. proponía
+    el día siguiente) y el servidor rechaza fechas futuras; "Productos
+    agotados" en Inicio cuenta solo productos activos; un administrador no
+    puede inactivarse a sí mismo ni dejar el sistema sin administradores
+    activos (tampoco cambiar su propio perfil); el login ya no muestra doble
+    borde en los campos y tiene "Mostrar" contraseña; se corrigió "Mesa Mesa
+    3"; colores de sede con contraste suficiente; frases de trazabilidad más
+    naturales.
+  - *Backlog:* edición de sedes (HU-010: nombre y dirección, con
+    trazabilidad `SEDE_MODIFICADA`); el costo de los productos y su historial
+    de precios solo los ve el Administrador (HU-017 CA-01).
+  - *Cobro:* el flujo sigue el orden de la caja (cómo paga → qué productos →
+    método → confirmar) en un solo bloque, con un solo total grande, método
+    con botones, confirmación con resumen antes de registrar (el pago es
+    irreversible) y aviso cuando hay abonos no asignados a productos.
+    "Cuentas por cobrar" se actualiza sola cada 10 s.
+  - *Pedido (mesero):* buscador y filtro por tipo en lugar de la lista
+    desplegable, cantidad con − / +, precio y disponibilidad a la vista; las
+    tandas del mismo producto al mismo precio se muestran juntas en pantalla,
+    en la tirilla y en el PDF (en la base de datos siguen siendo líneas
+    independientes e inmutables).
+  - *Celular:* las tablas de operación (pedidos, cobros, inventario,
+    recepciones, trazabilidad) se leen como tarjetas; mesas en dos columnas;
+    login compacto.
+  - *Consistencia:* un solo formato de dinero (sin decimales) y de fecha
+    ("Hoy · 8:15 p. m."), estados en tipo oración ("Activo", "Pago parcial",
+    "Por cobrar"), escala tipográfica única (mínimo 12 px en etiquetas y 15 px
+    en texto de trabajo), cifras alineadas a la derecha, una sola ventana de
+    confirmación para todo lo que no se deshace, filtros que se aplican solos
+    y formularios que se llevan a la vista al abrirse.
+  - *Navegación y accesibilidad:* menú agrupado (Operación, Abastecimiento,
+    Catálogo, Administración), título de pestaña por sección, "Acceso no
+    disponible" con botón de salida, avisos anunciados a lectores de pantalla,
+    foco visible, respeto a "reducir movimiento" y aviso 30 s antes del cierre
+    por inactividad (la regla de 3 minutos no cambia). El Cajero entra
+    directo a "Cuentas por cobrar".
+
 - **Mesas por sede para el Administrador (Oct 27).** La vista de Mesas del
   Administrador agrupa las mesas en secciones por sede (con su conteo de
   mesas y ocupadas) y cada tarjeta lleva la barra superior y una etiqueta con

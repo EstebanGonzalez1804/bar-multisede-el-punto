@@ -1,4 +1,4 @@
-import type { EventoTrazabilidad } from "../api/types";
+import { MOTIVOS_AJUSTE, type EventoTrazabilidad } from "../api/types";
 import { pesos } from "./format";
 
 /** Categorías para agrupar/filtrar los eventos de forma entendible. */
@@ -101,7 +101,46 @@ const MODALIDADES: Record<string, string> = {
 const MOTIVOS: Record<string, string> = {
   PAGO_COMPLETO: "el pedido se pagó por completo",
   TIPO_PRODUCTO_INACTIVADO: "se inactivó su tipo de producto",
+  ...Object.fromEntries(MOTIVOS_AJUSTE.map((m) => [m.value, m.label.toLowerCase()])),
 };
+
+/** Cómo se nombra cada entidad en una frase ("inactivó la sede …"). */
+const SUSTANTIVOS: Record<string, string> = {
+  SEDE: "la sede",
+  MESA: "la mesa",
+  USUARIO: "al usuario",
+  PRODUCTO: "el producto",
+  TIPO_PRODUCTO: "el tipo de producto",
+  PROVEEDOR: "al proveedor",
+  INVENTARIO: "el inventario de",
+  PEDIDO: "el pedido",
+};
+
+const VERBOS: Record<string, string> = {
+  CREADO: "creó",
+  CREADA: "creó",
+  MODIFICADO: "modificó",
+  MODIFICADA: "modificó",
+  ACTIVADO: "activó",
+  ACTIVADA: "activó",
+  INACTIVADO: "inactivó",
+  INACTIVADA: "inactivó",
+  DESBLOQUEADO: "desbloqueó",
+  BLOQUEADO: "bloqueó",
+};
+
+/** "Laura Gómez inactivó la sede Usaquén" — frase genérica para altas, cambios y estados. */
+function fraseGenerica(ev: EventoTrazabilidad, quien: string): string | null {
+  const partes = ev.tipoEvento.split("_");
+  const verbo = VERBOS[partes[partes.length - 1]];
+  if (!verbo) return null;
+  const sustantivo = SUSTANTIVOS[ev.entidadAfectada] ?? "";
+  let nombre = ev.nombreAfectado ?? "";
+  // Evita "la sede Sede Usaquén" o "la mesa Mesa 1".
+  const palabra = sustantivo.split(" ").pop() ?? "";
+  if (palabra && nombre.toLowerCase().startsWith(`${palabra} `)) nombre = nombre.slice(palabra.length + 1);
+  return `${quien} ${verbo} ${sustantivo}${nombre ? ` ${nombre}` : ""}.`.replace(/\s+\./, ".");
+}
 
 function num(v: unknown): number | null {
   const n = Number(v);
@@ -168,7 +207,8 @@ export function describirEvento(ev: EventoTrazabilidad): string {
       const a = num(d.cantidadAnterior);
       const r = num(d.cantidadResultante);
       const aj = num(d.ajuste);
-      return `${quien} ajustó el inventario de ${que ?? "un producto"}${a !== null && r !== null ? ` de ${a} a ${r} unidades` : ""}${aj !== null ? ` (${aj > 0 ? "+" : ""}${aj})` : ""}${txt(d.motivo) ? `. Motivo: ${txt(d.motivo)}` : ""}.`;
+      const motivo = txt(d.motivo) ? MOTIVOS[String(d.motivo)] ?? String(d.motivo).toLowerCase() : null;
+      return `${quien} ajustó el inventario de ${que ?? "un producto"}${a !== null && r !== null ? ` de ${a} a ${r} unidades` : ""}${aj !== null ? ` (${aj > 0 ? "+" : ""}${aj})` : ""}${motivo ? ` por ${motivo}` : ""}.`;
     }
     case "RECEPCION_REGISTRADA":
       return `${quien} registró una recepción de mercancía${Array.isArray(d.lineas) ? ` (${d.lineas.length} producto${d.lineas.length === 1 ? "" : "s"})` : ""}.`;
@@ -180,7 +220,19 @@ export function describirEvento(ev: EventoTrazabilidad): string {
       const n = num(d.productosInactivados);
       return `${quien} inactivó el tipo de producto ${que ?? ""}${n ? `, junto con ${n} producto${n === 1 ? "" : "s"}` : ""}.`.replace(" ,", ",");
     }
+    case "USUARIO_BLOQUEADO_POR_INTENTOS":
+      return `${que ? `El usuario ${que}` : "Un usuario"} quedó bloqueado tras varios intentos fallidos.`;
+    case "LOGIN_RECHAZADO_BLOQUEADO":
+      return `Se rechazó el ingreso de ${que ?? "un usuario"} porque está bloqueado.`;
+    case "LOGIN_RECHAZADO_INACTIVO":
+      return `Se rechazó el ingreso de ${que ?? "un usuario"} porque está inactivo.`;
+    case "CAMBIO_PASSWORD_PROPIA":
+      return `${quien} cambió su contraseña.`;
+    case "CAMBIO_PASSWORD_POR_ADMIN":
+      return `${quien} restableció la contraseña de ${que ?? "un usuario"}.`;
     default: {
+      const generica = fraseGenerica(ev, quien);
+      if (generica) return generica;
       const etiqueta = etiquetaEvento(ev.tipoEvento);
       return `${quien}: ${etiqueta.charAt(0).toLowerCase()}${etiqueta.slice(1)}${que ? ` — ${que}` : ""}.`;
     }

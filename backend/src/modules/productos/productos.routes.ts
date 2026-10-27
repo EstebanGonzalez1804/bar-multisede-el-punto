@@ -9,7 +9,12 @@ productosRouter.use(authenticate);
 // HU-017 — catálogo visible para cualquier perfil autenticado, igual para
 // todas las sedes (CA-03: el catálogo es único y global).
 productosRouter.get("/", productosController.getProductos);
-productosRouter.get("/:idProducto/historial-precios", productosController.getHistorialPrecios);
+// El historial de precios incluye costos: solo Administrador (HU-015).
+productosRouter.get(
+  "/:idProducto/historial-precios",
+  requireRole("ADMINISTRADOR"),
+  productosController.getHistorialPrecios
+);
 
 // HU-014/HU-015/HU-016 — solo Administrador.
 productosRouter.post("/", requireRole("ADMINISTRADOR"), productosController.postProducto);

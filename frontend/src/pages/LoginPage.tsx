@@ -4,6 +4,7 @@ import { getApiErrorMessage } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { Icon, ICONS } from "../components/icons";
 import { LogoMark, LogoWordmark } from "../components/Logo";
+import { Aviso } from "../components/Aviso";
 import type { Perfil } from "../api/types";
 
 /**
@@ -17,7 +18,7 @@ import type { Perfil } from "../api/types";
  */
 function vistaInicialPorPerfil(perfil: Perfil): string {
   if (perfil === "MESERO") return "/mesas";
-  if (perfil === "CAJERO") return "/inventario";
+  if (perfil === "CAJERO") return "/cobros";
   return "/";
 }
 
@@ -27,6 +28,7 @@ export function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [verPassword, setVerPassword] = useState(false);
 
   if (usuario) {
     return <Navigate to={vistaInicialPorPerfil(usuario.perfil)} replace />;
@@ -72,7 +74,7 @@ export function LoginPage() {
         <div>
           <div className="login-hero-headline">El control de toda tu barra, en una sola pantalla.</div>
           <p className="login-hero-sub">Mesas, inventario y pedidos de todas tus sedes, en tiempo real.</p>
-          <div className="login-hero-roles">
+          <div className="login-hero-roles" aria-label="Perfiles de la plataforma">
             <div className="login-hero-role">
               <Icon path={ICONS.usuarios} size={16} strokeWidth={2.2} />
               Administrador
@@ -97,7 +99,7 @@ export function LoginPage() {
           <h1>Inicia sesión</h1>
           <p className="login-subtitle">Ingresa con tu código de usuario y contraseña.</p>
 
-          {error && <div className="alert alert-error">{error}</div>}
+          {error && <Aviso tipo="error">{error}</Aviso>}
 
           <form onSubmit={handleSubmit}>
             <div className="field">
@@ -121,12 +123,20 @@ export function LoginPage() {
                 <Icon path={ICONS.password} size={16} strokeWidth={2} />
                 <input
                   id="password"
-                  type="password"
+                  type={verPassword ? "text" : "password"}
                   autoComplete="current-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+                <button
+                  type="button"
+                  className="btn-ver-password"
+                  onClick={() => setVerPassword((v) => !v)}
+                  aria-pressed={verPassword}
+                >
+                  {verPassword ? "Ocultar" : "Mostrar"}
+                </button>
               </div>
             </div>
             <button type="submit" className="btn-primary" disabled={enviando}>

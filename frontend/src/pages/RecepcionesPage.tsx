@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useState, type FormEvent } from "react";
+import { Fragment, useCallback, useEffect, useState, type FormEvent } from "react";
 import { getApiErrorMessage } from "../api/client";
 import * as proveedoresApi from "../api/proveedores";
 import * as recepcionesApi from "../api/recepciones";
@@ -6,6 +6,10 @@ import * as productosApi from "../api/productos";
 import * as sedesApi from "../api/sedes";
 import { useAuth } from "../context/AuthContext";
 import type { Producto, Proveedor, Recepcion, Sede } from "../api/types";
+import { Aviso } from "../components/Aviso";
+import { useConfirmar } from "../components/Confirmacion";
+import { useCargaConFiltros } from "../hooks/useCargaConFiltros";
+import { fecha, hora, hoyBogota } from "../utils/format";
 
 interface FilaLinea {
   idProducto: string;
@@ -14,13 +18,10 @@ interface FilaLinea {
 
 const LINEA_VACIA: FilaLinea = { idProducto: "", cantidad: "" };
 
-function hoyISO(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 /** HU-019 (consulta) + HU-021 (registro) — Recepciones de mercancía. */
 export function RecepcionesPage() {
   const { usuario } = useAuth();
+  const confirmar = useConfirmar();
   const esAdministrador = usuario?.perfil === "ADMINISTRADOR";
 
   const [recepciones, setRecepciones] = useState<Recepcion[]>([]);
@@ -41,11 +42,11 @@ export function RecepcionesPage() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [idProveedorNueva, setIdProveedorNueva] = useState("");
   const [idSedeNueva, setIdSedeNueva] = useState("");
-  const [fechaNueva, setFechaNueva] = useState(hoyISO());
+  const [fechaNueva, setFechaNueva] = useState(hoyBogota());
   const [lineas, setLineas] = useState<FilaLinea[]>([{ ...LINEA_VACIA }]);
   const [guardando, setGuardando] = useState(false);
 
-  async function cargarRecepciones() {
+  const cargarRecepciones = useCallback(async () => {
     setCargando(true);
     setError(null);
     try {
@@ -61,10 +62,11 @@ export function RecepcionesPage() {
     } finally {
       setCargando(false);
     }
-  }
+  }, [filtroProveedor, filtroSede, filtroDesde, filtroHasta]);
+
+  useCargaConFiltros(cargarRecepciones);
 
   useEffect(() => {
-    void cargarRecepciones();
     proveedoresApi.listarProveedores().then(setProveedores).catch(() => undefined);
     productosApi.listarProductos({ estado: "ACTIVO" }).then(setProductos).catch(() => undefined);
     if (esAdministrador) {
@@ -73,15 +75,10 @@ export function RecepcionesPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handleFiltrar(e: FormEvent) {
-    e.preventDefault();
-    void cargarRecepciones();
-  }
-
   function abrirFormulario() {
     setIdProveedorNueva("");
     setIdSedeNueva(esAdministrador ? "" : String(usuario?.idSede ?? ""));
-    setFechaNueva(hoyISO());
+    setFechaNueva(hoyBogota());
     setLineas([{ ...LINEA_VACIA }]);
     setMostrarFormulario(true);
     setError(null);
@@ -120,6 +117,10 @@ export function RecepcionesPage() {
       setError("Debes indicar la fecha de la recepción.");
       return;
     }
+    if (fechaNueva > hoyBogota()) {
+      setError("La fecha de la recepción no puede ser posterior a hoy.");
+      return;
+    }
 
     const lineasValidas: { idProducto: number; cantidad: number }[] = [];
     for (const linea of lineas) {
@@ -135,6 +136,20 @@ export function RecepcionesPage() {
       setError("Agrega al menos un producto a la recepción.");
       return;
     }
+    const unidades = lineasValidas.reduce((acc, l) => acc + l.cantidad, 0);
+    const proveedor = proveedores.find((p) => String(p.idProveedor) === idProveedorNueva)?.nombre ?? "";
+    const ok = await confirmar({
+      titulo: "¿Registrar la recepción?",
+      mensaje: (
+        <>
+          {lineasValidas.length} producto{lineasValidas.length === 1 ? "" : "s"} ({unidades} unidades) de{" "}
+          <strong>{proveedor}</strong>, con fecha {fecha(fechaNueva)}. El inventario se actualiza de inmediato y la
+          recepción no se puede editar después.
+        </>
+      ),
+      textoConfirmar: "Registrar recepción",
+    });
+    if (!ok) return;
 
     setGuardando(true);
     try {
@@ -158,7 +173,7 @@ export function RecepcionesPage() {
     <div>
       <div className="panel">
         <div className="panel-header">
-          <h2 style={{ margin: 0 }}>Recepciones de mercancía</h2>
+          <h1 className="page-title">Recepciones de mercancía</h1>
           {!mostrarFormulario && (
             <button className="btn-secondary" onClick={abrirFormulario}>
               + Registrar recepción
@@ -166,12 +181,12 @@ export function RecepcionesPage() {
           )}
         </div>
 
-        {error && <div className="alert alert-error">{error}</div>}
-        {mensaje && !error && <div className="alert alert-success">{mensaje}</div>}
+        {error && <Aviso tipo="error">{error}</Aviso>}
+        {mensaje && !error && <Aviso tipo="exito">{mensaje}</Aviso>}
 
         {mostrarFormulario && (
           <form className="row-subform" onSubmit={handleSubmit}>
-            <h3 style={{ marginTop: 0 }}>Nueva recepción</h3>
+            <h2 className="subform-title">Nueva recepción</h2>
             <div className="inline-form">
               <div className="field">
                 <label htmlFor="proveedorNueva">Proveedor</label>
@@ -195,7 +210,7 @@ export function RecepcionesPage() {
                     <option value="">Selecciona una sede</option>
                     {sedes.filter((x) => x.estado === "ACTIVO").map((s) => (
                       <option key={s.idSede} value={s.idSede}>
-                        {s.codigoSede} — {s.nombre}
+                        {s.nombre}
                       </option>
                     ))}
                   </select>
@@ -206,32 +221,36 @@ export function RecepcionesPage() {
                 <input
                   id="fechaNueva"
                   type="date"
+                  max={hoyBogota()}
                   value={fechaNueva}
                   onChange={(e) => setFechaNueva(e.target.value)}
                 />
               </div>
             </div>
 
-            <h4>Productos recibidos</h4>
+            <h3 className="subform-subtitle">Productos recibidos</h3>
             {lineas.map((linea, index) => (
-              <div className="inline-form" key={index}>
-                <div className="field">
-                  <label>Producto</label>
+              <div className="inline-form linea-recepcion" key={index}>
+                <div className="field field-ancho">
+                  <label htmlFor={`productoRecepcion${index}`}>Producto</label>
                   <select
+                    id={`productoRecepcion${index}`}
                     value={linea.idProducto}
                     onChange={(e) => actualizarLinea(index, { idProducto: e.target.value })}
                   >
                     <option value="">Selecciona un producto</option>
                     {productos.map((p) => (
                       <option key={p.idProducto} value={p.idProducto}>
-                        {p.codigo} — {p.nombre}
+                        {p.nombre} · {p.codigo}
                       </option>
                     ))}
                   </select>
                 </div>
-                <div className="field" style={{ maxWidth: 140 }}>
-                  <label>Cantidad</label>
+                <div className="field field-corto">
+                  <label htmlFor={`cantidadRecepcion${index}`}>Cantidad</label>
                   <input
+                    id={`cantidadRecepcion${index}`}
+                    inputMode="numeric"
                     type="number"
                     min={1}
                     step={1}
@@ -249,14 +268,12 @@ export function RecepcionesPage() {
                 </button>
               </div>
             ))}
-            <div className="table-actions" style={{ marginBottom: "1rem" }}>
-              <button type="button" className="btn-secondary" onClick={agregarLinea}>
-                + Agregar producto
-              </button>
-            </div>
+            <button type="button" className="btn-link agregar-linea" onClick={agregarLinea}>
+              + Agregar otro producto
+            </button>
 
-            <div className="table-actions">
-              <button type="submit" className="btn-primary" style={{ width: "auto" }} disabled={guardando}>
+            <div className="form-actions">
+              <button type="submit" className="btn-primary" disabled={guardando}>
                 {guardando ? "Guardando..." : "Registrar recepción"}
               </button>
               <button type="button" className="btn-secondary" onClick={cerrarFormulario}>
@@ -266,7 +283,7 @@ export function RecepcionesPage() {
           </form>
         )}
 
-        <form className="toolbar" onSubmit={handleFiltrar}>
+        <div className="toolbar">
           <div className="field">
             <label htmlFor="filtroProveedor">Proveedor</label>
             <select id="filtroProveedor" value={filtroProveedor} onChange={(e) => setFiltroProveedor(e.target.value)}>
@@ -285,7 +302,7 @@ export function RecepcionesPage() {
                 <option value="">Todas</option>
                 {sedes.map((s) => (
                   <option key={s.idSede} value={s.idSede}>
-                    {s.codigoSede} — {s.nombre}
+                    {s.nombre}
                   </option>
                 ))}
               </select>
@@ -299,10 +316,7 @@ export function RecepcionesPage() {
             <label htmlFor="filtroHasta">Hasta</label>
             <input id="filtroHasta" type="date" value={filtroHasta} onChange={(e) => setFiltroHasta(e.target.value)} />
           </div>
-          <button type="submit" className="btn-secondary">
-            Filtrar
-          </button>
-        </form>
+        </div>
 
         {cargando ? (
           <p className="empty-state">Cargando...</p>
@@ -310,42 +324,47 @@ export function RecepcionesPage() {
           <p className="empty-state">No hay recepciones registradas con estos filtros.</p>
         ) : (
           <div className="table-scroll">
-          <table>
+          <table className="tabla-apilada">
             <thead>
               <tr>
                 <th>Fecha</th>
                 <th>Proveedor</th>
-                <th>Sede</th>
-                <th>Usuario</th>
-                <th>Hora</th>
-                <th>Detalle</th>
+                {esAdministrador && <th>Sede</th>}
+                <th>Registró</th>
+                <th>Hora de registro</th>
+                <th>
+                  <span className="sr-only">Detalle</span>
+                </th>
               </tr>
             </thead>
             <tbody>
               {recepciones.map((r) => (
                 <Fragment key={r.idRecepcion}>
                   <tr>
-                    <td>{r.fechaRecepcion}</td>
-                    <td>{r.nombreProveedor}</td>
-                    <td>{r.nombreSede}</td>
-                    <td>{r.nombreUsuario}</td>
-                    <td>{new Date(r.creadoEn).toLocaleTimeString()}</td>
-                    <td>
+                    <td data-label="Fecha" className="celda-titulo">
+                      {fecha(r.fechaRecepcion)}
+                    </td>
+                    <td data-label="Proveedor">{r.nombreProveedor}</td>
+                    {esAdministrador && <td data-label="Sede">{r.nombreSede}</td>}
+                    <td data-label="Registró">{r.nombreUsuario}</td>
+                    <td data-label="Hora">{hora(r.creadoEn)}</td>
+                    <td data-label="" className="celda-acciones">
                       <button
                         className="btn-link"
                         onClick={() => setExpandidoId(expandidoId === r.idRecepcion ? null : r.idRecepcion)}
                       >
-                        {expandidoId === r.idRecepcion ? "Ocultar" : "Ver productos"}
+                        {expandidoId === r.idRecepcion ? "Ocultar productos" : `Ver productos (${r.lineas.length})`}
                       </button>
                     </td>
                   </tr>
                   {expandidoId === r.idRecepcion && (
-                    <tr>
-                      <td colSpan={6}>
-                        <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
+                    <tr className="fila-detalle">
+                      <td colSpan={6} data-label="">
+                        <ul className="lista-detalle">
                           {r.lineas.map((l) => (
                             <li key={l.idProducto}>
-                              {l.codigoProducto} — {l.nombreProducto}: {l.cantidad} unidad(es)
+                              <span>{l.nombreProducto}</span>
+                              <strong className="num">{l.cantidad} und.</strong>
                             </li>
                           ))}
                         </ul>

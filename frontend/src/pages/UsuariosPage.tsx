@@ -1,9 +1,15 @@
-import { Fragment, useEffect, useState, type FormEvent } from "react";
+import { Fragment, useCallback, useEffect, useState, type FormEvent } from "react";
 import * as authApi from "../api/auth";
 import { getApiErrorMessage } from "../api/client";
 import * as sedesApi from "../api/sedes";
 import * as usuariosApi from "../api/usuarios";
-import type { Estado, Perfil, Sede, Usuario } from "../api/types";
+import { ETIQUETAS_PERFIL, type Estado, type Perfil, type Sede, type Usuario } from "../api/types";
+import { useAuth } from "../context/AuthContext";
+import { useCargaConFiltros } from "../hooks/useCargaConFiltros";
+import { Aviso } from "../components/Aviso";
+import { useConfirmar } from "../components/Confirmacion";
+import { etiquetaEstado } from "../utils/format";
+import { useEnfocarAlAbrir } from "../hooks/useEnfocarAlAbrir";
 
 const PERFILES: Perfil[] = ["ADMINISTRADOR", "CAJERO", "MESERO"];
 
@@ -22,6 +28,8 @@ const FORMULARIO_VACIO: FormularioUsuario = {
 };
 
 export function UsuariosPage() {
+  const confirmar = useConfirmar();
+  const { usuario: usuarioActual } = useAuth();
   const [usuarios, setUsuarios] = useState<Usuario[]>([]);
   const [sedes, setSedes] = useState<Sede[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -38,6 +46,7 @@ export function UsuariosPage() {
   const [mostrarFormulario, setMostrarFormulario] = useState(false);
   const [formulario, setFormulario] = useState<FormularioUsuario>(FORMULARIO_VACIO);
   const [guardando, setGuardando] = useState(false);
+  const formRef = useEnfocarAlAbrir<HTMLFormElement>(mostrarFormulario, editandoId);
 
   // Fila con el formulario de "cambiar contraseña" abierto (HU-005)
   const [filaPassword, setFilaPassword] = useState<number | null>(null);
@@ -46,7 +55,7 @@ export function UsuariosPage() {
   // Deshabilita los botones de una fila mientras se ejecuta su acción.
   const [accionEnCurso, setAccionEnCurso] = useState<number | null>(null);
 
-  async function cargarUsuarios() {
+  const cargarUsuarios = useCallback(async () => {
     setCargando(true);
     setError(null);
     try {
@@ -61,10 +70,11 @@ export function UsuariosPage() {
     } finally {
       setCargando(false);
     }
-  }
+  }, [busqueda, filtroPerfil, filtroEstado]);
+
+  useCargaConFiltros(cargarUsuarios);
 
   useEffect(() => {
-    void cargarUsuarios();
     sedesApi
       .listarSedes()
       .then(setSedes)
@@ -73,11 +83,6 @@ export function UsuariosPage() {
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
-
-  function handleBuscar(e: FormEvent) {
-    e.preventDefault();
-    void cargarUsuarios();
-  }
 
   function abrirCreacion() {
     setFormulario(FORMULARIO_VACIO);
@@ -163,6 +168,17 @@ export function UsuariosPage() {
 
   async function handleCambiarEstado(usuario: Usuario) {
     const nuevoEstado: Estado = usuario.estado === "ACTIVO" ? "INACTIVO" : "ACTIVO";
+    if (
+      nuevoEstado === "INACTIVO" &&
+      !(await confirmar({
+        titulo: `¿Inactivar a ${usuario.nombre}?`,
+        mensaje: "No podrá iniciar sesión hasta que lo actives de nuevo. Su historial se conserva.",
+        textoConfirmar: "Inactivar usuario",
+        peligro: true,
+      }))
+    ) {
+      return;
+    }
     setAccionEnCurso(usuario.idUsuario);
     setError(null);
     try {
@@ -222,7 +238,7 @@ export function UsuariosPage() {
     <div>
       <div className="panel">
         <div className="panel-header">
-          <h2 style={{ margin: 0 }}>Usuarios</h2>
+          <h1 className="page-title">Usuarios</h1>
           {!mostrarFormulario && (
             <button className="btn-secondary" onClick={abrirCreacion}>
               + Nuevo usuario
@@ -230,18 +246,18 @@ export function UsuariosPage() {
           )}
         </div>
 
-        {error && <div className="alert alert-error">{error}</div>}
-        {mensaje && !error && <div className="alert alert-success">{mensaje}</div>}
+        {error && <Aviso tipo="error">{error}</Aviso>}
+        {mensaje && !error && <Aviso tipo="exito">{mensaje}</Aviso>}
 
-        <form className="toolbar" onSubmit={handleBuscar}>
-          <div className="field">
-            <label htmlFor="busqueda">Buscar (código o nombre)</label>
+        <div className="toolbar">
+          <div className="field field-busqueda">
+            <label htmlFor="busqueda">Buscar</label>
             <input
               id="busqueda"
-              type="text"
+              type="search"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="SE01-CAJ-001 o Juan"
+              placeholder="Nombre o código, p. ej. SE01-CAJ"
             />
           </div>
           <div className="field">
@@ -254,7 +270,7 @@ export function UsuariosPage() {
               <option value="">Todos</option>
               {PERFILES.map((p) => (
                 <option key={p} value={p}>
-                  {p}
+                  {ETIQUETAS_PERFIL[p]}
                 </option>
               ))}
             </select>
@@ -271,14 +287,11 @@ export function UsuariosPage() {
               <option value="INACTIVO">Inactivo</option>
             </select>
           </div>
-          <button type="submit" className="btn-secondary">
-            Buscar
-          </button>
-        </form>
+        </div>
 
         {mostrarFormulario && (
-          <form className="row-subform" onSubmit={handleSubmitFormulario}>
-            <h3 style={{ marginTop: 0 }}>{editandoId === null ? "Nuevo usuario" : "Editar usuario"}</h3>
+          <form ref={formRef} className="row-subform" onSubmit={handleSubmitFormulario}>
+            <h2 className="subform-title">{editandoId === null ? "Nuevo usuario" : "Editar usuario"}</h2>
             <div className="inline-form">
               <div className="field">
                 <label htmlFor="nombre">Nombre</label>
@@ -299,7 +312,7 @@ export function UsuariosPage() {
                 >
                   {PERFILES.map((p) => (
                     <option key={p} value={p}>
-                      {p}
+                      {ETIQUETAS_PERFIL[p]}
                     </option>
                   ))}
                 </select>
@@ -317,7 +330,7 @@ export function UsuariosPage() {
                   </option>
                   {sedes.filter((x) => x.estado === "ACTIVO").map((s) => (
                     <option key={s.idSede} value={s.idSede}>
-                      {s.codigoSede} — {s.nombre}
+                      {s.nombre}
                     </option>
                   ))}
                 </select>
@@ -340,8 +353,8 @@ export function UsuariosPage() {
                 El código de usuario se genera automáticamente al guardar (ej. SE01-CAJ-001).
               </p>
             )}
-            <div className="table-actions">
-              <button type="submit" className="btn-primary" style={{ width: "auto" }} disabled={guardando}>
+            <div className="form-actions">
+              <button type="submit" className="btn-primary" disabled={guardando}>
                 {guardando ? "Guardando..." : "Guardar"}
               </button>
               <button type="button" className="btn-secondary" onClick={cerrarFormulario}>
@@ -365,22 +378,27 @@ export function UsuariosPage() {
                 <th>Sede</th>
                 <th>Perfil</th>
                 <th>Estado</th>
-                <th>Acciones</th>
+                <th>
+                  <span className="sr-only">Acciones</span>
+                </th>
               </tr>
             </thead>
             <tbody>
               {usuarios.map((usuario) => (
                 <Fragment key={usuario.idUsuario}>
                   <tr>
-                    <td>{usuario.codigoUsuario}</td>
-                    <td>{usuario.nombre}</td>
-                    <td>{usuario.nombreSede ?? "—"}</td>
-                    <td>{usuario.perfil}</td>
+                    <td className="texto-suave">{usuario.codigoUsuario}</td>
+                    <td className="celda-titulo">
+                      {usuario.nombre}
+                      {usuario.idUsuario === usuarioActual?.idUsuario && <span className="texto-suave"> (tú)</span>}
+                    </td>
+                    <td>{usuario.nombreSede ?? "Todas"}</td>
+                    <td>{ETIQUETAS_PERFIL[usuario.perfil]}</td>
                     <td>
                       <span className={`badge ${usuario.estado === "ACTIVO" ? "badge-success" : "badge-muted"}`}>
-                        {usuario.estado}
+                        {etiquetaEstado(usuario.estado)}
                       </span>{" "}
-                      {usuario.bloqueado && <span className="badge badge-danger">BLOQUEADO</span>}
+                      {usuario.bloqueado && <span className="badge badge-danger">Bloqueado</span>}
                     </td>
                     <td>
                       <div className="table-actions">
@@ -396,7 +414,7 @@ export function UsuariosPage() {
                           onClick={() => abrirCambioPassword(usuario)}
                           disabled={accionEnCurso === usuario.idUsuario}
                         >
-                          Cambiar contraseña
+                          Contraseña
                         </button>
                         {usuario.bloqueado && (
                           <button
@@ -407,20 +425,22 @@ export function UsuariosPage() {
                             Desbloquear
                           </button>
                         )}
-                        <button
-                          className={`btn-link ${usuario.estado === "ACTIVO" ? "danger" : ""}`}
-                          onClick={() => void handleCambiarEstado(usuario)}
-                          disabled={accionEnCurso === usuario.idUsuario}
-                        >
-                          {usuario.estado === "ACTIVO" ? "Inactivar" : "Activar"}
-                        </button>
+                        {usuario.idUsuario !== usuarioActual?.idUsuario && (
+                          <button
+                            className={`btn-link ${usuario.estado === "ACTIVO" ? "danger" : ""}`}
+                            onClick={() => void handleCambiarEstado(usuario)}
+                            disabled={accionEnCurso === usuario.idUsuario}
+                          >
+                            {usuario.estado === "ACTIVO" ? "Inactivar" : "Activar"}
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
                   {filaPassword === usuario.idUsuario && (
                     <tr>
                       <td colSpan={6}>
-                        <div className="row-subform" style={{ margin: 0 }}>
+                        <div className="row-subform row-subform-fila">
                           <div className="inline-form">
                             <div className="field">
                               <label htmlFor={`nueva-password-${usuario.idUsuario}`}>
@@ -435,8 +455,8 @@ export function UsuariosPage() {
                               />
                             </div>
                             <button
+                              type="button"
                               className="btn-primary"
-                              style={{ width: "auto" }}
                               onClick={() => void handleGuardarPassword(usuario)}
                               disabled={accionEnCurso === usuario.idUsuario}
                             >

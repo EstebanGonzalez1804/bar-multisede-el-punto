@@ -3,6 +3,10 @@ import { getApiErrorMessage } from "../api/client";
 import * as proveedoresApi from "../api/proveedores";
 import { useAuth } from "../context/AuthContext";
 import type { Estado, Proveedor } from "../api/types";
+import { Aviso } from "../components/Aviso";
+import { useConfirmar } from "../components/Confirmacion";
+import { etiquetaEstado } from "../utils/format";
+import { useEnfocarAlAbrir } from "../hooks/useEnfocarAlAbrir";
 
 interface FormularioProveedor {
   nombre: string;
@@ -13,6 +17,7 @@ const FORMULARIO_VACIO: FormularioProveedor = { nombre: "", informacionContacto:
 
 /** HU-018 — Parametrización de proveedores. Crear/modificar: solo Administrador. */
 export function ProveedoresPage() {
+  const confirmar = useConfirmar();
   const { usuario } = useAuth();
   const esAdministrador = usuario?.perfil === "ADMINISTRADOR";
 
@@ -25,6 +30,7 @@ export function ProveedoresPage() {
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [formulario, setFormulario] = useState<FormularioProveedor>(FORMULARIO_VACIO);
   const [guardando, setGuardando] = useState(false);
+  const formRef = useEnfocarAlAbrir<HTMLFormElement>(mostrarFormulario, editandoId);
 
   async function cargarProveedores() {
     setCargando(true);
@@ -45,6 +51,17 @@ export function ProveedoresPage() {
 
   async function handleCambiarEstado(proveedor: Proveedor) {
     const nuevoEstado: Estado = proveedor.estado === "ACTIVO" ? "INACTIVO" : "ACTIVO";
+    if (
+      nuevoEstado === "INACTIVO" &&
+      !(await confirmar({
+        titulo: `¿Inactivar a ${proveedor.nombre}?`,
+        mensaje: "No se podrán registrar nuevas recepciones de este proveedor. Su historial se conserva y puedes activarlo de nuevo.",
+        textoConfirmar: "Inactivar proveedor",
+        peligro: true,
+      }))
+    ) {
+      return;
+    }
     setError(null);
     try {
       await proveedoresApi.cambiarEstadoProveedor(proveedor.idProveedor, nuevoEstado);
@@ -117,7 +134,7 @@ export function ProveedoresPage() {
     <div>
       <div className="panel">
         <div className="panel-header">
-          <h2 style={{ margin: 0 }}>Proveedores</h2>
+          <h1 className="page-title">Proveedores</h1>
           {esAdministrador && !mostrarFormulario && (
             <button className="btn-secondary" onClick={abrirCreacion}>
               + Nuevo proveedor
@@ -125,12 +142,12 @@ export function ProveedoresPage() {
           )}
         </div>
 
-        {error && <div className="alert alert-error">{error}</div>}
-        {mensaje && !error && <div className="alert alert-success">{mensaje}</div>}
+        {error && <Aviso tipo="error">{error}</Aviso>}
+        {mensaje && !error && <Aviso tipo="exito">{mensaje}</Aviso>}
 
         {mostrarFormulario && (
-          <form className="row-subform" onSubmit={handleSubmit}>
-            <h3 style={{ marginTop: 0 }}>{editandoId === null ? "Nuevo proveedor" : "Editar proveedor"}</h3>
+          <form ref={formRef} className="row-subform" onSubmit={handleSubmit}>
+            <h2 className="subform-title">{editandoId === null ? "Nuevo proveedor" : "Editar proveedor"}</h2>
             <div className="inline-form">
               <div className="field">
                 <label htmlFor="nombreProveedor">Nombre</label>
@@ -153,8 +170,8 @@ export function ProveedoresPage() {
                 />
               </div>
             </div>
-            <div className="table-actions">
-              <button type="submit" className="btn-primary" style={{ width: "auto" }} disabled={guardando}>
+            <div className="form-actions">
+              <button type="submit" className="btn-primary" disabled={guardando}>
                 {guardando ? "Guardando..." : "Guardar"}
               </button>
               <button type="button" className="btn-secondary" onClick={cerrarFormulario}>
@@ -186,7 +203,7 @@ export function ProveedoresPage() {
                   <td>{p.informacionContacto}</td>
                   <td>
                     <span className={`badge ${p.estado === "ACTIVO" ? "badge-success" : "badge-muted"}`}>
-                      {p.estado}
+                      {etiquetaEstado(p.estado)}
                     </span>
                   </td>
                   {esAdministrador && (

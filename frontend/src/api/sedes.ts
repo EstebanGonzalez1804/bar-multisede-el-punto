@@ -11,6 +11,12 @@ export async function crearSede(nombre: string, direccion: string): Promise<Sede
   return data.sede;
 }
 
+/** HU-010 — "crear y parametrizar": modificar nombre y dirección de una sede. */
+export async function modificarSede(idSede: number, nombre: string, direccion: string): Promise<Sede> {
+  const { data } = await apiClient.put<{ sede: Sede }>(`/sedes/${idSede}`, { nombre, direccion });
+  return data.sede;
+}
+
 export async function inactivarSede(idSede: number): Promise<Sede> {
   const { data } = await apiClient.post<{ sede: Sede }>(`/sedes/${idSede}/inactivar`);
   return data.sede;

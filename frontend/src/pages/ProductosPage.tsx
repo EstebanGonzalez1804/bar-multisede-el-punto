@@ -1,9 +1,14 @@
-import { Fragment, useEffect, useState, type FormEvent } from "react";
+import { Fragment, useCallback, useEffect, useState, type FormEvent } from "react";
 import { getApiErrorMessage } from "../api/client";
 import * as productosApi from "../api/productos";
 import * as tiposProductoApi from "../api/tiposProducto";
 import { useAuth } from "../context/AuthContext";
 import type { Estado, HistorialPrecio, Producto, TipoProducto } from "../api/types";
+import { Aviso } from "../components/Aviso";
+import { useConfirmar } from "../components/Confirmacion";
+import { etiquetaEstado, fechaHoraCompleta, pesos } from "../utils/format";
+import { useCargaConFiltros } from "../hooks/useCargaConFiltros";
+import { useEnfocarAlAbrir } from "../hooks/useEnfocarAlAbrir";
 
 interface FormularioProducto {
   nombre: string;
@@ -19,13 +24,8 @@ const FORMULARIO_VACIO: FormularioProducto = {
   valorVenta: "",
 };
 
-function formatearMoneda(valor: string): string {
-  const numero = Number(valor);
-  if (Number.isNaN(numero)) return valor;
-  return numero.toLocaleString("es-CO", { style: "currency", currency: "COP", maximumFractionDigits: 2 });
-}
-
 export function ProductosPage() {
+  const confirmar = useConfirmar();
   const { usuario } = useAuth();
   const esAdministrador = usuario?.perfil === "ADMINISTRADOR";
 
@@ -43,6 +43,7 @@ export function ProductosPage() {
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [formulario, setFormulario] = useState<FormularioProducto>(FORMULARIO_VACIO);
   const [guardando, setGuardando] = useState(false);
+  const formRef = useEnfocarAlAbrir<HTMLFormElement>(mostrarFormulario, editandoId);
   const [accionEnCurso, setAccionEnCurso] = useState<number | null>(null);
 
   // HU-015 CA-05/06: historial de precios por producto.
@@ -50,7 +51,7 @@ export function ProductosPage() {
   const [historial, setHistorial] = useState<HistorialPrecio[]>([]);
   const [cargandoHistorial, setCargandoHistorial] = useState(false);
 
-  async function cargarProductos() {
+  const cargarProductos = useCallback(async () => {
     setCargando(true);
     setError(null);
     try {
@@ -65,10 +66,11 @@ export function ProductosPage() {
     } finally {
       setCargando(false);
     }
-  }
+  }, [busqueda, filtroTipo, filtroEstado]);
+
+  useCargaConFiltros(cargarProductos);
 
   useEffect(() => {
-    void cargarProductos();
     tiposProductoApi
       .listarTiposProducto()
       .then(setTipos)
@@ -78,10 +80,6 @@ export function ProductosPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function handleBuscar(e: FormEvent) {
-    e.preventDefault();
-    void cargarProductos();
-  }
 
   function abrirCreacion() {
     setFormulario(FORMULARIO_VACIO);
@@ -95,7 +93,7 @@ export function ProductosPage() {
     setFormulario({
       nombre: producto.nombre,
       idTipoProducto: String(producto.idTipoProducto),
-      valorCompra: producto.valorCompra,
+      valorCompra: producto.valorCompra ?? "",
       valorVenta: producto.valorVenta,
     });
     setEditandoId(producto.idProducto);
@@ -159,6 +157,17 @@ export function ProductosPage() {
 
   async function handleCambiarEstado(producto: Producto) {
     const nuevoEstado: Estado = producto.estado === "ACTIVO" ? "INACTIVO" : "ACTIVO";
+    if (
+      nuevoEstado === "INACTIVO" &&
+      !(await confirmar({
+        titulo: `¿Inactivar ${producto.nombre}?`,
+        mensaje: "Deja de aparecer para agregarlo a pedidos. Su historial e inventario se conservan.",
+        textoConfirmar: "Inactivar producto",
+        peligro: true,
+      }))
+    ) {
+      return;
+    }
     setAccionEnCurso(producto.idProducto);
     setError(null);
     try {
@@ -196,7 +205,7 @@ export function ProductosPage() {
     <div>
       <div className="panel">
         <div className="panel-header">
-          <h2 style={{ margin: 0 }}>Productos</h2>
+          <h1 className="page-title">Productos</h1>
           {esAdministrador && !mostrarFormulario && (
             <button className="btn-secondary" onClick={abrirCreacion}>
               + Nuevo producto
@@ -204,18 +213,18 @@ export function ProductosPage() {
           )}
         </div>
 
-        {error && <div className="alert alert-error">{error}</div>}
-        {mensaje && !error && <div className="alert alert-success">{mensaje}</div>}
+        {error && <Aviso tipo="error">{error}</Aviso>}
+        {mensaje && !error && <Aviso tipo="exito">{mensaje}</Aviso>}
 
-        <form className="toolbar" onSubmit={handleBuscar}>
-          <div className="field">
-            <label htmlFor="busquedaProducto">Buscar (código o nombre)</label>
+        <div className="toolbar">
+          <div className="field field-busqueda">
+            <label htmlFor="busquedaProducto">Buscar</label>
             <input
               id="busquedaProducto"
-              type="text"
+              type="search"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="PRD-001 o Cerveza"
+              placeholder="Nombre o código, p. ej. PDT-CER o Club"
             />
           </div>
           <div className="field">
@@ -241,14 +250,11 @@ export function ProductosPage() {
               <option value="INACTIVO">Inactivo</option>
             </select>
           </div>
-          <button type="submit" className="btn-secondary">
-            Buscar
-          </button>
-        </form>
+        </div>
 
         {mostrarFormulario && (
-          <form className="row-subform" onSubmit={handleSubmitFormulario}>
-            <h3 style={{ marginTop: 0 }}>{editandoId === null ? "Nuevo producto" : "Editar producto"}</h3>
+          <form ref={formRef} className="row-subform" onSubmit={handleSubmitFormulario}>
+            <h2 className="subform-title">{editandoId === null ? "Nuevo producto" : "Editar producto"}</h2>
             <div className="inline-form">
               <div className="field">
                 <label htmlFor="nombreProducto">Nombre</label>
@@ -276,7 +282,10 @@ export function ProductosPage() {
                 </select>
               </div>
               <div className="field">
-                <label htmlFor="valorCompra">Valor de compra</label>
+                <label htmlFor="valorCompra">
+                  Valor de compra
+                  {Number(formulario.valorCompra) > 0 && <span className="etiqueta-valor"> · {pesos(formulario.valorCompra)}</span>}
+                </label>
                 <input
                   id="valorCompra"
                   type="number"
@@ -285,10 +294,14 @@ export function ProductosPage() {
                   value={formulario.valorCompra}
                   onChange={(e) => setFormulario((f) => ({ ...f, valorCompra: e.target.value }))}
                   placeholder="2500"
+                  inputMode="decimal"
                 />
               </div>
               <div className="field">
-                <label htmlFor="valorVenta">Valor de venta</label>
+                <label htmlFor="valorVenta">
+                  Valor de venta
+                  {Number(formulario.valorVenta) > 0 && <span className="etiqueta-valor"> · {pesos(formulario.valorVenta)}</span>}
+                </label>
                 <input
                   id="valorVenta"
                   type="number"
@@ -297,6 +310,7 @@ export function ProductosPage() {
                   value={formulario.valorVenta}
                   onChange={(e) => setFormulario((f) => ({ ...f, valorVenta: e.target.value }))}
                   placeholder="5000"
+                  inputMode="decimal"
                 />
               </div>
             </div>
@@ -310,8 +324,8 @@ export function ProductosPage() {
                 Si cambias los valores de compra o venta, se registrará un nuevo historial de precios.
               </p>
             )}
-            <div className="table-actions">
-              <button type="submit" className="btn-primary" style={{ width: "auto" }} disabled={guardando}>
+            <div className="form-actions">
+              <button type="submit" className="btn-primary" disabled={guardando}>
                 {guardando ? "Guardando..." : "Guardar"}
               </button>
               <button type="button" className="btn-secondary" onClick={cerrarFormulario}>
@@ -333,33 +347,37 @@ export function ProductosPage() {
                 <th>Código</th>
                 <th>Nombre</th>
                 <th>Tipo</th>
-                <th>Valor compra</th>
-                <th>Valor venta</th>
+                {esAdministrador && <th className="num">Valor compra</th>}
+                <th className="num">Valor venta</th>
                 <th>Estado</th>
-                <th>Acciones</th>
+                {esAdministrador && (
+                  <th>
+                    <span className="sr-only">Acciones</span>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody>
               {productos.map((producto) => (
                 <Fragment key={producto.idProducto}>
                   <tr>
-                    <td>{producto.codigo}</td>
-                    <td>{producto.nombre}</td>
+                    <td className="texto-suave">{producto.codigo}</td>
+                    <td className="celda-titulo">{producto.nombre}</td>
                     <td>{producto.nombreTipoProducto}</td>
-                    <td>{formatearMoneda(producto.valorCompra)}</td>
-                    <td>{formatearMoneda(producto.valorVenta)}</td>
+                    {esAdministrador && <td className="num">{pesos(producto.valorCompra)}</td>}
+                    <td className="num">{pesos(producto.valorVenta)}</td>
                     <td>
                       <span className={`badge ${producto.estado === "ACTIVO" ? "badge-success" : "badge-muted"}`}>
-                        {producto.estado}
+                        {etiquetaEstado(producto.estado)}
                       </span>
                     </td>
+                    {esAdministrador && (
                     <td>
                       <div className="table-actions">
                         <button className="btn-link" onClick={() => void toggleHistorial(producto)}>
-                          {expandidoId === producto.idProducto ? "Ocultar historial" : "Ver historial"}
+                          {expandidoId === producto.idProducto ? "Ocultar precios" : "Historial de precios"}
                         </button>
-                        {esAdministrador && (
-                          <>
+                        <>
                             <button
                               className="btn-link"
                               onClick={() => abrirEdicion(producto)}
@@ -374,10 +392,10 @@ export function ProductosPage() {
                             >
                               {producto.estado === "ACTIVO" ? "Inactivar" : "Activar"}
                             </button>
-                          </>
-                        )}
+                        </>
                       </div>
                     </td>
+                    )}
                   </tr>
                   {expandidoId === producto.idProducto && (
                     <tr>
@@ -392,16 +410,16 @@ export function ProductosPage() {
                             <thead>
                               <tr>
                                 <th>Vigente desde</th>
-                                <th>Valor compra</th>
-                                <th>Valor venta</th>
+                                <th className="num">Valor compra</th>
+                                <th className="num">Valor venta</th>
                               </tr>
                             </thead>
                             <tbody>
                               {historial.map((h) => (
                                 <tr key={h.idHistorial}>
-                                  <td>{new Date(h.vigenteDesde).toLocaleString("es-CO")}</td>
-                                  <td>{formatearMoneda(h.valorCompra)}</td>
-                                  <td>{formatearMoneda(h.valorVenta)}</td>
+                                  <td>{fechaHoraCompleta(h.vigenteDesde)}</td>
+                                  <td className="num">{pesos(h.valorCompra)}</td>
+                                  <td className="num">{pesos(h.valorVenta)}</td>
                                 </tr>
                               ))}
                             </tbody>

@@ -68,6 +68,54 @@ export async function crearSede(admin: JwtPayload, nombre: string, direccion: st
 }
 
 /**
+ * HU-010 ("crear y parametrizar", CA-03 y CA-06) — modificar nombre y
+ * dirección. El código (SE01, SE02...) no cambia: forma parte de los códigos
+ * de usuarios y pedidos ya emitidos. Queda en la trazabilidad con los
+ * valores anterior y nuevo.
+ */
+export async function modificarSede(
+  admin: JwtPayload,
+  idSede: number,
+  nombre: string,
+  direccion: string
+): Promise<Sede> {
+  return withTransaction(async (client) => {
+    const { rows: actuales } = await client.query<{ nombre: string; direccion: string }>(
+      `SELECT nombre, direccion FROM sede WHERE id_sede = $1 FOR UPDATE`,
+      [idSede]
+    );
+    const anterior = actuales[0];
+    if (!anterior) throw ApiError.notFound("Sede no encontrada.");
+
+    const { rows } = await client.query(
+      `UPDATE sede SET nombre = $1, direccion = $2 WHERE id_sede = $3
+       RETURNING id_sede, codigo_sede, nombre, direccion, estado, creado_en`,
+      [nombre, direccion, idSede]
+    );
+    const sede = mapRow(rows[0]);
+
+    await registrarEvento(
+      {
+        idUsuario: admin.idUsuario,
+        tipoEvento: "SEDE_MODIFICADA",
+        entidadAfectada: "SEDE",
+        idAfectado: idSede,
+        idSede,
+        detalle: {
+          nombreAnterior: anterior.nombre,
+          direccionAnterior: anterior.direccion,
+          nombre,
+          direccion,
+        },
+      },
+      client
+    );
+
+    return sede;
+  });
+}
+
+/**
  * Listado de sedes. Incluye el estado: las pantallas de gestión muestran
  * todas (activas e inactivas) y los selectores de operaciones nuevas filtran
  * solo las ACTIVO.

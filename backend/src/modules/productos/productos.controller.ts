@@ -20,6 +20,18 @@ function parseIdProducto(req: Request): number {
 export const getProductos = asyncHandler(async (req: Request, res: Response) => {
   const filtros = listarProductosQuerySchema.parse(req.query);
   const productos = await productosService.listarProductos(filtros);
+  // HU-017 CA-01: para Cajero y Mesero el catálogo muestra código, nombre,
+  // tipo y estado (y el precio de venta, que necesitan para operar); el
+  // costo (valor de compra) solo lo ve el Administrador.
+  if (req.usuarioActual?.perfil !== "ADMINISTRADOR") {
+    const sinCosto = productos.map((producto) => {
+      const copia: Partial<typeof producto> = { ...producto };
+      delete copia.valorCompra;
+      return copia;
+    });
+    res.status(200).json({ productos: sinCosto });
+    return;
+  }
   res.status(200).json({ productos });
 });
 

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import type { Perfil } from "../api/types";
 
@@ -28,6 +28,9 @@ export function ProtectedRoute({ children, perfilesPermitidos }: ProtectedRouteP
       <div className="panel">
         <h2>Acceso no disponible</h2>
         <p>Tu perfil no tiene permiso para ver esta sección.</p>
+        <Link to="/" className="btn-primary">
+          Ir al inicio
+        </Link>
       </div>
     );
   }

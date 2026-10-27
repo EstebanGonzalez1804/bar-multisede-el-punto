@@ -12,6 +12,7 @@ sedesRouter.get("/", sedesController.getSedes);
 
 // HU-010 CA-03: solo Administrador puede crear/modificar sedes.
 sedesRouter.post("/", requireRole("ADMINISTRADOR"), sedesController.postSede);
+sedesRouter.put("/:idSede", requireRole("ADMINISTRADOR"), sedesController.putSede);
 
 // Ajuste del cliente: las sedes también se inactivan/activan (solo Administrador).
 sedesRouter.post("/:idSede/inactivar", requireRole("ADMINISTRADOR"), sedesController.postInactivarSede);

@@ -7,6 +7,11 @@ import * as sedesApi from "../api/sedes";
 import { useAuth } from "../context/AuthContext";
 import { Icon, ICONS } from "../components/icons";
 import type { Mesa, Sede } from "../api/types";
+import { useConfirmar } from "../components/Confirmacion";
+import { useCargaConFiltros } from "../hooks/useCargaConFiltros";
+import { etiquetaEstadoMesa } from "../utils/format";
+import { Aviso } from "../components/Aviso";
+import { useEnfocarAlAbrir } from "../hooks/useEnfocarAlAbrir";
 
 /** HU-024 CA-01/CA-05 — "tiempo real" vía polling: refresca sin bloquear la
  * pantalla mientras el Mesero/Administrador la tienen abierta. */
@@ -14,10 +19,11 @@ const INTERVALO_POLLING_MS = 6000;
 
 /**
  * Colores de sede para la vista del Administrador. Sin verde ni rojo para no
- * confundirse con los estados (libre/ocupada) ni con "Inactivar". El color de
- * una sede es fijo: depende de su posición por id entre todas las sedes.
+ * confundirse con los estados (libre/ocupada) ni con "Inactivar". Todos dan
+ * contraste ≥ 4,5:1 con texto blanco. El color de una sede es fijo: depende
+ * de su posición por id entre todas las sedes.
  */
-const COLORES_SEDE = ["#2f6f9f", "#c8962e", "#7a4fa3", "#b0457a", "#1f8a9a", "#5b6b7a"];
+const COLORES_SEDE = ["#2f6f9f", "#94690f", "#7a4fa3", "#b0457a", "#16707c", "#5b6b7a"];
 
 interface FormularioMesa {
   idSede: string;
@@ -29,6 +35,7 @@ const FORMULARIO_VACIO: FormularioMesa = { idSede: "", identificador: "" };
 export function MesasPage() {
   const { usuario } = useAuth();
   const navigate = useNavigate();
+  const confirmar = useConfirmar();
   const esAdministrador = usuario?.perfil === "ADMINISTRADOR";
   const esMesero = usuario?.perfil === "MESERO";
 
@@ -46,6 +53,7 @@ export function MesasPage() {
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [formulario, setFormulario] = useState<FormularioMesa>(FORMULARIO_VACIO);
   const [guardando, setGuardando] = useState(false);
+  const formRef = useEnfocarAlAbrir<HTMLFormElement>(mostrarFormulario, editandoId);
   const [accionEnCurso, setAccionEnCurso] = useState<number | null>(null);
 
   const cargarMesas = useCallback(
@@ -70,8 +78,9 @@ export function MesasPage() {
     [filtroSede]
   );
 
+  useCargaConFiltros(cargarMesas, 0);
+
   useEffect(() => {
-    void cargarMesas();
     if (esAdministrador) {
       sedesApi
         .listarSedes()
@@ -104,11 +113,6 @@ export function MesasPage() {
       setError(getApiErrorMessage(err, "No se pudo abrir el pedido."));
       setAccionEnCurso(null);
     }
-  }
-
-  function handleFiltrar(e: FormEvent) {
-    e.preventDefault();
-    void cargarMesas();
   }
 
   function abrirCreacion() {
@@ -170,11 +174,18 @@ export function MesasPage() {
   }
 
   async function handleInactivar(mesa: Mesa) {
+    const ok = await confirmar({
+      titulo: `¿Inactivar ${mesa.identificador}?`,
+      mensaje: "La mesa deja de aparecer para abrir pedidos. Puedes activarla de nuevo cuando quieras.",
+      textoConfirmar: "Inactivar mesa",
+      peligro: true,
+    });
+    if (!ok) return;
     setAccionEnCurso(mesa.idMesa);
     setError(null);
     try {
       await mesasApi.inactivarMesa(mesa.idMesa);
-      setMensaje(`Mesa ${mesa.identificador} inactivada.`);
+      setMensaje(`${mesa.identificador} inactivada.`);
       await cargarMesas();
     } catch (err) {
       setError(getApiErrorMessage(err, "No se pudo inactivar la mesa."));
@@ -188,7 +199,7 @@ export function MesasPage() {
     setError(null);
     try {
       await mesasApi.activarMesa(mesa.idMesa);
-      setMensaje(`Mesa ${mesa.identificador} activada (queda en estado LIBRE).`);
+      setMensaje(`${mesa.identificador} activada; queda libre.`);
       await cargarMesas();
     } catch (err) {
       setError(getApiErrorMessage(err, "No se pudo activar la mesa."));
@@ -253,7 +264,7 @@ export function MesasPage() {
                           <div className="mesa-card-meta">{mesa.nombreSede}</div>
                         )}
                       </div>
-                      <span className={`badge ${badgeClase(mesa.estado)}`}>{mesa.estado}</span>
+                      <span className={`badge ${badgeClase(mesa.estado)}`}>{etiquetaEstadoMesa(mesa.estado)}</span>
                     </div>
 
                     {esMesero && (
@@ -321,7 +332,7 @@ export function MesasPage() {
     <div>
       <div className="panel">
         <div className="panel-header">
-          <h2 style={{ margin: 0 }}>Mesas</h2>
+          <h1 className="page-title">Mesas</h1>
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <div className="live-indicator">
               <span className="live-dot" />
@@ -335,11 +346,11 @@ export function MesasPage() {
           </div>
         </div>
 
-        {error && <div className="alert alert-error">{error}</div>}
-        {mensaje && !error && <div className="alert alert-success">{mensaje}</div>}
+        {error && <Aviso tipo="error">{error}</Aviso>}
+        {mensaje && !error && <Aviso tipo="exito">{mensaje}</Aviso>}
 
         {esAdministrador && (
-          <form className="toolbar" onSubmit={handleFiltrar}>
+          <div className="toolbar">
             <div className="field">
               <label htmlFor="filtroSede">Sede</label>
               <select id="filtroSede" value={filtroSede} onChange={(e) => setFiltroSede(e.target.value)}>
@@ -351,15 +362,12 @@ export function MesasPage() {
                 ))}
               </select>
             </div>
-            <button type="submit" className="btn-secondary">
-              Filtrar
-            </button>
-          </form>
+          </div>
         )}
 
         {mostrarFormulario && (
-          <form className="row-subform" onSubmit={handleSubmitFormulario}>
-            <h3 style={{ marginTop: 0 }}>{editandoId === null ? "Nueva mesa" : "Editar mesa"}</h3>
+          <form ref={formRef} className="row-subform" onSubmit={handleSubmitFormulario}>
+            <h2 className="subform-title">{editandoId === null ? "Nueva mesa" : "Editar mesa"}</h2>
             <div className="inline-form">
               <div className="field">
                 <label htmlFor="idSedeMesa">Sede</label>
@@ -387,8 +395,8 @@ export function MesasPage() {
                 />
               </div>
             </div>
-            <div className="table-actions">
-              <button type="submit" className="btn-primary" style={{ width: "auto" }} disabled={guardando}>
+            <div className="form-actions">
+              <button type="submit" className="btn-primary" disabled={guardando}>
                 {guardando ? "Guardando..." : "Guardar"}
               </button>
               <button type="button" className="btn-secondary" onClick={cerrarFormulario}>

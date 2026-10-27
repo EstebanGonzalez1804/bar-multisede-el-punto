@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import * as mesasApi from "../api/mesas";
 import * as inventarioApi from "../api/inventario";
@@ -17,12 +18,10 @@ function fechaHoyISO(): string {
 }
 
 /**
- * Los indicadores de esta pantalla salen todos de endpoints que ya existen
- * (mesas, inventario, recepciones) — no se agregó ningún endpoint nuevo para
- * esto. No se incluye un feed de "actividad reciente" (trazabilidad) porque
- * esa tabla hoy no tiene ningún endpoint de lectura expuesto — se puede
- * agregar en un siguiente ajuste si se quiere ese panel con datos reales,
- * en vez de inventar datos que no existen.
+ * Inicio: indicadores que salen de endpoints existentes (mesas, inventario,
+ * recepciones). Cada tarjeta y cada fila llevan a la pantalla donde se
+ * actúa. "Agotados" cuenta solo productos activos; "Recepciones hoy" no se
+ * muestra al Mesero (no las registra).
  */
 export function DashboardPage() {
   const { usuario } = useAuth();
@@ -35,26 +34,34 @@ export function DashboardPage() {
     let activo = true;
     async function cargar() {
       const hoy = fechaHoyISO();
+      const verRecepciones = usuario?.perfil !== "MESERO";
       const [mesasRes, inventarioRes, recepcionesRes] = await Promise.allSettled([
         mesasApi.listarMesas(),
         inventarioApi.listarInventario(),
-        recepcionesApi.listarRecepciones({ desde: hoy, hasta: hoy }),
+        verRecepciones ? recepcionesApi.listarRecepciones({ desde: hoy, hasta: hoy }) : Promise.resolve(null),
       ]);
       if (!activo) return;
       if (mesasRes.status === "fulfilled") setMesas(mesasRes.value);
       if (inventarioRes.status === "fulfilled") setInventario(inventarioRes.value);
-      if (recepcionesRes.status === "fulfilled") setRecepcionesHoy(recepcionesRes.value.length);
+      if (recepcionesRes.status === "fulfilled" && recepcionesRes.value) {
+        setRecepcionesHoy(recepcionesRes.value.length);
+      }
       setCargando(false);
     }
     void cargar();
     return () => {
       activo = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const ocupadas = mesas.filter((m) => m.estado === "OCUPADA").length;
   const totalMesas = mesas.filter((m) => m.estado !== "INACTIVA").length;
-  const agotados = inventario.filter((i) => i.cantidadDisponible === 0);
+  // Solo productos activos: uno inactivo no se vende, así que no está "agotado".
+  const agotados = inventario.filter((i) => i.estadoProducto === "ACTIVO" && i.cantidadDisponible === 0);
+  const esMesero = usuario?.perfil === "MESERO";
+  const esAdministrador = usuario?.perfil === "ADMINISTRADOR";
+  const MAX_AGOTADOS = 8;
   const mesasOcupadas = mesas.filter((m) => m.estado === "OCUPADA");
 
   const primerNombre = usuario?.nombre?.split(" ")[0] ?? "";
@@ -62,7 +69,7 @@ export function DashboardPage() {
   return (
     <div>
       <h1 className="dashboard-heading">Hola, {primerNombre}</h1>
-      <p style={{ margin: 0, color: "var(--color-text-muted)", fontSize: 14 }}>
+      <p className="dashboard-sub">
         {usuario ? ETIQUETAS_PERFIL[usuario.perfil] : ""}
         {usuario?.idSede ? " · tu sede" : " · todas las sedes"} — esto es lo que está pasando ahora.
       </p>
@@ -72,66 +79,75 @@ export function DashboardPage() {
       ) : (
         <>
           <div className="kpi-grid">
-            <div className="kpi-card">
-              <div className="kpi-card-icon" style={{ background: "#e3ece8", color: "#173a33" }}>
+            <Link to="/mesas" className="kpi-card">
+              <div className="kpi-card-icon kpi-icon-mesas">
                 <Icon path={ICONS.mesas} size={19} strokeWidth={1.9} />
               </div>
-              <div className="kpi-card-value">
+              <div className="kpi-card-value cond num">
                 {ocupadas} / {totalMesas}
               </div>
               <div className="kpi-card-label">Mesas ocupadas</div>
-            </div>
+            </Link>
 
-            <div className="kpi-card">
-              <div className="kpi-card-icon" style={{ background: "#f6e0da", color: "#8e2f1e" }}>
+            <Link to="/inventario" className="kpi-card">
+              <div className="kpi-card-icon kpi-icon-agotados">
                 <Icon path={ICONS.warning} size={19} strokeWidth={1.9} />
               </div>
-              <div className="kpi-card-value">{agotados.length}</div>
+              <div className="kpi-card-value cond num">{agotados.length}</div>
               <div className="kpi-card-label">Productos agotados</div>
-            </div>
+            </Link>
 
-            <div className="kpi-card">
-              <div className="kpi-card-icon" style={{ background: "#f5e7c8", color: "#6e4a05" }}>
-                <Icon path={ICONS.recepciones} size={19} strokeWidth={1.9} />
-              </div>
-              <div className="kpi-card-value">{recepcionesHoy ?? "—"}</div>
-              <div className="kpi-card-label">Recepciones hoy</div>
-            </div>
+            {!esMesero && (
+              <Link to="/recepciones" className="kpi-card">
+                <div className="kpi-card-icon kpi-icon-recepciones">
+                  <Icon path={ICONS.recepciones} size={19} strokeWidth={1.9} />
+                </div>
+                <div className="kpi-card-value cond num">{recepcionesHoy ?? "—"}</div>
+                <div className="kpi-card-label">Recepciones hoy</div>
+              </Link>
+            )}
           </div>
 
           <div className="dashboard-panels">
-            <div className="panel" style={{ padding: 0, marginBottom: 0 }}>
+            <div className="panel panel-lista">
               <div className="dashboard-panel-title">Mesas ocupadas ahora</div>
               {mesasOcupadas.length === 0 ? (
-                <p className="empty-state" style={{ padding: "13px 22px" }}>
-                  No hay mesas ocupadas en este momento.
-                </p>
+                <p className="empty-state dashboard-vacio">No hay mesas ocupadas en este momento.</p>
               ) : (
                 mesasOcupadas.map((m) => (
-                  <div className="dashboard-panel-row" key={m.idMesa}>
-                    <span style={{ fontSize: 13.5, fontWeight: 600 }}>{m.identificador}</span>
-                    <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{m.nombreSede}</span>
-                  </div>
+                  <Link
+                    className="dashboard-panel-row"
+                    key={m.idMesa}
+                    to={esMesero ? `/pedidos/mesa/${m.idMesa}` : "/mesas"}
+                  >
+                    <span className="dashboard-row-titulo">{m.identificador}</span>
+                    <span className="dashboard-row-meta">{esMesero ? "Ver pedido" : m.nombreSede}</span>
+                  </Link>
                 ))
               )}
             </div>
 
-            <div className="panel" style={{ padding: 0, marginBottom: 0 }}>
-              <div className="dashboard-panel-title" style={{ display: "flex", justifyContent: "space-between" }}>
+            <div className="panel panel-lista">
+              <div className="dashboard-panel-title dashboard-panel-title-flex">
                 <span>Productos agotados</span>
                 {agotados.length > 0 && <span className="badge badge-danger">{agotados.length}</span>}
               </div>
               {agotados.length === 0 ? (
-                <p className="empty-state" style={{ padding: "13px 22px" }}>
-                  No hay productos agotados.
-                </p>
+                <p className="empty-state dashboard-vacio">No hay productos agotados.</p>
               ) : (
-                agotados.map((item) => (
-                  <div className="dashboard-panel-row" key={`${item.idProducto}-${item.idSede}`}>
-                    <span style={{ fontSize: 13.5, fontWeight: 600 }}>{item.nombreProducto}</span>
-                    <span style={{ fontSize: 12, color: "var(--color-text-muted)" }}>{item.nombreSede}</span>
-                  </div>
-                ))
+                <>
+                  {agotados.slice(0, MAX_AGOTADOS).map((item) => (
+                    <div className="dashboard-panel-row" key={`${item.idProducto}-${item.idSede}`}>
+                      <span className="dashboard-row-titulo">{item.nombreProducto}</span>
+                      {esAdministrador && <span className="dashboard-row-meta">{item.nombreSede}</span>}
+                    </div>
+                  ))}
+                  {agotados.length > MAX_AGOTADOS && (
+                    <Link className="dashboard-panel-row dashboard-ver-todos" to="/inventario">
+                      Ver los {agotados.length} en Inventario
+                    </Link>
+                  )}
+                </>
               )}
             </div>
           </div>

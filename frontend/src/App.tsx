@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { Layout } from "./components/Layout";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
+import { ConfirmacionProvider } from "./components/Confirmacion";
 import { CambiarPasswordPage } from "./pages/CambiarPasswordPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
@@ -24,6 +25,7 @@ import { TrazabilidadPage } from "./pages/TrazabilidadPage";
 export function App() {
   return (
     <AuthProvider>
+      <ConfirmacionProvider>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
 
@@ -132,6 +134,7 @@ export function App() {
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </ConfirmacionProvider>
     </AuthProvider>
   );
 }

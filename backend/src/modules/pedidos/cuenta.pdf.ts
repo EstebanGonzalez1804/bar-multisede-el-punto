@@ -12,8 +12,38 @@ function pesos(valor: number): string {
   return `$${valor.toLocaleString("es-CO")}`;
 }
 
+/** "27/10/2026 · 8:15 p. m." (sin segundos), en hora de Colombia. */
 function fechaHora(iso: string): string {
-  return new Date(iso).toLocaleString("es-CO", { timeZone: "America/Bogota" });
+  const d = new Date(iso);
+  const fecha = d.toLocaleDateString("es-CO", { timeZone: "America/Bogota", day: "2-digit", month: "2-digit", year: "numeric" });
+  const hora = d.toLocaleTimeString("es-CO", { timeZone: "America/Bogota", hour: "numeric", minute: "2-digit" });
+  return `${fecha} · ${hora}`;
+}
+
+interface GrupoLinea {
+  nombre: string;
+  precio: number;
+  cantidad: number;
+}
+
+/**
+ * Las tandas del mismo producto al mismo precio se imprimen juntas
+ * ("5 x Club Colombia"), igual que en pantalla. En la base de datos cada
+ * tanda sigue siendo su propia línea inmutable.
+ */
+function agruparLineas(pedido: Pedido): GrupoLinea[] {
+  const grupos: Array<GrupoLinea & { clave: string }> = [];
+  for (const l of pedido.lineas) {
+    const precio = Number(l.precioVentaCongelado);
+    const clave = `${l.idProducto}-${precio}`;
+    let g = grupos.find((x) => x.clave === clave);
+    if (!g) {
+      g = { clave, nombre: l.nombreProducto, precio, cantidad: 0 };
+      grupos.push(g);
+    }
+    g.cantidad += l.cantidad;
+  }
+  return grupos;
 }
 
 /**
@@ -24,7 +54,8 @@ function fechaHora(iso: string): string {
  */
 export function enviarCuentaPdf(pedido: Pedido, res: Response): void {
   const ancho = 226.77;
-  const alto = Math.max(300, 230 + pedido.lineas.length * 34 + pedido.pagos.length * 16);
+  const grupos = agruparLineas(pedido);
+  const alto = Math.max(300, 230 + grupos.length * 34 + pedido.pagos.length * 16);
   const margen = 12;
   const util = ancho - margen * 2;
 
@@ -55,13 +86,12 @@ export function enviarCuentaPdf(pedido: Pedido, res: Response): void {
   };
   linea();
 
-  for (const l of pedido.lineas) {
-    const precio = Number(l.precioVentaCongelado);
-    doc.font("Helvetica-Bold").fontSize(8).text(l.nombreProducto, { width: util });
+  for (const g of grupos) {
+    doc.font("Helvetica-Bold").fontSize(8).text(g.nombre, { width: util });
     doc
       .font("Helvetica")
       .fontSize(8)
-      .text(`${l.cantidad} x ${pesos(precio)}   =   ${pesos(precio * l.cantidad)}`, { width: util, align: "right" });
+      .text(`${g.cantidad} x ${pesos(g.precio)}   =   ${pesos(g.precio * g.cantidad)}`, { width: util, align: "right" });
     doc.moveDown(0.2);
   }
   linea();

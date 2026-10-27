@@ -69,7 +69,9 @@ export interface Producto {
   nombreTipoProducto: string;
   // Viajan como string (ver nota en el backend: NUMERIC de Postgres no se
   // convierte a number para no perder precisión de dinero).
-  valorCompra: string;
+  // valorCompra solo llega al Administrador (HU-017 CA-01: el catálogo de
+  // los demás perfiles muestra código, nombre, tipo y estado, sin costos).
+  valorCompra?: string;
   valorVenta: string;
   estado: Estado;
   creadoEn: string;

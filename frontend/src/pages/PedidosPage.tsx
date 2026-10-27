@@ -1,21 +1,40 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getApiErrorMessage } from "../api/client";
 import * as pedidosApi from "../api/pedidos";
 import * as sedesApi from "../api/sedes";
 import type { ResumenPedido, Sede } from "../api/types";
+import { Aviso } from "../components/Aviso";
 import { useAuth } from "../context/AuthContext";
-import { etiquetaEstadoPago, fechaHora, pesos } from "../utils/format";
+import { useCargaConFiltros } from "../hooks/useCargaConFiltros";
+import { fechaHora, pesos } from "../utils/format";
+
+type Vista = "PENDIENTE" | "PAGADO" | "TODOS";
+
+const VISTAS: { value: Vista; etiqueta: string }[] = [
+  { value: "PENDIENTE", etiqueta: "En curso" },
+  { value: "PAGADO", etiqueta: "Pagados" },
+  { value: "TODOS", etiqueta: "Todos" },
+];
+
+/** Un solo estado legible que combina estado del pedido y estado de pago. */
+function estadoCombinado(p: ResumenPedido): { texto: string; clase: string } {
+  if (p.estadoPedido === "ABIERTO") return { texto: "Abierto", clase: "badge-success" };
+  if (p.estadoPago === "PAGADO") return { texto: "Pagado", clase: "badge-muted" };
+  if (p.estadoPago === "PARCIAL") return { texto: "Pago parcial", clase: "badge-warning" };
+  return { texto: "Por cobrar", clase: "badge-warning" };
+}
 
 /**
- * HU-030 — Consulta de pedidos por rol y sede. Mesero y Cajero ven solo los de
- * su sede (lo garantiza el backend); el Administrador ve todas y puede filtrar
- * por sede. Muestra mesa, estado del pedido y estado de pago, con filtros por
- * estado o por mesa/número de pedido.
+ * HU-030 — Consulta de pedidos por rol y sede. Mesero y Cajero ven solo los
+ * de su sede (lo garantiza el backend); el Administrador ve todas y puede
+ * filtrar por sede. Por defecto se ven los pedidos en curso: los pagados no
+ * se eliminan, quedan archivados y se consultan con "Pagados" o "Todos".
  */
 export function PedidosPage() {
   const { usuario } = useAuth();
   const esAdministrador = usuario?.perfil === "ADMINISTRADOR";
+  const esMesero = usuario?.perfil === "MESERO";
   const puedeCobrar = usuario?.perfil === "ADMINISTRADOR" || usuario?.perfil === "CAJERO";
 
   const [pedidos, setPedidos] = useState<ResumenPedido[]>([]);
@@ -23,8 +42,8 @@ export function PedidosPage() {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [vista, setVista] = useState<Vista>("PENDIENTE");
   const [filtroEstadoPedido, setFiltroEstadoPedido] = useState("");
-  const [filtroEstadoPago, setFiltroEstadoPago] = useState("PENDIENTE");
   const [filtroBusqueda, setFiltroBusqueda] = useState("");
   const [filtroSede, setFiltroSede] = useState("");
 
@@ -34,7 +53,7 @@ export function PedidosPage() {
     try {
       const data = await pedidosApi.listarPedidos({
         estadoPedido: filtroEstadoPedido || undefined,
-        estadoPago: filtroEstadoPago || undefined,
+        estadoPago: vista,
         busqueda: filtroBusqueda.trim() || undefined,
         idSede: filtroSede ? Number(filtroSede) : undefined,
       });
@@ -44,13 +63,9 @@ export function PedidosPage() {
     } finally {
       setCargando(false);
     }
-  }, [filtroEstadoPedido, filtroEstadoPago, filtroBusqueda, filtroSede]);
+  }, [filtroEstadoPedido, vista, filtroBusqueda, filtroSede]);
 
-  useEffect(() => {
-    void cargar();
-    // Solo al montar: los filtros se aplican con el botón Filtrar.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useCargaConFiltros(cargar);
 
   useEffect(() => {
     if (esAdministrador) {
@@ -58,42 +73,37 @@ export function PedidosPage() {
     }
   }, [esAdministrador]);
 
-  function handleFiltrar(e: FormEvent) {
-    e.preventDefault();
-    void cargar();
-  }
-
   return (
     <div className="panel">
       <div className="panel-header">
-        <h2 style={{ margin: 0 }}>Pedidos</h2>
+        <h1 className="page-title">Pedidos</h1>
+        <div className="segmentado" role="radiogroup" aria-label="Qué pedidos mostrar">
+          {VISTAS.map((v) => (
+            <label key={v.value} className={vista === v.value ? "activo" : ""}>
+              <input type="radio" name="vistaPedidos" value={v.value} checked={vista === v.value} onChange={() => setVista(v.value)} />
+              {v.etiqueta}
+            </label>
+          ))}
+        </div>
       </div>
 
-      <form className="inline-form" onSubmit={handleFiltrar} style={{ marginBottom: "1rem" }}>
-        <div className="field">
-          <label htmlFor="busquedaPedido">Mesa o n.º de pedido</label>
+      <div className="toolbar">
+        <div className="field field-busqueda">
+          <label htmlFor="busquedaPedido">Buscar</label>
           <input
             id="busquedaPedido"
-            type="text"
+            type="search"
             value={filtroBusqueda}
             onChange={(e) => setFiltroBusqueda(e.target.value)}
-            placeholder="Mesa 3 o SE01-12"
+            placeholder="Mesa o n.º de pedido, p. ej. Mesa 3"
           />
         </div>
         <div className="field">
           <label htmlFor="estadoPedido">Estado del pedido</label>
           <select id="estadoPedido" value={filtroEstadoPedido} onChange={(e) => setFiltroEstadoPedido(e.target.value)}>
             <option value="">Todos</option>
-            <option value="ABIERTO">Abierto</option>
-            <option value="CERRADO">Cerrado</option>
-          </select>
-        </div>
-        <div className="field">
-          <label htmlFor="estadoPago">Estado de pago</label>
-          <select id="estadoPago" value={filtroEstadoPago} onChange={(e) => setFiltroEstadoPago(e.target.value)}>
-            <option value="PENDIENTE">En curso (sin pagar del todo)</option>
-            <option value="PAGADO">Pagados (archivo)</option>
-            <option value="TODOS">Todos</option>
+            <option value="ABIERTO">Abiertos</option>
+            <option value="CERRADO">Cerrados</option>
           </select>
         </div>
         {esAdministrador && (
@@ -109,19 +119,15 @@ export function PedidosPage() {
             </select>
           </div>
         )}
-        <button type="submit" className="btn-secondary">
-          Filtrar
-        </button>
-      </form>
+      </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
-
-      {filtroEstadoPago === "PENDIENTE" && (
-        <p style={{ marginTop: 0, color: "var(--color-muted, #5b6b64)", fontSize: "0.9rem" }}>
-          Los pedidos ya pagados no se eliminan: están archivados. Para verlos, cambia “Estado de pago” a
-          “Pagados” o “Todos”.
+      {vista === "PENDIENTE" && (
+        <p className="field-hint nota-lista">
+          Los pedidos pagados no se eliminan: quedan archivados en “Pagados”.
         </p>
       )}
+
+      {error && <Aviso tipo="error">{error}</Aviso>}
 
       {cargando ? (
         <p className="empty-state">Cargando...</p>
@@ -129,55 +135,64 @@ export function PedidosPage() {
         <p className="empty-state">No hay pedidos que coincidan con la búsqueda.</p>
       ) : (
         <div className="table-scroll">
-          <table>
+          <table className="tabla-apilada">
             <thead>
               <tr>
-                <th>Pedido</th>
                 <th>Mesa</th>
+                <th>Pedido</th>
                 {esAdministrador && <th>Sede</th>}
-                <th>Estado del pedido</th>
-                <th>Estado de pago</th>
-                <th>Total</th>
-                <th>Saldo</th>
+                <th>Estado</th>
                 <th>Apertura</th>
-                <th>Acciones</th>
+                <th className="num">Total</th>
+                <th className="num">Saldo</th>
+                <th>
+                  <span className="sr-only">Acciones</span>
+                </th>
               </tr>
             </thead>
             <tbody>
-              {pedidos.map((p) => (
-                <tr key={p.idPedido}>
-                  <td>{p.identificadorPedido}</td>
-                  <td>{p.identificadorMesa}</td>
-                  {esAdministrador && <td>{p.nombreSede}</td>}
-                  <td>
-                    <span className={`badge ${p.estadoPedido === "ABIERTO" ? "badge-success" : "badge-muted"}`}>
-                      {p.estadoPedido === "ABIERTO" ? "Abierto" : "Cerrado"}
-                    </span>
-                  </td>
-                  <td>
-                    <span className={`badge ${p.estadoPago === "PAGADO" ? "badge-success" : "badge-warning"}`}>
-                      {etiquetaEstadoPago(p.estadoPago)}
-                    </span>
-                  </td>
-                  <td>{pesos(p.total)}</td>
-                  <td>{p.estadoPedido === "CERRADO" ? pesos(p.saldoPendiente) : "—"}</td>
-                  <td>{fechaHora(p.fechaApertura)}</td>
-                  <td>
-                    <div className="table-actions">
-                      {p.estadoPedido === "CERRADO" && (
-                        <Link className="btn-link" to={`/cuenta/${p.idPedido}`}>
-                          Ver cuenta
-                        </Link>
-                      )}
-                      {puedeCobrar && p.estadoPedido === "CERRADO" && p.estadoPago !== "PAGADO" && (
-                        <Link className="btn-link" to={`/cobro/${p.idPedido}`}>
-                          Cobrar
-                        </Link>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {pedidos.map((p) => {
+                const estado = estadoCombinado(p);
+                const cerrado = p.estadoPedido === "CERRADO";
+                return (
+                  <tr key={p.idPedido}>
+                    <td data-label="Mesa" className="celda-titulo">
+                      {p.identificadorMesa}
+                    </td>
+                    <td data-label="Pedido">{p.identificadorPedido}</td>
+                    {esAdministrador && <td data-label="Sede">{p.nombreSede}</td>}
+                    <td data-label="Estado">
+                      <span className={`badge ${estado.clase}`}>{estado.texto}</span>
+                    </td>
+                    <td data-label="Apertura">{fechaHora(p.fechaApertura)}</td>
+                    <td data-label="Total" className="num">
+                      {pesos(p.total)}
+                    </td>
+                    <td data-label="Saldo" className="num">
+                      {cerrado ? pesos(p.saldoPendiente) : "—"}
+                    </td>
+                    <td data-label="" className="celda-acciones">
+                      <div className="table-actions">
+                        {esMesero && !cerrado && (
+                          <Link className="btn-link" to={`/pedidos/mesa/${p.idMesa}`}>
+                            Ver pedido
+                          </Link>
+                        )}
+                        {cerrado && (
+                          <Link className="btn-link" to={`/cuenta/${p.idPedido}`}>
+                            Ver cuenta
+                          </Link>
+                        )}
+                        {puedeCobrar && cerrado && p.estadoPago !== "PAGADO" && (
+                          <Link className="btn-link" to={`/cobro/${p.idPedido}`}>
+                            Cobrar
+                          </Link>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

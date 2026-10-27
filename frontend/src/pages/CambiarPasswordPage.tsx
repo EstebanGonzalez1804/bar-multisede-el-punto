@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import * as authApi from "../api/auth";
 import { getApiErrorMessage } from "../api/client";
+import { Aviso } from "../components/Aviso";
 
 export function CambiarPasswordPage() {
   const [passwordActual, setPasswordActual] = useState("");
@@ -18,6 +19,10 @@ export function CambiarPasswordPage() {
     // CA-03: el campo de nueva contraseña no puede quedar vacío.
     if (!passwordNueva) {
       setError("Debes indicar la nueva contraseña.");
+      return;
+    }
+    if (passwordNueva.length < 8) {
+      setError("La nueva contraseña debe tener al menos 8 caracteres.");
       return;
     }
     if (passwordNueva !== confirmacion) {
@@ -40,11 +45,11 @@ export function CambiarPasswordPage() {
   }
 
   return (
-    <div className="panel" style={{ maxWidth: 420 }}>
-      <h2>Cambiar mi contraseña</h2>
+    <div className="panel panel-angosto">
+      <h1 className="page-title">Cambiar mi contraseña</h1>
 
-      {error && <div className="alert alert-error">{error}</div>}
-      {exito && <div className="alert alert-success">Tu contraseña se actualizó correctamente.</div>}
+      {error && <Aviso tipo="error">{error}</Aviso>}
+      {exito && <Aviso tipo="exito">Tu contraseña se actualizó correctamente.</Aviso>}
 
       <form onSubmit={handleSubmit}>
         <div className="field">
@@ -54,6 +59,7 @@ export function CambiarPasswordPage() {
             type="password"
             value={passwordActual}
             onChange={(e) => setPasswordActual(e.target.value)}
+            autoComplete="current-password"
             required
           />
         </div>
@@ -64,8 +70,13 @@ export function CambiarPasswordPage() {
             type="password"
             value={passwordNueva}
             onChange={(e) => setPasswordNueva(e.target.value)}
+            autoComplete="new-password"
+            aria-describedby="ayudaPassword"
             required
           />
+          <div id="ayudaPassword" className="field-hint">
+            Mínimo 8 caracteres.
+          </div>
         </div>
         <div className="field">
           <label htmlFor="confirmacion">Confirmar nueva contraseña</label>
@@ -74,6 +85,7 @@ export function CambiarPasswordPage() {
             type="password"
             value={confirmacion}
             onChange={(e) => setConfirmacion(e.target.value)}
+            autoComplete="new-password"
             required
           />
         </div>

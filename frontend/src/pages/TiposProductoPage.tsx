@@ -3,8 +3,13 @@ import { getApiErrorMessage } from "../api/client";
 import * as tiposProductoApi from "../api/tiposProducto";
 import { useAuth } from "../context/AuthContext";
 import type { Estado, TipoProducto, TipoProductoConProductos } from "../api/types";
+import { Aviso } from "../components/Aviso";
+import { useConfirmar } from "../components/Confirmacion";
+import { etiquetaEstado } from "../utils/format";
+import { useEnfocarAlAbrir } from "../hooks/useEnfocarAlAbrir";
 
 export function TiposProductoPage() {
+  const confirmar = useConfirmar();
   const { usuario } = useAuth();
   const esAdministrador = usuario?.perfil === "ADMINISTRADOR";
 
@@ -17,6 +22,7 @@ export function TiposProductoPage() {
   const [editandoId, setEditandoId] = useState<number | null>(null);
   const [nombre, setNombre] = useState("");
   const [guardando, setGuardando] = useState(false);
+  const formRef = useEnfocarAlAbrir<HTMLFormElement>(mostrarFormulario, editandoId);
 
   // HU-013 CA-03: ver los productos asociados a un tipo.
   const [expandidoId, setExpandidoId] = useState<number | null>(null);
@@ -45,9 +51,12 @@ export function TiposProductoPage() {
     setError(null);
     if (
       nuevoEstado === "INACTIVO" &&
-      !window.confirm(
-        `Al inactivar "${tipo.nombre}" también se inactivarán todos los productos de este tipo. ¿Deseas continuar?`
-      )
+      !(await confirmar({
+        titulo: `¿Inactivar el tipo ${tipo.nombre}?`,
+        mensaje: "También se inactivarán todos los productos de este tipo. Al activarlo de nuevo, los productos siguen inactivos hasta que los actives uno a uno.",
+        textoConfirmar: "Inactivar tipo y productos",
+        peligro: true,
+      }))
     ) {
       return;
     }
@@ -138,7 +147,7 @@ export function TiposProductoPage() {
     <div>
       <div className="panel">
         <div className="panel-header">
-          <h2 style={{ margin: 0 }}>Tipos de producto</h2>
+          <h1 className="page-title">Tipos de producto</h1>
           {esAdministrador && !mostrarFormulario && (
             <button className="btn-secondary" onClick={abrirCreacion}>
               + Nuevo tipo
@@ -146,12 +155,12 @@ export function TiposProductoPage() {
           )}
         </div>
 
-        {error && <div className="alert alert-error">{error}</div>}
-        {mensaje && !error && <div className="alert alert-success">{mensaje}</div>}
+        {error && <Aviso tipo="error">{error}</Aviso>}
+        {mensaje && !error && <Aviso tipo="exito">{mensaje}</Aviso>}
 
         {mostrarFormulario && (
-          <form className="row-subform" onSubmit={handleSubmit}>
-            <h3 style={{ marginTop: 0 }}>{editandoId === null ? "Nuevo tipo de producto" : "Editar tipo de producto"}</h3>
+          <form ref={formRef} className="row-subform" onSubmit={handleSubmit}>
+            <h2 className="subform-title">{editandoId === null ? "Nuevo tipo de producto" : "Editar tipo de producto"}</h2>
             <div className="inline-form">
               <div className="field">
                 <label htmlFor="nombreTipo">Nombre</label>
@@ -163,7 +172,12 @@ export function TiposProductoPage() {
                   placeholder="Licores"
                 />
               </div>
-              <button type="submit" className="btn-primary" style={{ width: "auto" }} disabled={guardando}>
+            </div>
+            {editandoId === null && (
+              <p className="field-hint">La abreviación de 3 letras (para el código de los productos) se genera sola.</p>
+            )}
+            <div className="form-actions">
+              <button type="submit" className="btn-primary" disabled={guardando}>
                 {guardando ? "Guardando..." : "Guardar"}
               </button>
               <button type="button" className="btn-secondary" onClick={cerrarFormulario}>
@@ -185,20 +199,22 @@ export function TiposProductoPage() {
                 <th>Nombre</th>
                 <th>Abreviación</th>
                 <th>Estado</th>
-                <th>Acciones</th>
+                <th>
+                  <span className="sr-only">Acciones</span>
+                </th>
               </tr>
             </thead>
             <tbody>
               {tipos.map((tipo) => (
                 <Fragment key={tipo.idTipoProducto}>
                   <tr>
-                    <td>{tipo.nombre}</td>
+                    <td className="celda-titulo">{tipo.nombre}</td>
                     <td>
                       <span className="badge badge-muted">{tipo.abreviacion}</span>
                     </td>
                     <td>
                       <span className={`badge ${tipo.estado === "ACTIVO" ? "badge-success" : "badge-muted"}`}>
-                        {tipo.estado}
+                        {etiquetaEstado(tipo.estado)}
                       </span>
                     </td>
                     <td>
@@ -223,17 +239,19 @@ export function TiposProductoPage() {
                     </td>
                   </tr>
                   {expandidoId === tipo.idTipoProducto && (
-                    <tr>
+                    <tr className="fila-detalle">
                       <td colSpan={4}>
                         {cargandoDetalle ? (
                           <p className="empty-state">Cargando productos...</p>
                         ) : detalle && detalle.productos.length > 0 ? (
-                          <ul style={{ margin: 0, paddingLeft: "1.25rem" }}>
+                          <ul className="lista-detalle">
                             {detalle.productos.map((p) => (
                               <li key={p.idProducto}>
-                                {p.codigo} — {p.nombre}{" "}
+                                <span>
+                                  {p.nombre} <span className="texto-suave">· {p.codigo}</span>
+                                </span>
                                 <span className={`badge ${p.estado === "ACTIVO" ? "badge-success" : "badge-muted"}`}>
-                                  {p.estado}
+                                  {etiquetaEstado(p.estado)}
                                 </span>
                               </li>
                             ))}

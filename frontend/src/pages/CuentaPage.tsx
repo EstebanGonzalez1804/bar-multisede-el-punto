@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { getApiErrorMessage } from "../api/client";
 import * as pedidosApi from "../api/pedidos";
 import { ETIQUETAS_METODO, type Pedido } from "../api/types";
 import { useAuth } from "../context/AuthContext";
-import { fechaHora, pesos } from "../utils/format";
+import { fechaHoraCompleta, pesos } from "../utils/format";
+import { agruparLineas } from "../utils/lineas";
+import { Aviso } from "../components/Aviso";
 
 /**
  * HU-031 — Vista previa de la cuenta con el ancho de una tirilla de 80 mm,
@@ -15,6 +17,7 @@ import { fechaHora, pesos } from "../utils/format";
 export function CuentaPage() {
   const { idPedido } = useParams<{ idPedido: string }>();
   const { usuario } = useAuth();
+  const navigate = useNavigate();
   const puedeCobrar = usuario?.perfil === "ADMINISTRADOR" || usuario?.perfil === "CAJERO";
 
   const [pedido, setPedido] = useState<Pedido | null>(null);
@@ -58,7 +61,7 @@ export function CuentaPage() {
   if (!pedido) {
     return (
       <div className="panel">
-        {error && <div className="alert alert-error">{error}</div>}
+        {error && <Aviso tipo="error">{error}</Aviso>}
         <Link to="/pedidos" className="btn-secondary">
           Volver a Pedidos
         </Link>
@@ -71,29 +74,34 @@ export function CuentaPage() {
   return (
     <div className="panel">
       <div className="panel-header no-print">
-        <h2 style={{ margin: 0 }}>Cuenta {pedido.identificadorPedido}</h2>
-        <Link to="/pedidos" className="btn-secondary">
+        <div>
+          <h1 className="page-title">Cuenta · {pedido.identificadorMesa}</h1>
+          <p className="page-sub">
+            Pedido {pedido.identificadorPedido} · {pedido.nombreSede}
+          </p>
+        </div>
+        <button type="button" className="btn-secondary" onClick={() => navigate(-1)}>
           Volver
-        </Link>
+        </button>
       </div>
 
-      {error && <div className="alert alert-error no-print">{error}</div>}
+      {error && <Aviso tipo="error" className="no-print">{error}</Aviso>}
 
       {!cerrado ? (
-        <div className="alert alert-info no-print">
-          El pedido sigue abierto. La cuenta se genera cuando el Mesero lo cierra.
-        </div>
+        <Aviso tipo="info" className="no-print">
+          El pedido sigue abierto. La cuenta se genera cuando el mesero lo cierra.
+        </Aviso>
       ) : (
         <>
           <div className="form-actions no-print" style={{ marginBottom: "1rem" }}>
-            <button type="button" className="btn-primary" style={{ width: "auto" }} onClick={() => window.print()}>
-              Imprimir (tirilla 80 mm)
+            <button type="button" className="btn-secondary" onClick={() => window.print()}>
+              Imprimir tirilla
             </button>
             <button type="button" className="btn-secondary" disabled={descargando} onClick={() => void handleDescargar()}>
               {descargando ? "Descargando..." : "Descargar PDF"}
             </button>
             {puedeCobrar && pedido.estadoPago !== "PAGADO" && (
-              <Link to={`/cobro/${pedido.idPedido}`} className="btn-secondary">
+              <Link to={`/cobro/${pedido.idPedido}`} className="btn-primary">
                 Cobrar
               </Link>
             )}
@@ -109,14 +117,14 @@ export function CuentaPage() {
               <div>Pedido: {pedido.identificadorPedido}</div>
               <div>Mesa: {pedido.identificadorMesa}</div>
               <div>Atendió: {pedido.nombreMesero}</div>
-              <div>Apertura: {fechaHora(pedido.fechaApertura)}</div>
-              {pedido.fechaCierre && <div>Cierre: {fechaHora(pedido.fechaCierre)}</div>}
+              <div>Apertura: {fechaHoraCompleta(pedido.fechaApertura)}</div>
+              {pedido.fechaCierre && <div>Cierre: {fechaHoraCompleta(pedido.fechaCierre)}</div>}
               <hr />
-              {pedido.lineas.map((l) => (
-                <div key={l.idDetallePedido} className="ticket-line">
-                  <div className="ticket-strong">{l.nombreProducto}</div>
+              {agruparLineas(pedido.lineas).map((g) => (
+                <div key={g.clave} className="ticket-line">
+                  <div className="ticket-strong">{g.nombreProducto}</div>
                   <div className="ticket-right">
-                    {l.cantidad} x {pesos(l.precioVentaCongelado)} = {pesos(Number(l.precioVentaCongelado) * l.cantidad)}
+                    {g.cantidad} x {pesos(g.precioVenta)} = {pesos(g.subtotal)}
                   </div>
                 </div>
               ))}

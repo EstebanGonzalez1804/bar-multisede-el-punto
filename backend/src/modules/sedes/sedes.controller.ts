@@ -24,6 +24,13 @@ function parseIdSede(req: Request): number {
   return idSede;
 }
 
+export const putSede = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  const { nombre, direccion } = crearSedeSchema.parse(req.body);
+  const sede = await sedesService.modificarSede(req.usuarioActual, parseIdSede(req), nombre.trim(), direccion.trim());
+  res.status(200).json({ sede });
+});
+
 export const postInactivarSede = asyncHandler(async (req: Request, res: Response) => {
   if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
   const sede = await sedesService.inactivarSede(req.usuarioActual, parseIdSede(req));

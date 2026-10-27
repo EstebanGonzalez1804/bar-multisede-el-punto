@@ -1,30 +1,25 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getApiErrorMessage } from "../api/client";
 import * as reportesApi from "../api/reportes";
 import * as sedesApi from "../api/sedes";
 import type { ReporteVentas, Sede } from "../api/types";
 import { useAuth } from "../context/AuthContext";
-import { pesos } from "../utils/format";
-
-function hoyColombia(): string {
-  return new Date().toLocaleDateString("en-CA", { timeZone: "America/Bogota" });
-}
-
-function primerDiaMes(): string {
-  return `${hoyColombia().slice(0, 8)}01`;
-}
+import { fecha, hoyBogota, inicioDeMesBogota, pesos } from "../utils/format";
+import { useCargaConFiltros } from "../hooks/useCargaConFiltros";
+import { Aviso } from "../components/Aviso";
 
 /**
  * HU-039 — Reporte de ventas y ganancias por rango de fechas, con totales y
  * exportación únicamente a Excel (.xlsx). Administrador: todas las sedes (o
  * una elegida); Cajero: solo su sede; Mesero: sin acceso (ver App.tsx).
+ * El reporte se genera solo al entrar (mes en curso) y al cambiar el rango.
  */
 export function ReportesPage() {
   const { usuario } = useAuth();
   const esAdministrador = usuario?.perfil === "ADMINISTRADOR";
 
-  const [desde, setDesde] = useState(primerDiaMes());
-  const [hasta, setHasta] = useState(hoyColombia());
+  const [desde, setDesde] = useState(inicioDeMesBogota());
+  const [hasta, setHasta] = useState(hoyBogota());
   const [idSede, setIdSede] = useState("");
   const [sedes, setSedes] = useState<Sede[]>([]);
   const [reporte, setReporte] = useState<ReporteVentas | null>(null);
@@ -38,7 +33,7 @@ export function ReportesPage() {
     }
   }, [esAdministrador]);
 
-  function validar(): boolean {
+  const validar = useCallback((): boolean => {
     if (!desde || !hasta) {
       setError("Selecciona el rango de fechas.");
       return false;
@@ -48,10 +43,9 @@ export function ReportesPage() {
       return false;
     }
     return true;
-  }
+  }, [desde, hasta]);
 
-  async function handleGenerar(e: FormEvent) {
-    e.preventDefault();
+  const generar = useCallback(async () => {
     setError(null);
     if (!validar()) return;
     setGenerando(true);
@@ -62,7 +56,9 @@ export function ReportesPage() {
     } finally {
       setGenerando(false);
     }
-  }
+  }, [desde, hasta, idSede, validar]);
+
+  useCargaConFiltros(generar, 500);
 
   async function handleExportar() {
     setError(null);
@@ -77,20 +73,22 @@ export function ReportesPage() {
     }
   }
 
+  const mostrarSede = esAdministrador && !idSede;
+
   return (
     <div className="panel">
       <div className="panel-header">
-        <h2 style={{ margin: 0 }}>Reporte de ventas y ganancias</h2>
+        <h1 className="page-title">Reporte de ventas y ganancias</h1>
       </div>
 
-      <form className="inline-form" onSubmit={handleGenerar} style={{ marginBottom: "1rem" }}>
+      <div className="toolbar">
         <div className="field">
           <label htmlFor="desde">Desde</label>
-          <input id="desde" type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
+          <input id="desde" type="date" max={hasta || undefined} value={desde} onChange={(e) => setDesde(e.target.value)} />
         </div>
         <div className="field">
           <label htmlFor="hasta">Hasta</label>
-          <input id="hasta" type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
+          <input id="hasta" type="date" max={hoyBogota()} value={hasta} onChange={(e) => setHasta(e.target.value)} />
         </div>
         {esAdministrador && (
           <div className="field">
@@ -105,21 +103,25 @@ export function ReportesPage() {
             </select>
           </div>
         )}
-        <button type="submit" className="btn-primary" style={{ width: "auto" }} disabled={generando}>
-          {generando ? "Generando..." : "Generar reporte"}
-        </button>
-        <button type="button" className="btn-secondary" disabled={exportando} onClick={() => void handleExportar()}>
+        <button
+          type="button"
+          className="btn-primary"
+          disabled={exportando || !reporte || reporte.filas.length === 0}
+          onClick={() => void handleExportar()}
+        >
           {exportando ? "Exportando..." : "Exportar a Excel"}
         </button>
-      </form>
+      </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <Aviso tipo="error">{error}</Aviso>}
+
+      {generando && !reporte && <p className="empty-state">Generando reporte...</p>}
 
       {reporte && (
         <>
-          <p className="field-hint">
-            Ventas de pedidos pagados por completo, con los valores de compra y venta vigentes cuando se registró cada
-            consumo. Ganancia = (valor de venta − valor de compra) × cantidad.
+          <p className="field-hint nota-lista">
+            Ventas de cuentas pagadas por completo, con el costo y el precio vigentes cuando se registró cada consumo.
+            Ganancia = (precio − costo) × cantidad.
           </p>
           {reporte.filas.length === 0 ? (
             <p className="empty-state">No hay ventas en el periodo seleccionado.</p>
@@ -129,39 +131,49 @@ export function ReportesPage() {
                 <thead>
                   <tr>
                     <th>Fecha</th>
-                    <th>Código</th>
                     <th>Producto</th>
-                    <th>Cantidad</th>
-                    <th>Valor de compra</th>
-                    <th>Valor de venta</th>
-                    <th>Ganancia</th>
-                    <th>Sede</th>
+                    <th>Código</th>
+                    <th className="num">Cantidad</th>
+                    <th className="num">Costo unitario</th>
+                    <th className="num">Precio unitario</th>
+                    <th className="num">Ganancia</th>
+                    {mostrarSede && <th>Sede</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {reporte.filas.map((f, i) => (
                     <tr key={i}>
-                      <td>{f.fecha}</td>
-                      <td>{f.codigoProducto}</td>
-                      <td>{f.nombreProducto}</td>
-                      <td>{f.cantidadVendida}</td>
-                      <td>{pesos(f.valorCompra)}</td>
-                      <td>{pesos(f.valorVenta)}</td>
-                      <td>{pesos(f.ganancia)}</td>
-                      <td>{f.nombreSede}</td>
+                      <td>{fecha(f.fecha)}</td>
+                      <td className="celda-titulo">{f.nombreProducto}</td>
+                      <td className="texto-suave">{f.codigoProducto}</td>
+                      <td className="num">{f.cantidadVendida}</td>
+                      <td className="num">{pesos(f.valorCompra)}</td>
+                      <td className="num">{pesos(f.valorVenta)}</td>
+                      <td className="num">{pesos(f.ganancia)}</td>
+                      {mostrarSede && <td>{f.nombreSede}</td>}
                     </tr>
                   ))}
                 </tbody>
                 <tfoot>
-                  <tr>
-                    <td colSpan={3} style={{ fontWeight: 700 }}>
-                      Totales del periodo
+                  <tr className="fila-totales">
+                    <td colSpan={3}>Totales del periodo</td>
+                    <td className="num">
+                      <span className="tfoot-etiqueta">Unidades</span>
+                      {reporte.totales.unidadesVendidas}
                     </td>
-                    <td style={{ fontWeight: 700 }}>{reporte.totales.unidadesVendidas}</td>
-                    <td style={{ fontWeight: 700 }}>{pesos(reporte.totales.costosCompra)}</td>
-                    <td style={{ fontWeight: 700 }}>{pesos(reporte.totales.ventas)}</td>
-                    <td style={{ fontWeight: 700 }}>{pesos(reporte.totales.gananciaTotal)}</td>
-                    <td />
+                    <td className="num">
+                      <span className="tfoot-etiqueta">Costo total</span>
+                      {pesos(reporte.totales.costosCompra)}
+                    </td>
+                    <td className="num">
+                      <span className="tfoot-etiqueta">Venta total</span>
+                      {pesos(reporte.totales.ventas)}
+                    </td>
+                    <td className="num">
+                      <span className="tfoot-etiqueta">Ganancia</span>
+                      {pesos(reporte.totales.gananciaTotal)}
+                    </td>
+                    {mostrarSede && <td />}
                   </tr>
                 </tfoot>
               </table>

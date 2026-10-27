@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getApiErrorMessage } from "../api/client";
 import * as sedesApi from "../api/sedes";
 import * as trazabilidadApi from "../api/trazabilidad";
 import * as usuariosApi from "../api/usuarios";
 import type { EventoTrazabilidad, Sede, Usuario } from "../api/types";
-import { fechaHora } from "../utils/format";
+import { fecha, hora, hoyBogota } from "../utils/format";
+import { useCargaConFiltros } from "../hooks/useCargaConFiltros";
 import { describirEvento, detalleLegible, infoEvento, tiposPorCategoria } from "../utils/trazabilidad";
+import { Aviso } from "../components/Aviso";
 
 /** Datos adicionales del evento (valores anterior/nuevo, montos, motivo...) en etiquetas legibles. */
 function DetalleEvento({ evento }: { evento: EventoTrazabilidad }) {
@@ -64,29 +66,20 @@ export function TrazabilidadPage() {
     }
   }, [idUsuario, idSede, tipoEvento, desde, hasta]);
 
-  useEffect(() => {
-    void cargar();
-    // Solo al montar; los filtros se aplican con el botón Filtrar.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  useCargaConFiltros(cargar);
 
   useEffect(() => {
     usuariosApi.listarUsuarios().then(setUsuarios).catch(() => undefined);
     sedesApi.listarSedes().then(setSedes).catch(() => undefined);
   }, []);
 
-  function handleFiltrar(e: FormEvent) {
-    e.preventDefault();
-    void cargar();
-  }
-
   return (
     <div className="panel">
       <div className="panel-header">
-        <h2 style={{ margin: 0 }}>Trazabilidad</h2>
+        <h1 className="page-title">Trazabilidad</h1>
       </div>
 
-      <form className="inline-form" onSubmit={handleFiltrar} style={{ marginBottom: "1rem" }}>
+      <div className="toolbar">
         <div className="field">
           <label htmlFor="usuarioTraza">Usuario</label>
           <select id="usuarioTraza" value={idUsuario} onChange={(e) => setIdUsuario(e.target.value)}>
@@ -130,14 +123,11 @@ export function TrazabilidadPage() {
         </div>
         <div className="field">
           <label htmlFor="hastaTraza">Hasta</label>
-          <input id="hastaTraza" type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
+          <input id="hastaTraza" type="date" max={hoyBogota()} value={hasta} onChange={(e) => setHasta(e.target.value)} />
         </div>
-        <button type="submit" className="btn-secondary">
-          Filtrar
-        </button>
-      </form>
+      </div>
 
-      {error && <div className="alert alert-error">{error}</div>}
+      {error && <Aviso tipo="error">{error}</Aviso>}
 
       {cargando ? (
         <p className="empty-state">Cargando...</p>
@@ -145,15 +135,16 @@ export function TrazabilidadPage() {
         <p className="empty-state">No hay eventos que coincidan con los filtros.</p>
       ) : (
         <>
-          <p className="field-hint">
-            Se muestran los {eventos.length} eventos más recientes (máximo 250). Usa los filtros para encontrar
-            algo más antiguo.
+          <p className="field-hint nota-lista">
+            {eventos.length >= 250
+              ? "Se muestran los 250 eventos más recientes. Usa los filtros para encontrar algo más antiguo."
+              : `${eventos.length} evento${eventos.length === 1 ? "" : "s"}.`}
           </p>
           <div className="table-scroll">
-            <table>
+            <table className="tabla-apilada tabla-traza">
               <thead>
                 <tr>
-                  <th>Fecha y hora</th>
+                  <th>Cuándo</th>
                   <th>Quién</th>
                   <th>Qué pasó</th>
                   <th>Sede</th>
@@ -164,24 +155,26 @@ export function TrazabilidadPage() {
                   const info = infoEvento(ev.tipoEvento);
                   return (
                     <tr key={ev.idEvento}>
-                      <td style={{ whiteSpace: "nowrap" }}>{fechaHora(ev.fechaHora)}</td>
-                      <td>
+                      <td data-label="Cuándo" className="celda-fecha">
+                        <span>{fecha(ev.fechaHora)}</span>
+                        <span className="texto-suave">{hora(ev.fechaHora)}</span>
+                      </td>
+                      <td data-label="Quién" className="celda-quien">
                         {ev.codigoUsuario ? (
                           <>
-                            {ev.nombreUsuario}
-                            <br />
-                            <small className="detalle-clave">{ev.codigoUsuario}</small>
+                            <span>{ev.nombreUsuario}</span>
+                            <span className="texto-suave">{ev.codigoUsuario}</span>
                           </>
                         ) : (
                           "Sistema"
                         )}
                       </td>
-                      <td>
+                      <td data-label="Qué pasó">
                         <span className={`evento-etiqueta evento-${info.tono}`}>{info.etiqueta}</span>
                         <div>{describirEvento(ev)}</div>
                         <DetalleEvento evento={ev} />
                       </td>
-                      <td>{ev.nombreSede ?? "—"}</td>
+                      <td data-label="Sede">{ev.nombreSede ?? "—"}</td>
                     </tr>
                   );
                 })}

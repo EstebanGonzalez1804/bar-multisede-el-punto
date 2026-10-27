@@ -162,6 +162,27 @@ export async function crearUsuario(
 }
 
 /** HU-008 CA-01 — Modificación de nombre/sede/perfil. */
+/**
+ * Protección contra quedar sin acceso de administración: debe existir al
+ * menos OTRO administrador activo antes de inactivar o cambiar de perfil a
+ * un administrador activo. Se bloquean esas filas para que dos operaciones
+ * simultáneas no dejen el sistema sin administradores.
+ */
+async function exigirOtroAdministradorActivo(client: PoolClient, idUsuario: number): Promise<void> {
+  const { rows } = await client.query(
+    `SELECT id_usuario FROM usuario
+      WHERE perfil = 'ADMINISTRADOR' AND estado = 'ACTIVO' AND id_usuario <> $1
+      FOR UPDATE`,
+    [idUsuario]
+  );
+  if (rows.length === 0) {
+    throw ApiError.conflict(
+      "Es el único administrador activo: crea o activa otro administrador antes de hacer este cambio.",
+      "ULTIMO_ADMINISTRADOR"
+    );
+  }
+}
+
 export async function modificarUsuario(
   admin: JwtPayload,
   idUsuario: number,
@@ -170,12 +191,22 @@ export async function modificarUsuario(
   validarSedeSegunPerfil(datos.idSede, datos.perfil);
 
   return withTransaction(async (client) => {
-    const { rows: existentes } = await client.query<{ id_usuario: number; id_sede: number | null }>(
-      `SELECT id_usuario, id_sede FROM usuario WHERE id_usuario = $1 FOR UPDATE`,
-      [idUsuario]
-    );
+    const { rows: existentes } = await client.query<{
+      id_usuario: number;
+      id_sede: number | null;
+      perfil: string;
+      estado: string;
+    }>(`SELECT id_usuario, id_sede, perfil, estado FROM usuario WHERE id_usuario = $1 FOR UPDATE`, [idUsuario]);
     if (!existentes[0]) {
       throw ApiError.notFound("Usuario no encontrado.");
+    }
+
+    const dejaDeSerAdmin = existentes[0].perfil === "ADMINISTRADOR" && datos.perfil !== "ADMINISTRADOR";
+    if (dejaDeSerAdmin && idUsuario === admin.idUsuario) {
+      throw ApiError.conflict("No puedes cambiar tu propio perfil de Administrador.", "PERFIL_PROPIO");
+    }
+    if (dejaDeSerAdmin && existentes[0].estado === "ACTIVO") {
+      await exigirOtroAdministradorActivo(client, idUsuario);
     }
 
     // Solo se exige sede activa si el usuario se reasigna a otra sede.
@@ -212,8 +243,8 @@ export async function cambiarEstadoUsuario(
   estado: "ACTIVO" | "INACTIVO"
 ): Promise<Usuario> {
   return withTransaction(async (client) => {
-    const { rows } = await client.query<{ id_usuario: number; id_sede: number | null; estado: string }>(
-      `SELECT id_usuario, id_sede, estado FROM usuario WHERE id_usuario = $1 FOR UPDATE`,
+    const { rows } = await client.query<{ id_usuario: number; id_sede: number | null; estado: string; perfil: string }>(
+      `SELECT id_usuario, id_sede, estado, perfil FROM usuario WHERE id_usuario = $1 FOR UPDATE`,
       [idUsuario]
     );
     const usuario = rows[0];
@@ -222,6 +253,12 @@ export async function cambiarEstadoUsuario(
     }
     if (usuario.estado === estado) {
       throw ApiError.conflict(`El usuario ya está en estado ${estado}.`);
+    }
+    if (estado === "INACTIVO" && idUsuario === admin.idUsuario) {
+      throw ApiError.conflict("No puedes inactivar tu propio usuario.", "INACTIVAR_PROPIO");
+    }
+    if (estado === "INACTIVO" && usuario.perfil === "ADMINISTRADOR") {
+      await exigirOtroAdministradorActivo(client, idUsuario);
     }
 
     await client.query(`UPDATE usuario SET estado = $1, actualizado_en = now() WHERE id_usuario = $2`, [
