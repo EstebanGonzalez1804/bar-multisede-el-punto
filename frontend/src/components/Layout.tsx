@@ -13,53 +13,29 @@ interface ItemMenu {
   end?: boolean;
 }
 
-interface GrupoMenu {
-  titulo: string | null;
-  items: ItemMenu[];
-}
-
 const ADMIN_CAJERO: Perfil[] = ["ADMINISTRADOR", "CAJERO"];
 const SOLO_ADMIN: Perfil[] = ["ADMINISTRADOR"];
 
 /**
- * Menú agrupado por área de trabajo (antes eran 14 opciones en una sola
- * lista). Cada perfil ve solo los grupos y opciones que le corresponden;
- * las rutas siguen protegidas igual en App.tsx y en el backend.
+ * Menú en una sola lista, sin encabezados de grupo, para que quepa completo
+ * en pantalla sin desplazarse. El orden agrupa por área de trabajo (operación,
+ * abastecimiento, catálogo, administración). Cada perfil ve solo lo que le
+ * corresponde; las rutas siguen protegidas igual en App.tsx y en el backend.
  */
-const GRUPOS: GrupoMenu[] = [
-  { titulo: null, items: [{ to: "/", etiqueta: "Inicio", icono: ICONS.inicio, end: true }] },
-  {
-    titulo: "Operación",
-    items: [
-      { to: "/mesas", etiqueta: "Mesas", icono: ICONS.mesas },
-      { to: "/pedidos", etiqueta: "Pedidos", icono: ICONS.pedidos },
-      { to: "/cobros", etiqueta: "Cobros", icono: ICONS.cobros, perfiles: ADMIN_CAJERO },
-    ],
-  },
-  {
-    titulo: "Abastecimiento",
-    items: [
-      { to: "/inventario", etiqueta: "Inventario", icono: ICONS.inventario },
-      { to: "/recepciones", etiqueta: "Recepciones", icono: ICONS.recepciones, perfiles: ADMIN_CAJERO },
-      { to: "/proveedores", etiqueta: "Proveedores", icono: ICONS.proveedores, perfiles: ADMIN_CAJERO },
-    ],
-  },
-  {
-    titulo: "Catálogo",
-    items: [
-      { to: "/productos", etiqueta: "Productos", icono: ICONS.productos },
-      { to: "/tipos-producto", etiqueta: "Tipos de producto", icono: ICONS.tiposProducto },
-    ],
-  },
-  {
-    titulo: "Administración",
-    items: [
-      { to: "/reportes", etiqueta: "Reportes", icono: ICONS.reportes, perfiles: ADMIN_CAJERO },
-      { to: "/usuarios", etiqueta: "Usuarios", icono: ICONS.usuarios, perfiles: SOLO_ADMIN },
-      { to: "/sedes", etiqueta: "Sedes", icono: ICONS.sedes, perfiles: SOLO_ADMIN },
-      { to: "/trazabilidad", etiqueta: "Trazabilidad", icono: ICONS.trazabilidad, perfiles: SOLO_ADMIN },
-    ],
-  },
+const ITEMS: ItemMenu[] = [
+  { to: "/", etiqueta: "Inicio", icono: ICONS.inicio, end: true },
+  { to: "/mesas", etiqueta: "Mesas", icono: ICONS.mesas },
+  { to: "/pedidos", etiqueta: "Pedidos", icono: ICONS.pedidos },
+  { to: "/cobros", etiqueta: "Cobros", icono: ICONS.cobros, perfiles: ADMIN_CAJERO },
+  { to: "/inventario", etiqueta: "Inventario", icono: ICONS.inventario },
+  { to: "/recepciones", etiqueta: "Recepciones", icono: ICONS.recepciones, perfiles: ADMIN_CAJERO },
+  { to: "/proveedores", etiqueta: "Proveedores", icono: ICONS.proveedores, perfiles: ADMIN_CAJERO },
+  { to: "/productos", etiqueta: "Productos", icono: ICONS.productos },
+  { to: "/tipos-producto", etiqueta: "Tipos de producto", icono: ICONS.tiposProducto },
+  { to: "/reportes", etiqueta: "Reportes", icono: ICONS.reportes, perfiles: ADMIN_CAJERO },
+  { to: "/usuarios", etiqueta: "Usuarios", icono: ICONS.usuarios, perfiles: SOLO_ADMIN },
+  { to: "/sedes", etiqueta: "Sedes", icono: ICONS.sedes, perfiles: SOLO_ADMIN },
+  { to: "/trazabilidad", etiqueta: "Trazabilidad", icono: ICONS.trazabilidad, perfiles: SOLO_ADMIN },
 ];
 
 /** Título de la pestaña del navegador según la sección. */
@@ -107,10 +83,7 @@ export function Layout() {
   }, [location.pathname]);
 
   const perfil = usuario?.perfil;
-  const grupos = GRUPOS.map((g) => ({
-    ...g,
-    items: g.items.filter((i) => !i.perfiles || (perfil && i.perfiles.includes(perfil))),
-  })).filter((g) => g.items.length > 0);
+  const items = ITEMS.filter((i) => !i.perfiles || (perfil && i.perfiles.includes(perfil)));
 
   return (
     <div className="app-shell">
@@ -139,16 +112,11 @@ export function Layout() {
         </div>
 
         <nav className="sidebar-nav" aria-label="Menú principal">
-          {grupos.map((g) => (
-            <div className="sidebar-grupo" key={g.titulo ?? "inicio"}>
-              {g.titulo && <div className="sidebar-grupo-titulo">{g.titulo}</div>}
-              {g.items.map((i) => (
-                <NavLink key={i.to} to={i.to} end={i.end}>
-                  <Icon path={i.icono} />
-                  <span>{i.etiqueta}</span>
-                </NavLink>
-              ))}
-            </div>
+          {items.map((i) => (
+            <NavLink key={i.to} to={i.to} end={i.end}>
+              <Icon path={i.icono} />
+              <span>{i.etiqueta}</span>
+            </NavLink>
           ))}
         </nav>
 

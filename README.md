@@ -264,12 +264,16 @@ a criterio técnico del proveedor:
     en texto de trabajo), cifras alineadas a la derecha, una sola ventana de
     confirmación para todo lo que no se deshace, filtros que se aplican solos
     y formularios que se llevan a la vista al abrirse.
-  - *Navegación y accesibilidad:* menú agrupado (Operación, Abastecimiento,
-    Catálogo, Administración), título de pestaña por sección, "Acceso no
+  - *Navegación y accesibilidad:* menú en una sola lista sin
+    encabezados de grupo (todo visible sin desplazarse; "Mi contraseña" y
+    "Cerrar sesión" aparte), título de pestaña por sección, "Acceso no
     disponible" con botón de salida, avisos anunciados a lectores de pantalla,
     foco visible, respeto a "reducir movimiento" y aviso 30 s antes del cierre
     por inactividad (la regla de 3 minutos no cambia). El Cajero entra
-    directo a "Cuentas por cobrar".
+    directo a "Cuentas por cobrar". Inicio muestra máximo 8 mesas ocupadas y
+    8 productos agotados, con un enlace debajo para ver la lista completa en
+    Mesas o Inventario. Trazabilidad conserva la presentación de la versión
+    anterior (Oct 27, primera revisión).
 
 - **Mesas por sede para el Administrador (Oct 27).** La vista de Mesas del
   Administrador agrupa las mesas en secciones por sede (con su conteo de

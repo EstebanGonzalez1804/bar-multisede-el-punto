@@ -61,7 +61,8 @@ export function DashboardPage() {
   const agotados = inventario.filter((i) => i.estadoProducto === "ACTIVO" && i.cantidadDisponible === 0);
   const esMesero = usuario?.perfil === "MESERO";
   const esAdministrador = usuario?.perfil === "ADMINISTRADOR";
-  const MAX_AGOTADOS = 8;
+  // Máximo de filas por lista en Inicio; el resto se ve en la pantalla completa.
+  const MAX_FILAS = 8;
   const mesasOcupadas = mesas.filter((m) => m.estado === "OCUPADA");
 
   const primerNombre = usuario?.nombre?.split(" ")[0] ?? "";
@@ -114,16 +115,23 @@ export function DashboardPage() {
               {mesasOcupadas.length === 0 ? (
                 <p className="empty-state dashboard-vacio">No hay mesas ocupadas en este momento.</p>
               ) : (
-                mesasOcupadas.map((m) => (
-                  <Link
-                    className="dashboard-panel-row"
-                    key={m.idMesa}
-                    to={esMesero ? `/pedidos/mesa/${m.idMesa}` : "/mesas"}
-                  >
-                    <span className="dashboard-row-titulo">{m.identificador}</span>
-                    <span className="dashboard-row-meta">{esMesero ? "Ver pedido" : m.nombreSede}</span>
-                  </Link>
-                ))
+                <>
+                  {mesasOcupadas.slice(0, MAX_FILAS).map((m) => (
+                    <Link
+                      className="dashboard-panel-row"
+                      key={m.idMesa}
+                      to={esMesero ? `/pedidos/mesa/${m.idMesa}` : "/mesas"}
+                    >
+                      <span className="dashboard-row-titulo">{m.identificador}</span>
+                      <span className="dashboard-row-meta">{esMesero ? "Ver pedido" : m.nombreSede}</span>
+                    </Link>
+                  ))}
+                  {mesasOcupadas.length > MAX_FILAS && (
+                    <Link className="dashboard-panel-row dashboard-ver-todos" to="/mesas">
+                      Ver las {mesasOcupadas.length} mesas ocupadas en Mesas
+                    </Link>
+                  )}
+                </>
               )}
             </div>
 
@@ -136,15 +144,15 @@ export function DashboardPage() {
                 <p className="empty-state dashboard-vacio">No hay productos agotados.</p>
               ) : (
                 <>
-                  {agotados.slice(0, MAX_AGOTADOS).map((item) => (
+                  {agotados.slice(0, MAX_FILAS).map((item) => (
                     <div className="dashboard-panel-row" key={`${item.idProducto}-${item.idSede}`}>
                       <span className="dashboard-row-titulo">{item.nombreProducto}</span>
                       {esAdministrador && <span className="dashboard-row-meta">{item.nombreSede}</span>}
                     </div>
                   ))}
-                  {agotados.length > MAX_AGOTADOS && (
+                  {agotados.length > MAX_FILAS && (
                     <Link className="dashboard-panel-row dashboard-ver-todos" to="/inventario">
-                      Ver los {agotados.length} en Inventario
+                      Ver los {agotados.length} productos agotados en Inventario
                     </Link>
                   )}
                 </>
