@@ -1277,3 +1277,40 @@ a.btn-secondary {
   width: 2.1rem;
   padding: 0.3rem 0;
 }
+
+/* ---------- Mesas por sede (vista del Administrador) ---------- */
+
+.sede-grupo {
+  margin-bottom: 1.5rem;
+}
+
+.sede-grupo-titulo {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.sede-grupo-titulo i {
+  width: 6px;
+  height: 22px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.sede-grupo-titulo small {
+  color: var(--color-text-muted);
+  font-weight: 400;
+  font-size: 0.85rem;
+}
+
+.sede-pill {
+  display: inline-block;
+  margin-top: 0.15rem;
+  padding: 0.1rem 0.6rem;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 600;
+}

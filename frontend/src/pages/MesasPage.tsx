@@ -12,6 +12,13 @@ import type { Mesa, Sede } from "../api/types";
  * pantalla mientras el Mesero/Administrador la tienen abierta. */
 const INTERVALO_POLLING_MS = 6000;
 
+/**
+ * Colores de sede para la vista del Administrador. Sin verde ni rojo para no
+ * confundirse con los estados (libre/ocupada) ni con "Inactivar". El color de
+ * una sede es fijo: depende de su posición por id entre todas las sedes.
+ */
+const COLORES_SEDE = ["#2f6f9f", "#c8962e", "#7a4fa3", "#b0457a", "#1f8a9a", "#5b6b7a"];
+
 interface FormularioMesa {
   idSede: string;
   identificador: string;
@@ -200,8 +207,115 @@ export function MesasPage() {
     return "badge-muted";
   }
 
+  const colorSede = (idSede: number): string => {
+    const ids = [...sedes.map((x) => x.idSede), ...mesas.map((m) => m.idSede)]
+      .filter((v, i, arr) => arr.indexOf(v) === i)
+      .sort((a, b) => a - b);
+    return COLORES_SEDE[Math.max(0, ids.indexOf(idSede)) % COLORES_SEDE.length];
+  };
+
+  // Vista del Administrador: mesas agrupadas por sede (Cajero/Mesero ven una sola lista).
+  const gruposSede: Array<{ idSede: number; nombre: string; mesas: Mesa[] }> = [];
+  for (const m of mesas) {
+    let g = gruposSede.find((x) => x.idSede === m.idSede);
+    if (!g) {
+      g = { idSede: m.idSede, nombre: m.nombreSede, mesas: [] };
+      gruposSede.push(g);
+    }
+    g.mesas.push(m);
+  }
+  gruposSede.sort((a, b) => a.idSede - b.idSede);
+
   const libres = mesas.filter((m) => m.estado === "LIBRE").length;
   const ocupadas = mesas.filter((m) => m.estado === "OCUPADA").length;
+
+  function renderMesa(mesa: Mesa, conColorSede: boolean) {
+              const libre = mesa.estado === "LIBRE";
+              const ocupada = mesa.estado === "OCUPADA";
+              const barColor = libre
+                ? "var(--color-primary)"
+                : ocupada
+                  ? "var(--color-primary)"
+                  : "var(--color-border)";
+              const color = conColorSede ? colorSede(mesa.idSede) : null;
+              return (
+                <div className={`mesa-card${ocupada ? " ocupada" : ""}`} key={mesa.idMesa}>
+                  <div className="mesa-card-bar" style={{ background: color ?? barColor }} />
+                  <div className="mesa-card-body">
+                    <div className="mesa-card-top">
+                      <div>
+                        <div className="mesa-card-title">{mesa.identificador}</div>
+                        {color ? (
+                          <span className="sede-pill" style={{ background: color }}>
+                            {mesa.nombreSede}
+                          </span>
+                        ) : (
+                          <div className="mesa-card-meta">{mesa.nombreSede}</div>
+                        )}
+                      </div>
+                      <span className={`badge ${badgeClase(mesa.estado)}`}>{mesa.estado}</span>
+                    </div>
+
+                    {esMesero && (
+                      <>
+                        <div className="mesa-card-info">
+                          {libre ? "Disponible para un nuevo pedido" : ocupada ? "Pedido en curso" : "Mesa inactiva"}
+                        </div>
+                        {libre && (
+                          <button
+                            className="mesa-card-btn libre"
+                            onClick={() => void handleAbrirPedido(mesa)}
+                            disabled={accionEnCurso === mesa.idMesa}
+                          >
+                            <Icon path={ICONS.plus} size={15} strokeWidth={2.2} />
+                            Abrir pedido
+                          </button>
+                        )}
+                        {ocupada && (
+                          <button
+                            className="mesa-card-btn ocupada"
+                            onClick={() => navigate(`/pedidos/mesa/${mesa.idMesa}`)}
+                          >
+                            <Icon path={ICONS.receipt} size={15} strokeWidth={2.2} />
+                            Ver pedido
+                          </button>
+                        )}
+                      </>
+                    )}
+
+                    {esAdministrador && (
+                      <div className="mesa-card-actions">
+                        <button
+                          className="btn-link"
+                          onClick={() => abrirEdicion(mesa)}
+                          disabled={accionEnCurso === mesa.idMesa}
+                        >
+                          Editar
+                        </button>
+                        {mesa.estado === "INACTIVA" ? (
+                          <button
+                            className="btn-link"
+                            onClick={() => void handleActivar(mesa)}
+                            disabled={accionEnCurso === mesa.idMesa}
+                          >
+                            Activar
+                          </button>
+                        ) : (
+                          <button
+                            className="btn-link danger"
+                            onClick={() => void handleInactivar(mesa)}
+                            disabled={mesa.estado === "OCUPADA" || accionEnCurso === mesa.idMesa}
+                            title={mesa.estado === "OCUPADA" ? "Solo se puede inactivar una mesa libre" : undefined}
+                          >
+                            Inactivar
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+              }
 
   return (
     <div>
@@ -302,88 +416,29 @@ export function MesasPage() {
         ) : mesas.length === 0 ? (
           <p className="empty-state">No hay mesas registradas.</p>
         ) : (
-          <div className="mesas-grid">
-            {mesas.map((mesa) => {
-              const libre = mesa.estado === "LIBRE";
-              const ocupada = mesa.estado === "OCUPADA";
-              const barColor = libre
-                ? "var(--color-primary)"
-                : ocupada
-                  ? "var(--color-primary)"
-                  : "var(--color-border)";
-              return (
-                <div className={`mesa-card${ocupada ? " ocupada" : ""}`} key={mesa.idMesa}>
-                  <div className="mesa-card-bar" style={{ background: barColor }} />
-                  <div className="mesa-card-body">
-                    <div className="mesa-card-top">
-                      <div>
-                        <div className="mesa-card-title">{mesa.identificador}</div>
-                        <div className="mesa-card-meta">{mesa.nombreSede}</div>
-                      </div>
-                      <span className={`badge ${badgeClase(mesa.estado)}`}>{mesa.estado}</span>
-                    </div>
-
-                    {esMesero && (
-                      <>
-                        <div className="mesa-card-info">
-                          {libre ? "Disponible para un nuevo pedido" : ocupada ? "Pedido en curso" : "Mesa inactiva"}
-                        </div>
-                        {libre && (
-                          <button
-                            className="mesa-card-btn libre"
-                            onClick={() => void handleAbrirPedido(mesa)}
-                            disabled={accionEnCurso === mesa.idMesa}
-                          >
-                            <Icon path={ICONS.plus} size={15} strokeWidth={2.2} />
-                            Abrir pedido
-                          </button>
-                        )}
-                        {ocupada && (
-                          <button
-                            className="mesa-card-btn ocupada"
-                            onClick={() => navigate(`/pedidos/mesa/${mesa.idMesa}`)}
-                          >
-                            <Icon path={ICONS.receipt} size={15} strokeWidth={2.2} />
-                            Ver pedido
-                          </button>
-                        )}
-                      </>
-                    )}
-
-                    {esAdministrador && (
-                      <div className="mesa-card-actions">
-                        <button
-                          className="btn-link"
-                          onClick={() => abrirEdicion(mesa)}
-                          disabled={accionEnCurso === mesa.idMesa}
-                        >
-                          Editar
-                        </button>
-                        {mesa.estado === "INACTIVA" ? (
-                          <button
-                            className="btn-link"
-                            onClick={() => void handleActivar(mesa)}
-                            disabled={accionEnCurso === mesa.idMesa}
-                          >
-                            Activar
-                          </button>
-                        ) : (
-                          <button
-                            className="btn-link danger"
-                            onClick={() => void handleInactivar(mesa)}
-                            disabled={mesa.estado === "OCUPADA" || accionEnCurso === mesa.idMesa}
-                            title={mesa.estado === "OCUPADA" ? "Solo se puede inactivar una mesa libre" : undefined}
-                          >
-                            Inactivar
-                          </button>
-                        )}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
+          esAdministrador ? (
+            <div>
+              {gruposSede.map((g) => {
+                const color = colorSede(g.idSede);
+                const ocup = g.mesas.filter((m) => m.estado === "OCUPADA").length;
+                return (
+                  <section key={g.idSede} className="sede-grupo">
+                    <h3 className="sede-grupo-titulo">
+                      <i style={{ background: color }} />
+                      {g.nombre}
+                      <small>
+                        {" "}
+                        · {g.mesas.length} mesa{g.mesas.length === 1 ? "" : "s"} · {ocup} ocupada{ocup === 1 ? "" : "s"}
+                      </small>
+                    </h3>
+                    <div className="mesas-grid">{g.mesas.map((m) => renderMesa(m, true))}</div>
+                  </section>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="mesas-grid">{mesas.map((m) => renderMesa(m, false))}</div>
+          )
         )}
       </div>
     </div>

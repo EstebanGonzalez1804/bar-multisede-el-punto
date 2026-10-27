@@ -230,6 +230,12 @@ a criterio técnico del proveedor:
     servidor valida cantidades y valor, y cubre primero las líneas más
     antiguas. `pago_detalle_pedido` guarda ahora la cantidad por línea.
 
+- **Mesas por sede para el Administrador (Oct 27).** La vista de Mesas del
+  Administrador agrupa las mesas en secciones por sede (con su conteo de
+  mesas y ocupadas) y cada tarjeta lleva la barra superior y una etiqueta con
+  el color de su sede. El color es fijo por sede (paleta sin verde ni rojo).
+  Cajero y Mesero siguen viendo solo su sede, sin cambios.
+
 - **Ajustes tras la validación del avance (Oct 27).**
   - *Inactivar un tipo de producto* inactiva en la misma transacción todos
     sus productos activos (cada uno queda en trazabilidad). Reactivar el tipo
