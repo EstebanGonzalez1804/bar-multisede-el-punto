@@ -27,7 +27,6 @@ export const registrarPagoSchema = z.object({
       z.object({
         metodo: z.enum(["EFECTIVO", "TARJETA_CREDITO", "TARJETA_DEBITO"]),
         valor: z.number().positive("El valor del pago debe ser mayor a cero."),
-        valorEntregado: z.number().positive().optional(),
       })
     )
     .min(1, "Agrega al menos un método de pago con su valor.")

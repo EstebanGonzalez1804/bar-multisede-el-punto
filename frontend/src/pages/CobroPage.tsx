@@ -14,7 +14,6 @@ import { etiquetaEstadoPago, fechaHora, pesos } from "../utils/format";
 interface LineaForm {
   metodo: MetodoPago;
   valor: string;
-  entregado: string;
 }
 
 const METODOS: MetodoPago[] = ["EFECTIVO", "TARJETA_CREDITO", "TARJETA_DEBITO"];
@@ -89,7 +88,7 @@ export function CobroPage() {
   const [mensaje, setMensaje] = useState<string | null>(null);
 
   const [modalidad, setModalidad] = useState<ModalidadPago>("TOTAL");
-  const [lineas, setLineas] = useState<LineaForm[]>([{ metodo: "EFECTIVO", valor: "", entregado: "" }]);
+  const [lineas, setLineas] = useState<LineaForm[]>([{ metodo: "EFECTIVO", valor: "" }]);
   // idProducto -> unidades que el cliente va a pagar ahora.
   const [seleccion, setSeleccion] = useState<Record<number, number>>({});
   const [guardando, setGuardando] = useState(false);
@@ -100,7 +99,6 @@ export function CobroPage() {
       {
         metodo: "EFECTIVO",
         valor: mod === "TOTAL" && p.saldoPendiente > 0 ? String(p.saldoPendiente) : "",
-        entregado: "",
       },
     ]);
   }, []);
@@ -160,12 +158,9 @@ export function CobroPage() {
     const nueva = { ...seleccion, [prod.idProducto]: valida };
     if (valida === 0) delete nueva[prod.idProducto];
     setSeleccion(nueva);
-    // El valor se calcula automáticamente (HU-036 CA-01) cuando hay un único método.
-    if (lineas.length === 1) {
-      const total =
-        pendientes.reduce((acc, p) => acc + valorCentavos(p, nueva[p.idProducto] ?? 0), 0) / 100;
-      setLineas([{ ...lineas[0], valor: total > 0 ? String(total) : "" }]);
-    }
+    // El valor se calcula solo (HU-036 CA-01) y no se edita: el pago por productos usa un único método.
+    const total = pendientes.reduce((acc, p) => acc + valorCentavos(p, nueva[p.idProducto] ?? 0), 0) / 100;
+    setLineas([{ ...lineas[0], valor: total > 0 ? String(total) : "" }]);
   }
 
   function actualizarLinea(i: number, cambios: Partial<LineaForm>) {
@@ -173,13 +168,6 @@ export function CobroPage() {
   }
 
   const sumaLineas = lineas.reduce((acc, l) => acc + (aCentavos(l.valor) || 0), 0) / 100;
-  const vueltas =
-    lineas.reduce((acc, l) => {
-      const entregado = aCentavos(l.entregado);
-      const valor = aCentavos(l.valor);
-      return l.metodo === "EFECTIVO" && entregado > valor && valor > 0 ? acc + (entregado - valor) : acc;
-    }, 0) / 100;
-
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
     if (!pedido) return;
@@ -194,9 +182,6 @@ export function CobroPage() {
         return;
       }
       const item: LineaPagoEntrada = { metodo: l.metodo, valor };
-      if (l.metodo === "EFECTIVO" && l.entregado.trim() !== "") {
-        item.valorEntregado = Number(l.entregado);
-      }
       entrada.push(item);
     }
     const productosElegidos = pendientes
@@ -216,11 +201,10 @@ export function CobroPage() {
       });
       setPedido(resultado.pedido);
       preparar(resultado.pedido, modalidad);
-      const vueltasTxt = resultado.vueltas > 0 ? ` Vueltas a entregar: ${pesos(resultado.vueltas)}.` : "";
       setMensaje(
         resultado.pedido.estadoPago === "PAGADO"
-          ? `Pago registrado. La cuenta quedó pagada y la mesa se liberó.${vueltasTxt}`
-          : `Pago registrado. Saldo pendiente: ${pesos(resultado.pedido.saldoPendiente)}.${vueltasTxt}`
+          ? `Pago registrado. La cuenta quedó pagada y la mesa se liberó.`
+          : `Pago registrado. Saldo pendiente: ${pesos(resultado.pedido.saldoPendiente)}.`
       );
     } catch (err) {
       setError(getApiErrorMessage(err, "No se pudo registrar el pago."));
@@ -431,24 +415,11 @@ export function CobroPage() {
                     min={0}
                     step="any"
                     value={l.valor}
-                    readOnly={modalidad === "TOTAL"}
+                    readOnly={modalidad !== "ABONO"}
                     onChange={(e) => actualizarLinea(i, { valor: e.target.value })}
                   />
                 </div>
-                {l.metodo === "EFECTIVO" && (
-                  <div className="field">
-                    <label htmlFor={`entregado${i}`}>Entrega el cliente (opcional)</label>
-                    <input
-                      id={`entregado${i}`}
-                      type="number"
-                      min={0}
-                      step="any"
-                      value={l.entregado}
-                      onChange={(e) => actualizarLinea(i, { entregado: e.target.value })}
-                    />
-                  </div>
-                )}
-                {modalidad !== "TOTAL" && lineas.length > 1 && (
+                {modalidad === "ABONO" && lineas.length > 1 && (
                   <button
                     type="button"
                     className="btn-link danger"
@@ -460,11 +431,11 @@ export function CobroPage() {
               </div>
             ))}
 
-            {modalidad !== "TOTAL" && lineas.length < 6 && (
+            {modalidad === "ABONO" && lineas.length < 6 && (
               <button
                 type="button"
                 className="btn-link"
-                onClick={() => setLineas([...lineas, { metodo: "TARJETA_CREDITO", valor: "", entregado: "" }])}
+                onClick={() => setLineas([...lineas, { metodo: "TARJETA_CREDITO", valor: "" }])}
               >
                 + Agregar otro método
               </button>
@@ -472,12 +443,6 @@ export function CobroPage() {
 
             <p className="field-hint" style={{ marginTop: "0.75rem" }}>
               Valor a cobrar: <strong>{pesos(sumaLineas)}</strong>
-              {vueltas > 0 && (
-                <>
-                  {" "}
-                  · Vueltas: <strong>{pesos(vueltas)}</strong>
-                </>
-              )}
             </p>
 
             <div className="form-actions" style={{ marginTop: "1rem" }}>

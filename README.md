@@ -261,11 +261,12 @@ a criterio técnico del proveedor:
     impresión con `@media print` y PDF generado en el servidor (`pdfkit`).
     Se rotula "documento interno · no es factura electrónica".
   - *Pagos (HU-033 a 038):* un solo endpoint (`POST /api/pedidos/:id/pagos`)
-    con tres modalidades — pago completo (uno o varios métodos que sumen el
-    saldo exacto), abono por monto y pago por productos (se eligen líneas de
-    la cuenta y el valor se calcula solo). Los importes se calculan en
-    centavos enteros. Las vueltas en efectivo se muestran al cajero pero NO
-    se almacenan (HU-033 CA-02). Al llegar el saldo a 0 el pedido pasa a
+    con tres modalidades — pago completo (un único pago, un método, por el
+    saldo exacto), abono por monto (valor libre, se pueden combinar métodos) y
+    pago por productos (producto + cantidad, valor calculado y no editable,
+    un solo método por pago; otro cliente con otro método = otro pago). Los
+    importes se calculan en centavos enteros. No se manejan vueltas en
+    efectivo. Al llegar el saldo a 0 el pedido pasa a
     PAGADO y la mesa a LIBRE en la misma transacción (HU-037). Los pagos son
     inmutables: no hay endpoint de edición/anulación y un trigger de
     PostgreSQL (`trg_pago_inmutable`) bloquea cualquier UPDATE/DELETE

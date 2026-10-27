@@ -188,7 +188,6 @@ export interface ResumenPedido {
 export interface LineaPagoEntrada {
   metodo: MetodoPago;
   valor: number;
-  valorEntregado?: number;
 }
 
 export interface RegistrarPagoEntrada {

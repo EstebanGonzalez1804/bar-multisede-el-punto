@@ -56,8 +56,8 @@ export async function listarPedidosPendientesPago(busqueda?: string, idSede?: nu
 export async function registrarPago(
   idPedido: number,
   entrada: RegistrarPagoEntrada
-): Promise<{ pedido: Pedido; vueltas: number }> {
-  const { data } = await apiClient.post<{ pedido: Pedido; vueltas: number }>(`/pedidos/${idPedido}/pagos`, entrada);
+): Promise<{ pedido: Pedido }> {
+  const { data } = await apiClient.post<{ pedido: Pedido }>(`/pedidos/${idPedido}/pagos`, entrada);
   return data;
 }
 

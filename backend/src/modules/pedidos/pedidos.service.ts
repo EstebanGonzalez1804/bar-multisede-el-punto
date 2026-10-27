@@ -573,8 +573,6 @@ export async function listarPedidos(filtros: FiltrosPedidos): Promise<ResumenPed
 export interface LineaPagoEntrada {
   metodo: MetodoPago;
   valor: number;
-  /** Solo efectivo: lo que entrega el cliente; la diferencia son vueltas y NO se almacena (HU-033 CA-02). */
-  valorEntregado?: number;
 }
 
 export interface RegistrarPagoEntrada {
@@ -586,7 +584,6 @@ export interface RegistrarPagoEntrada {
 
 export interface ResultadoPago {
   pedido: Pedido;
-  vueltas: number;
 }
 
 function formatoPesos(centavos: number): string {
@@ -650,20 +647,17 @@ export async function registrarPago(
       if (!(aCentavos(l.valor) > 0)) {
         throw ApiError.badRequest("Cada valor de pago debe ser mayor a cero.");
       }
-      if (l.valorEntregado !== undefined) {
-        if (l.metodo !== "EFECTIVO") {
-          throw ApiError.badRequest("El valor entregado solo aplica a pagos en efectivo.");
-        }
-        if (aCentavos(l.valorEntregado) < aCentavos(l.valor)) {
-          throw ApiError.badRequest("El valor entregado en efectivo no puede ser menor al valor a pagar.");
-        }
-      }
     }
     const sumaCent = entrada.lineas.reduce((acc, l) => acc + aCentavos(l.valor), 0);
 
     // Asignación de unidades a líneas del pedido (solo modalidad PRODUCTOS).
     const asignaciones: Array<{ idDetallePedido: number; cantidad: number }> = [];
     if (entrada.modalidad === "PRODUCTOS") {
+      if (entrada.lineas.length !== 1) {
+        throw ApiError.badRequest(
+          "El pago por productos se cobra con un solo método. Si otra persona paga con otro método, registra otro pago por productos."
+        );
+      }
       const pedidos = entrada.productos ?? [];
       if (pedidos.length === 0) {
         throw ApiError.badRequest("Selecciona al menos un producto de la cuenta.");
@@ -739,7 +733,6 @@ export async function registrarPago(
     }
 
     let primerPago: number | null = null;
-    let vueltasCent = 0;
     for (const l of entrada.lineas) {
       const { rows: pagoRows } = await client.query<{ id_pago: number }>(
         `INSERT INTO pago (id_pedido, id_usuario, metodo, valor, modalidad)
@@ -748,9 +741,6 @@ export async function registrarPago(
       );
       const idPago = Number(pagoRows[0].id_pago);
       if (primerPago === null) primerPago = idPago;
-      if (l.valorEntregado !== undefined) {
-        vueltasCent += aCentavos(l.valorEntregado) - aCentavos(l.valor);
-      }
 
       await registrarEvento(
         {
@@ -815,6 +805,6 @@ export async function registrarPago(
       await client.query(`UPDATE pedido SET estado_pago = 'PARCIAL' WHERE id_pedido = $1`, [idPedido]);
     }
 
-    return { pedido: await obtenerPedidoConLineas(idPedido, client), vueltas: vueltasCent / 100 };
+    return { pedido: await obtenerPedidoConLineas(idPedido, client) };
   });
 }
