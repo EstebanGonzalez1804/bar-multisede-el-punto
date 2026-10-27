@@ -36,7 +36,6 @@ pedidosRouter.get("/:idPedido/cuenta.pdf", pedidosController.getCuentaPdf);
 
 // HU-028 / HU-029 — cierre y reapertura excepcional: Mesero (de su sede).
 pedidosRouter.post("/:idPedido/cerrar", requireRole("MESERO"), pedidosController.postCerrarPedido);
-pedidosRouter.post("/:idPedido/reabrir", requireRole("MESERO"), pedidosController.postReabrirPedido);
 
 // HU-033 a HU-038 — registro de pagos: Cajero (su sede) y Administrador. No existe
 // ninguna ruta para editar o anular un pago (HU-038 CA-03).

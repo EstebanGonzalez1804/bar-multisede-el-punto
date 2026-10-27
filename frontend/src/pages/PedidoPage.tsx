@@ -109,23 +109,6 @@ export function PedidoPage() {
     }
   }
 
-  // HU-029: reapertura excepcional (solo pedidos cerrados sin ningún pago).
-  async function handleReabrirPedido() {
-    if (!pedido) return;
-    setError(null);
-    setMensaje(null);
-    setProcesando(true);
-    try {
-      const actualizado = await pedidosApi.reabrirPedido(pedido.idPedido);
-      setPedido(actualizado);
-      setMensaje("Pedido reabierto. Ya puedes agregar nuevos productos; al cerrarlo de nuevo la cuenta se actualiza.");
-    } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo reabrir el pedido."));
-    } finally {
-      setProcesando(false);
-    }
-  }
-
   if (cargando) {
     return (
       <div className="panel">
@@ -151,7 +134,6 @@ export function PedidoPage() {
   );
 
   const abierto = pedido.estadoPedido === "ABIERTO";
-  const sinPagos = pedido.pagos.length === 0;
 
   return (
     <div>
@@ -174,8 +156,8 @@ export function PedidoPage() {
         {!abierto && (
           <div className="alert alert-info">
             {pedido.estadoPago === "PARCIAL"
-              ? `Este pedido ya tiene pagos registrados y un saldo pendiente de $${pedido.saldoPendiente.toLocaleString("es-CO")}. No se puede reabrir ni modificar.`
-              : "El pedido está cerrado y su cuenta está pendiente de pago. Si el cliente pide algo más antes de pagar, puedes reabrirlo."}
+              ? `Este pedido ya tiene pagos registrados y un saldo pendiente de $${pedido.saldoPendiente.toLocaleString("es-CO")}. No se puede modificar.`
+              : "El pedido está cerrado y su cuenta está pendiente de pago. Un pedido cerrado no se puede reabrir: si el cliente pide algo más, cobra esta cuenta y abre una cuenta nueva en la mesa."}
           </div>
         )}
 
@@ -272,11 +254,6 @@ export function PedidoPage() {
             <Link to={`/cuenta/${pedido.idPedido}`} className="btn-primary" style={{ width: "auto" }}>
               Ver cuenta
             </Link>
-          )}
-          {!abierto && sinPagos && (
-            <button type="button" className="btn-secondary" disabled={procesando} onClick={() => void handleReabrirPedido()}>
-              {procesando ? "Reabriendo..." : "Reabrir pedido"}
-            </button>
           )}
         </div>
 

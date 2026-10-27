@@ -43,9 +43,22 @@ export function TiposProductoPage() {
   async function handleCambiarEstado(tipo: TipoProducto) {
     const nuevoEstado: Estado = tipo.estado === "ACTIVO" ? "INACTIVO" : "ACTIVO";
     setError(null);
+    if (
+      nuevoEstado === "INACTIVO" &&
+      !window.confirm(
+        `Al inactivar "${tipo.nombre}" también se inactivarán todos los productos de este tipo. ¿Deseas continuar?`
+      )
+    ) {
+      return;
+    }
     try {
-      await tiposProductoApi.cambiarEstadoTipoProducto(tipo.idTipoProducto, nuevoEstado);
-      setMensaje(nuevoEstado === "ACTIVO" ? "Tipo de producto activado." : "Tipo de producto inactivado.");
+      const resultado = await tiposProductoApi.cambiarEstadoTipoProducto(tipo.idTipoProducto, nuevoEstado);
+      const n = resultado.productosInactivados ?? 0;
+      setMensaje(
+        nuevoEstado === "ACTIVO"
+          ? "Tipo de producto activado. Sus productos siguen inactivos hasta que los actives uno a uno desde Productos."
+          : `Tipo de producto inactivado${n > 0 ? ` junto con ${n} producto${n === 1 ? "" : "s"} de este tipo` : ""}.`
+      );
       await cargarTipos();
     } catch (err) {
       setError(getApiErrorMessage(err, "No se pudo cambiar el estado del tipo de producto."));

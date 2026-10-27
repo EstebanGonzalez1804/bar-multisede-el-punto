@@ -82,6 +82,12 @@ h3 {
   display: flex;
   flex-direction: column;
   padding: 22px 0;
+  /* Menú fijo: queda a la altura de la ventana mientras el contenido se
+     desplaza; si el menú no cabe, se desplaza solo su lista de opciones. */
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  align-self: flex-start;
 }
 
 .sidebar-brand {
@@ -97,6 +103,7 @@ h3 {
   gap: 2px;
   padding: 0 12px;
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
 }
 
@@ -265,6 +272,7 @@ h3 {
     top: 0;
     bottom: 0;
     left: 0;
+    height: auto;
     z-index: 50;
     transform: translateX(-100%);
     transition: transform 0.22s ease;
@@ -1137,6 +1145,31 @@ a.btn-secondary {
 .detalle-clave {
   color: var(--color-text-muted);
 }
+
+.detalle-desplegable {
+  margin-top: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.detalle-desplegable summary {
+  cursor: pointer;
+  color: var(--color-text-muted);
+}
+
+.evento-etiqueta {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  margin-bottom: 0.2rem;
+  background: #e6ecea;
+  color: #34443e;
+}
+
+.evento-ok { background: #dcefe3; color: #1f5a37; }
+.evento-aviso { background: #f6e8c8; color: #7a5200; }
+.evento-alerta { background: #f6d9d6; color: #8a2a20; }
 
 /* ---------- Tirilla de cuenta (80 mm) — HU-031 ---------- */
 

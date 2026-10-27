@@ -320,12 +320,12 @@ export async function registrarProductoEnPedido(
     }
     if (pedido.estado_pedido !== "ABIERTO") {
       // HU-027 CA-03: con un pago registrado no se agrega nada, bajo ninguna
-      // circunstancia. CA-02: cerrado sin pagos -> hay que reabrirlo primero.
+      // circunstancia. Un pedido cerrado tampoco se reabre: se abre una cuenta nueva.
       const { rows: pagos } = await client.query(`SELECT 1 FROM pago WHERE id_pedido = $1 LIMIT 1`, [idPedido]);
       throw ApiError.conflict(
         pagos.length > 0
           ? "El pedido ya tiene un pago registrado: no se le pueden agregar productos."
-          : "El pedido está cerrado: reábrelo antes de agregar nuevos productos.",
+          : "El pedido está cerrado y no se puede reabrir: cuando se pague la cuenta y la mesa quede libre, abre una cuenta nueva.",
         pagos.length > 0 ? "PEDIDO_CON_PAGO" : "PEDIDO_CERRADO"
       );
     }
@@ -409,8 +409,8 @@ function exigirAccesoSede(usuario: JwtPayload, idSedePedido: number): void {
  * HU-028 — Cierre del pedido y generación de la cuenta. Solo Mesero, de su
  * sede. Requiere al menos un producto (CA-04). La mesa permanece OCUPADA
  * (CA-02) y el estado de pago queda PENDIENTE (CA-01). La "cuenta" es el
- * propio pedido cerrado con sus líneas y total (ver HU-031); al reabrir,
- * agregar productos y cerrar de nuevo, refleja el consumo consolidado.
+ * propio pedido cerrado con sus líneas y total (ver HU-031). Un pedido
+ * cerrado no se reabre: si hay más consumo, se abre una cuenta nueva.
  */
 export async function cerrarPedido(mesero: JwtPayload, idPedido: number): Promise<Pedido> {
   return withTransaction(async (client) => {
@@ -456,52 +456,6 @@ export async function cerrarPedido(mesero: JwtPayload, idPedido: number): Promis
   });
 }
 
-/**
- * HU-029 / HU-038 — Reapertura excepcional. Solo si el pedido está CERRADO y
- * NO tiene ningún pago registrado (ni parcial). No ofrece edición de líneas
- * previas: solo vuelve a permitir agregar productos nuevos.
- */
-export async function reabrirPedido(mesero: JwtPayload, idPedido: number): Promise<Pedido> {
-  return withTransaction(async (client) => {
-    const { rows } = await client.query<{ id_sede: number; estado_pedido: string }>(
-      `SELECT id_sede, estado_pedido FROM pedido WHERE id_pedido = $1 FOR UPDATE`,
-      [idPedido]
-    );
-    const pedido = rows[0];
-    if (!pedido) throw ApiError.notFound("Pedido no encontrado.");
-    exigirAccesoSede(mesero, pedido.id_sede);
-    if (pedido.estado_pedido !== "CERRADO") {
-      throw ApiError.conflict("Solo se puede reabrir un pedido cerrado.", "PEDIDO_NO_REABRIBLE");
-    }
-
-    const { rows: pagos } = await client.query(`SELECT 1 FROM pago WHERE id_pedido = $1 LIMIT 1`, [idPedido]);
-    if (pagos.length > 0) {
-      throw ApiError.conflict(
-        "El pedido ya tiene un pago registrado: no se puede reabrir bajo ninguna circunstancia.",
-        "PEDIDO_CON_PAGO"
-      );
-    }
-
-    await client.query(
-      `UPDATE pedido SET estado_pedido = 'ABIERTO', fecha_cierre = NULL WHERE id_pedido = $1`,
-      [idPedido]
-    );
-
-    await registrarEvento(
-      {
-        idUsuario: mesero.idUsuario,
-        tipoEvento: "PEDIDO_REABIERTO",
-        entidadAfectada: "PEDIDO",
-        idAfectado: idPedido,
-        idSede: pedido.id_sede,
-      },
-      client
-    );
-
-    return obtenerPedidoConLineas(idPedido, client);
-  });
-}
-
 /** Consulta de un pedido por id con control de sede (cuenta, detalle de cobro). */
 export async function obtenerPedidoParaUsuario(usuario: JwtPayload, idPedido: number): Promise<Pedido> {
   const pedido = await obtenerPedidoConLineas(idPedido, pool);
@@ -528,7 +482,7 @@ export interface FiltrosPedidos {
   idSede: number | null;
   estadoPedido?: "ABIERTO" | "CERRADO";
   /** "PENDIENTE" incluye los pagos parciales (saldo > 0); "PAGADO" solo los saldados. */
-  estadoPago?: "PENDIENTE" | "PAGADO";
+  estadoPago?: "PENDIENTE" | "PAGADO" | "TODOS";
   /** Texto: número de pedido o identificador de mesa (búsqueda parcial). */
   busqueda?: string;
   soloPendientesDePago?: boolean;
@@ -650,7 +604,7 @@ function formatoPesos(centavos: number): string {
  *   pueden estar ya cubiertas por otro pago (HU-036).
  * - Saldo 0 => pedido PAGADO y mesa LIBRE de inmediato (HU-037). Nunca se
  *   libera la mesa por el paso del tiempo ni con saldo > 0.
- * - Desde el primer pago el pedido no puede reabrirse (HU-038); los pagos no
+ * - Un pedido cerrado no se reabre; los pagos no
  *   tienen ninguna operación de edición/anulación (y la BD lo impide con un
  *   trigger).
  */

@@ -222,6 +222,7 @@ export interface EventoTrazabilidad {
   tipoEvento: string;
   entidadAfectada: string;
   idAfectado: string | null;
+  nombreAfectado: string | null;
   idSede: number | null;
   nombreSede: string | null;
   fechaHora: string;

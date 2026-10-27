@@ -219,12 +219,33 @@ a criterio técnico del proveedor:
   ya eran fluidas (`grid-template-columns: repeat(auto-fit/auto-fill, ...)`)
   y no necesitaron cambios adicionales.
 
+- **Ajustes tras la validación del avance (Oct 27).**
+  - *Inactivar un tipo de producto* inactiva en la misma transacción todos
+    sus productos activos (cada uno queda en trazabilidad). Reactivar el tipo
+    **no** reactiva los productos: se activan uno a uno desde Productos.
+  - *Trazabilidad más clara:* cada evento se muestra con una etiqueta de color
+    y una frase en español (“Ana agregó 2 × Cerveza al pedido…”), nombres en
+    vez de ids y los datos adicionales (precio anterior → nuevo, ajuste de
+    inventario, valores de pago) en un desplegable “Ver datos”. Solo se
+    consultan los **250** eventos más recientes (los filtros permiten
+    llegar a lo anterior).
+  - *Pedidos:* por defecto se listan los pedidos “en curso”; los ya pagados
+    no se eliminan, quedan archivados y se consultan con el filtro
+    “Pagados” o “Todos”.
+  - *Excel de ventas:* título combinado, encabezado verde con filtros
+    automáticos, bordes, fechas reales, ganancia por fórmula y fila TOTALES
+    (SUBTOTAL/SUMPRODUCT) que se recalcula con las filas visibles al filtrar.
+  - *Pedidos cerrados no se reabren:* se cobra la cuenta y se abre una cuenta
+    nueva en la mesa (se retiró el endpoint y el botón de reapertura).
+  - *Menú lateral fijo:* el panel izquierdo no se desplaza con la página.
+
 - **Sprints 4 y 5 (HU-027 a HU-040), migración 006.**
   - *Pedidos:* un pedido ABIERTO se cierra con confirmación (HU-028): pasa a
-    CERRADO, la cuenta queda PENDIENTE y la mesa sigue OCUPADA. Se puede
-    reabrir (HU-029) solo si no tiene ningún pago, y desde el primer pago
-    (aunque sea parcial) ya no se puede reabrir ni agregarle productos
-    (HU-027 CA-03, HU-038). Nunca se editan ni eliminan líneas ya registradas.
+    CERRADO, la cuenta queda PENDIENTE y la mesa sigue OCUPADA. Un pedido
+    cerrado **no se reabre** (ajuste acordado tras la validación): si el
+    cliente pide más, se cobra la cuenta y se abre una cuenta nueva en la
+    mesa. Con pagos registrados (aunque sea parcial) tampoco se le agregan
+    productos (HU-027 CA-03, HU-038). Nunca se editan ni eliminan líneas ya registradas.
   - *Cuenta (HU-031):* se genera al cerrar; vista previa en tirilla de 80 mm,
     impresión con `@media print` y PDF generado en el servidor (`pdfkit`).
     Se rotula "documento interno · no es factura electrónica".

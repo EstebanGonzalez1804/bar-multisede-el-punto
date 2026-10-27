@@ -25,8 +25,11 @@ export async function modificarTipoProducto(idTipoProducto: number, nombre: stri
   return data.tipoProducto;
 }
 
-export async function cambiarEstadoTipoProducto(idTipoProducto: number, estado: Estado): Promise<TipoProducto> {
-  const { data } = await apiClient.put<{ tipoProducto: TipoProducto }>(
+export async function cambiarEstadoTipoProducto(
+  idTipoProducto: number,
+  estado: Estado
+): Promise<TipoProducto & { productosInactivados?: number }> {
+  const { data } = await apiClient.put<{ tipoProducto: TipoProducto & { productosInactivados?: number } }>(
     `/tipos-producto/${idTipoProducto}/estado`,
     { estado }
   );

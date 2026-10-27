@@ -207,7 +207,7 @@ export async function cambiarEstadoTipoProducto(
   admin: JwtPayload,
   idTipoProducto: number,
   estado: "ACTIVO" | "INACTIVO"
-): Promise<TipoProducto> {
+): Promise<TipoProducto & { productosInactivados: number }> {
   return withTransaction(async (client) => {
     const { rows } = await client.query<{ estado: string }>(
       `SELECT estado FROM tipo_producto WHERE id_tipo_producto = $1 FOR UPDATE`,
@@ -225,16 +225,44 @@ export async function cambiarEstadoTipoProducto(
       [estado, idTipoProducto]
     );
 
+    // Al inactivar un tipo, todos sus productos activos se inactivan también
+    // (cada uno queda registrado en trazabilidad). Al reactivar el tipo NO se
+    // reactivan automáticamente: algunos pudieron estar inactivos por otra
+    // razón y el Administrador decide cuáles vuelven a la venta.
+    let productosInactivados = 0;
+    if (estado === "INACTIVO") {
+      const { rows: inactivados } = await client.query<{ id_producto: number; codigo: string }>(
+        `UPDATE producto SET estado = 'INACTIVO', actualizado_en = now()
+          WHERE id_tipo_producto = $1 AND estado = 'ACTIVO'
+      RETURNING id_producto, codigo`,
+        [idTipoProducto]
+      );
+      productosInactivados = inactivados.length;
+      for (const prod of inactivados) {
+        await registrarEvento(
+          {
+            idUsuario: admin.idUsuario,
+            tipoEvento: "PRODUCTO_INACTIVADO",
+            entidadAfectada: "PRODUCTO",
+            idAfectado: prod.id_producto,
+            detalle: { motivo: "TIPO_PRODUCTO_INACTIVADO", idTipoProducto, codigo: prod.codigo },
+          },
+          client
+        );
+      }
+    }
+
     await registrarEvento(
       {
         idUsuario: admin.idUsuario,
         tipoEvento: estado === "ACTIVO" ? "TIPO_PRODUCTO_ACTIVADO" : "TIPO_PRODUCTO_INACTIVADO",
         entidadAfectada: "TIPO_PRODUCTO",
         idAfectado: idTipoProducto,
+        detalle: estado === "INACTIVO" ? { productosInactivados } : undefined,
       },
       client
     );
 
-    return mapRow(actualizados[0]);
+    return { ...mapRow(actualizados[0]), productosInactivados };
   });
 }

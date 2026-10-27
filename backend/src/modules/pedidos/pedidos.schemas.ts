@@ -15,7 +15,7 @@ export const registrarProductoEnPedidoSchema = z.object({
 export const listarPedidosQuerySchema = z.object({
   idSede: z.coerce.number().int().positive().optional(),
   estadoPedido: z.enum(["ABIERTO", "CERRADO"]).optional(),
-  estadoPago: z.enum(["PENDIENTE", "PAGADO"]).optional(),
+  estadoPago: z.enum(["PENDIENTE", "PAGADO", "TODOS"]).optional(),
   busqueda: z.string().trim().max(60).optional(),
 });
 

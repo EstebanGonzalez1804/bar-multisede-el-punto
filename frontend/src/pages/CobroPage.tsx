@@ -383,7 +383,7 @@ export function CobroPage() {
               </button>
             </div>
             <p className="field-hint">
-              Un pago registrado no se puede modificar ni anular, y la cuenta ya no podrá reabrirse.
+              Un pago registrado no se puede modificar ni anular.
             </p>
           </form>
         </div>

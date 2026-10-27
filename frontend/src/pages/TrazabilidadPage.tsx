@@ -5,26 +5,23 @@ import * as trazabilidadApi from "../api/trazabilidad";
 import * as usuariosApi from "../api/usuarios";
 import type { EventoTrazabilidad, Sede, Usuario } from "../api/types";
 import { fechaHora } from "../utils/format";
+import { describirEvento, detalleLegible, infoEvento, tiposPorCategoria } from "../utils/trazabilidad";
 
-function formatearValor(v: unknown): string {
-  if (v === null || v === undefined) return "—";
-  if (typeof v === "object") return JSON.stringify(v);
-  return String(v);
-}
-
-/** Muestra el detalle; si trae valor anterior y resultante los destaca (HU-040 CA-04). */
-function DetalleEvento({ detalle }: { detalle: Record<string, unknown> | null }) {
-  if (!detalle) return <span>—</span>;
-  const pares = Object.entries(detalle);
-  if (pares.length === 0) return <span>—</span>;
+/** Datos adicionales del evento (valores anterior/nuevo, montos, motivo...) en etiquetas legibles. */
+function DetalleEvento({ evento }: { evento: EventoTrazabilidad }) {
+  const datos = detalleLegible(evento);
+  if (datos.length === 0) return null;
   return (
-    <ul className="detalle-evento">
-      {pares.map(([clave, valor]) => (
-        <li key={clave}>
-          <span className="detalle-clave">{clave}:</span> {formatearValor(valor)}
-        </li>
-      ))}
-    </ul>
+    <details className="detalle-desplegable">
+      <summary>Ver datos</summary>
+      <ul className="detalle-evento">
+        {datos.map((d) => (
+          <li key={d.etiqueta}>
+            <span className="detalle-clave">{d.etiqueta}:</span> {d.valor}
+          </li>
+        ))}
+      </ul>
+    </details>
   );
 }
 
@@ -113,13 +110,17 @@ export function TrazabilidadPage() {
           </select>
         </div>
         <div className="field">
-          <label htmlFor="tipoTraza">Tipo de evento</label>
+          <label htmlFor="tipoTraza">¿Qué pasó?</label>
           <select id="tipoTraza" value={tipoEvento} onChange={(e) => setTipoEvento(e.target.value)}>
             <option value="">Todos</option>
-            {tiposEvento.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
+            {tiposPorCategoria(tiposEvento).map((g) => (
+              <optgroup key={g.categoria} label={g.categoria}>
+                {g.tipos.map((t) => (
+                  <option key={t.tipo} value={t.tipo}>
+                    {t.etiqueta}
+                  </option>
+                ))}
+              </optgroup>
             ))}
           </select>
         </div>
@@ -144,35 +145,46 @@ export function TrazabilidadPage() {
         <p className="empty-state">No hay eventos que coincidan con los filtros.</p>
       ) : (
         <>
-          <p className="field-hint">Se muestran los 500 eventos más recientes que cumplen el filtro.</p>
+          <p className="field-hint">
+            Se muestran los {eventos.length} eventos más recientes (máximo 250). Usa los filtros para encontrar
+            algo más antiguo.
+          </p>
           <div className="table-scroll">
             <table>
               <thead>
                 <tr>
                   <th>Fecha y hora</th>
-                  <th>Usuario</th>
-                  <th>Acción</th>
-                  <th>Información afectada</th>
+                  <th>Quién</th>
+                  <th>Qué pasó</th>
                   <th>Sede</th>
-                  <th>Detalle</th>
                 </tr>
               </thead>
               <tbody>
-                {eventos.map((ev) => (
-                  <tr key={ev.idEvento}>
-                    <td>{fechaHora(ev.fechaHora)}</td>
-                    <td>{ev.codigoUsuario ? `${ev.codigoUsuario} — ${ev.nombreUsuario}` : "—"}</td>
-                    <td>{ev.tipoEvento}</td>
-                    <td>
-                      {ev.entidadAfectada}
-                      {ev.idAfectado ? ` #${ev.idAfectado}` : ""}
-                    </td>
-                    <td>{ev.nombreSede ?? "—"}</td>
-                    <td>
-                      <DetalleEvento detalle={ev.detalle} />
-                    </td>
-                  </tr>
-                ))}
+                {eventos.map((ev) => {
+                  const info = infoEvento(ev.tipoEvento);
+                  return (
+                    <tr key={ev.idEvento}>
+                      <td style={{ whiteSpace: "nowrap" }}>{fechaHora(ev.fechaHora)}</td>
+                      <td>
+                        {ev.codigoUsuario ? (
+                          <>
+                            {ev.nombreUsuario}
+                            <br />
+                            <small className="detalle-clave">{ev.codigoUsuario}</small>
+                          </>
+                        ) : (
+                          "Sistema"
+                        )}
+                      </td>
+                      <td>
+                        <span className={`evento-etiqueta evento-${info.tono}`}>{info.etiqueta}</span>
+                        <div>{describirEvento(ev)}</div>
+                        <DetalleEvento evento={ev} />
+                      </td>
+                      <td>{ev.nombreSede ?? "—"}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

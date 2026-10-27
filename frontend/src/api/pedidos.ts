@@ -29,11 +29,6 @@ export async function cerrarPedido(idPedido: number): Promise<Pedido> {
   return data.pedido;
 }
 
-export async function reabrirPedido(idPedido: number): Promise<Pedido> {
-  const { data } = await apiClient.post<{ pedido: Pedido }>(`/pedidos/${idPedido}/reabrir`);
-  return data.pedido;
-}
-
 export async function obtenerPedido(idPedido: number): Promise<Pedido> {
   const { data } = await apiClient.get<{ pedido: Pedido }>(`/pedidos/${idPedido}`);
   return data.pedido;

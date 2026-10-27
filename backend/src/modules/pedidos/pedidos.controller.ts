@@ -96,12 +96,6 @@ export const postCerrarPedido = asyncHandler(async (req: Request, res: Response)
   res.status(200).json({ pedido });
 });
 
-export const postReabrirPedido = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
-  const pedido = await pedidosService.reabrirPedido(req.usuarioActual, parseIdPedido(req));
-  res.status(200).json({ pedido });
-});
-
 export const postPago = asyncHandler(async (req: Request, res: Response) => {
   if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
   const datos = registrarPagoSchema.parse(req.body);

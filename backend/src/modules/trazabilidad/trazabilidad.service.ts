@@ -8,11 +8,16 @@ export interface EventoTrazabilidad {
   tipoEvento: string;
   entidadAfectada: string;
   idAfectado: string | null;
+  /** Nombre legible de lo afectado (producto, mesa, sede, pedido...) cuando se puede resolver. */
+  nombreAfectado: string | null;
   idSede: number | null;
   nombreSede: string | null;
   fechaHora: string;
   detalle: Record<string, unknown> | null;
 }
+
+/** Cantidad máxima de eventos que devuelve la consulta (los más recientes). */
+export const MAX_EVENTOS_TRAZABILIDAD = 250;
 
 export interface FiltrosTrazabilidad {
   idUsuario?: number;
@@ -27,7 +32,7 @@ export interface FiltrosTrazabilidad {
  * Muestra usuario, acción, información afectada, sede, fecha y hora; el campo
  * `detalle` conserva los valores anterior y resultante cuando el evento los
  * tiene (cambio de precio, ajuste de inventario). Filtros por usuario, sede,
- * tipo de evento y rango de fechas (hora de Colombia). Máximo 500, los más recientes.
+ * tipo de evento y rango de fechas (hora de Colombia). Máximo 250, los más recientes.
  */
 export async function consultarTrazabilidad(filtros: FiltrosTrazabilidad): Promise<EventoTrazabilidad[]> {
   const condiciones: string[] = [];
@@ -63,19 +68,38 @@ export async function consultarTrazabilidad(filtros: FiltrosTrazabilidad): Promi
     tipo_evento: string;
     entidad_afectada: string;
     id_afectado: string | null;
+    nombre_afectado: string | null;
     id_sede: number | null;
     nombre_sede: string | null;
     fecha_hora: string;
     detalle: Record<string, unknown> | null;
   }>(
     `SELECT t.id_evento, t.id_usuario, u.codigo_usuario, u.nombre AS nombre_usuario, t.tipo_evento,
-            t.entidad_afectada, t.id_afectado, t.id_sede, s.nombre AS nombre_sede, t.fecha_hora, t.detalle
+            t.entidad_afectada, t.id_afectado,
+            CASE WHEN t.id_afectado ~ '^[0-9]+$' THEN
+              CASE t.entidad_afectada
+                WHEN 'PRODUCTO'   THEN (SELECT codigo || ' · ' || nombre FROM producto WHERE id_producto = t.id_afectado::int)
+                WHEN 'INVENTARIO' THEN (SELECT codigo || ' · ' || nombre FROM producto WHERE id_producto = t.id_afectado::int)
+                WHEN 'MESA'       THEN (SELECT identificador FROM mesa WHERE id_mesa = t.id_afectado::int)
+                WHEN 'SEDE'       THEN (SELECT nombre FROM sede WHERE id_sede = t.id_afectado::int)
+                WHEN 'USUARIO'    THEN (SELECT codigo_usuario || ' · ' || nombre FROM usuario WHERE id_usuario = t.id_afectado::int)
+                WHEN 'PROVEEDOR'  THEN (SELECT nombre FROM proveedor WHERE id_proveedor = t.id_afectado::int)
+                WHEN 'TIPO_PRODUCTO' THEN (SELECT nombre FROM tipo_producto WHERE id_tipo_producto = t.id_afectado::int)
+                WHEN 'PEDIDO'     THEN (SELECT identificador_pedido FROM pedido WHERE id_pedido = t.id_afectado::int)
+                WHEN 'PAGO'       THEN (SELECT pd.identificador_pedido FROM pago pg JOIN pedido pd ON pd.id_pedido = pg.id_pedido
+                                         WHERE pg.id_pago = t.id_afectado::bigint)
+                WHEN 'DETALLE_PEDIDO' THEN (SELECT pr.nombre FROM detalle_pedido dp JOIN producto pr ON pr.id_producto = dp.id_producto
+                                             WHERE dp.id_detalle_pedido = t.id_afectado::bigint)
+                ELSE NULL
+              END
+            END AS nombre_afectado,
+            t.id_sede, s.nombre AS nombre_sede, t.fecha_hora, t.detalle
      FROM trazabilidad t
      LEFT JOIN usuario u ON u.id_usuario = t.id_usuario
      LEFT JOIN sede s ON s.id_sede = t.id_sede
      ${where}
      ORDER BY t.fecha_hora DESC, t.id_evento DESC
-     LIMIT 500`,
+     LIMIT ${MAX_EVENTOS_TRAZABILIDAD}`,
     valores
   );
 
@@ -87,6 +111,7 @@ export async function consultarTrazabilidad(filtros: FiltrosTrazabilidad): Promi
     tipoEvento: r.tipo_evento,
     entidadAfectada: r.entidad_afectada,
     idAfectado: r.id_afectado,
+    nombreAfectado: r.nombre_afectado,
     idSede: r.id_sede,
     nombreSede: r.nombre_sede,
     fechaHora: r.fecha_hora,

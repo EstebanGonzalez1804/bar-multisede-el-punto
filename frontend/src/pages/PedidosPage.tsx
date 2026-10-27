@@ -24,7 +24,7 @@ export function PedidosPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [filtroEstadoPedido, setFiltroEstadoPedido] = useState("");
-  const [filtroEstadoPago, setFiltroEstadoPago] = useState("");
+  const [filtroEstadoPago, setFiltroEstadoPago] = useState("PENDIENTE");
   const [filtroBusqueda, setFiltroBusqueda] = useState("");
   const [filtroSede, setFiltroSede] = useState("");
 
@@ -91,9 +91,9 @@ export function PedidosPage() {
         <div className="field">
           <label htmlFor="estadoPago">Estado de pago</label>
           <select id="estadoPago" value={filtroEstadoPago} onChange={(e) => setFiltroEstadoPago(e.target.value)}>
-            <option value="">Todos</option>
-            <option value="PENDIENTE">Pendiente</option>
-            <option value="PAGADO">Pagado</option>
+            <option value="PENDIENTE">En curso (sin pagar del todo)</option>
+            <option value="PAGADO">Pagados (archivo)</option>
+            <option value="TODOS">Todos</option>
           </select>
         </div>
         {esAdministrador && (
@@ -115,6 +115,13 @@ export function PedidosPage() {
       </form>
 
       {error && <div className="alert alert-error">{error}</div>}
+
+      {filtroEstadoPago === "PENDIENTE" && (
+        <p style={{ marginTop: 0, color: "var(--color-muted, #5b6b64)", fontSize: "0.9rem" }}>
+          Los pedidos ya pagados no se eliminan: están archivados. Para verlos, cambia “Estado de pago” a
+          “Pagados” o “Todos”.
+        </p>
+      )}
 
       {cargando ? (
         <p className="empty-state">Cargando...</p>
