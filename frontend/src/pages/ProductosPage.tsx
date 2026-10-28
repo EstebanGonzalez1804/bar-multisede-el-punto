@@ -126,6 +126,10 @@ export function ProductosPage() {
       setError("Los valores de compra y venta deben ser números válidos mayores o iguales a 0.");
       return;
     }
+    if (valorVenta < valorCompra) {
+      setError("El valor de venta no puede ser menor que el valor de compra.");
+      return;
+    }
 
     setGuardando(true);
     try {
@@ -200,6 +204,11 @@ export function ProductosPage() {
       setCargandoHistorial(false);
     }
   }
+
+  const ventaMenorQueCompra =
+    formulario.valorCompra !== "" &&
+    formulario.valorVenta !== "" &&
+    Number(formulario.valorVenta) < Number(formulario.valorCompra);
 
   return (
     <div>
@@ -311,7 +320,13 @@ export function ProductosPage() {
                   onChange={(e) => setFormulario((f) => ({ ...f, valorVenta: e.target.value }))}
                   placeholder="5000"
                   inputMode="decimal"
+                  aria-invalid={ventaMenorQueCompra}
                 />
+                {ventaMenorQueCompra && (
+                  <p className="field-error" role="alert">
+                    El valor de venta no puede ser menor que el valor de compra.
+                  </p>
+                )}
               </div>
             </div>
             {editandoId === null ? (

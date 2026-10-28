@@ -275,6 +275,12 @@ a criterio técnico del proveedor:
     Mesas o Inventario. Trazabilidad conserva la presentación de la versión
     anterior (Oct 27, primera revisión).
 
+- **Regla de precios (Oct 28).** El valor de venta no puede ser menor que el
+  de compra: se valida en el formulario (aviso en línea) y en el servidor
+  (crear y modificar producto responden 400). Es regla de la aplicación, no
+  una restricción de base de datos, para no bloquear productos antiguos que
+  ya tuvieran un precio inconsistente.
+
 - **Mesas por sede para el Administrador (Oct 27).** La vista de Mesas del
   Administrador agrupa las mesas en secciones por sede (con su conteo de
   mesas y ocupadas) y cada tarjeta lleva la barra superior y una etiqueta con

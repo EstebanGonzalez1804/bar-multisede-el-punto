@@ -2531,3 +2531,10 @@ table.tabla-apilada .table-actions {
     grid-column: auto;
   }
 }
+
+.field-error {
+  margin: 4px 0 0;
+  font-size: var(--fs-xs);
+  color: var(--color-danger, #8a2a1c);
+  font-weight: 600;
+}
