@@ -270,8 +270,8 @@ a criterio técnico del proveedor:
     disponible" con botón de salida, avisos anunciados a lectores de pantalla,
     foco visible, respeto a "reducir movimiento" y aviso 30 s antes del cierre
     por inactividad (la regla de 3 minutos no cambia). El Cajero entra
-    directo a "Cuentas por cobrar". Inicio muestra máximo 8 mesas ocupadas y
-    8 productos agotados, con un enlace debajo para ver la lista completa en
+    directo a "Cuentas por cobrar". Inicio muestra máximo 6 mesas ocupadas y
+    6 productos agotados, con un enlace (siempre visible) debajo para ver la lista completa en
     Mesas o Inventario. Trazabilidad conserva la presentación de la versión
     anterior (Oct 27, primera revisión).
 

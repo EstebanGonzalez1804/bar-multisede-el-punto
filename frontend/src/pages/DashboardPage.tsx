@@ -62,7 +62,7 @@ export function DashboardPage() {
   const esMesero = usuario?.perfil === "MESERO";
   const esAdministrador = usuario?.perfil === "ADMINISTRADOR";
   // Máximo de filas por lista en Inicio; el resto se ve en la pantalla completa.
-  const MAX_FILAS = 8;
+  const MAX_FILAS = 6;
   const mesasOcupadas = mesas.filter((m) => m.estado === "OCUPADA");
 
   const primerNombre = usuario?.nombre?.split(" ")[0] ?? "";
@@ -126,7 +126,7 @@ export function DashboardPage() {
                       <span className="dashboard-row-meta">{esMesero ? "Ver pedido" : m.nombreSede}</span>
                     </Link>
                   ))}
-                  {mesasOcupadas.length > MAX_FILAS && (
+                  {mesasOcupadas.length > 0 && (
                     <Link className="dashboard-panel-row dashboard-ver-todos" to="/mesas">
                       Ver las {mesasOcupadas.length} mesas ocupadas en Mesas
                     </Link>
@@ -150,7 +150,7 @@ export function DashboardPage() {
                       {esAdministrador && <span className="dashboard-row-meta">{item.nombreSede}</span>}
                     </div>
                   ))}
-                  {agotados.length > MAX_FILAS && (
+                  {agotados.length > 0 && (
                     <Link className="dashboard-panel-row dashboard-ver-todos" to="/inventario">
                       Ver los {agotados.length} productos agotados en Inventario
                     </Link>

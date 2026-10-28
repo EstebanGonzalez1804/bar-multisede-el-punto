@@ -1679,19 +1679,15 @@ a.btn-secondary,
 
 /* ---------- Menú lateral (lista única, compacta) ---------- */
 
+/* Opciones del menú: el alto de cada una se ajusta a la altura de la ventana
+   (entre 3 y 10 px de relleno) para que las 13 del Administrador llenen el
+   menú sin dejar un hueco ni obligar a desplazarse; Cajero y Mesero ven el
+   mismo tamaño. */
 .sidebar-nav a {
-  font-size: var(--fs-sm);
-  padding: 7px 12px;
+  font-size: var(--fs-base);
+  padding: clamp(3px, calc((100vh - 255px) / 26 - 11.5px), 10px) 12px;
 }
 
-/* Pantallas bajas: se compacta para que el menú siga cabiendo completo. */
-@media (min-width: 901px) and (max-height: 760px) {
-  .sidebar { padding-top: 14px; padding-bottom: 12px; }
-  .sidebar-brand { padding-bottom: 10px; }
-  .sidebar-nav { gap: 0; }
-  .sidebar-nav a { padding: 5px 12px; }
-  .sidebar-footer-acciones { margin-top: 6px; gap: 3px; }
-}
 
 .sidebar-brand {
   padding-bottom: 18px;
@@ -1797,7 +1793,7 @@ a.dashboard-panel-row:hover {
   padding: 13px 22px;
 }
 
-.dashboard-ver-todos {
+a.dashboard-panel-row.dashboard-ver-todos {
   font-weight: 700;
   font-size: var(--fs-sm);
   color: var(--color-primary-dark) !important;
@@ -1807,7 +1803,7 @@ a.dashboard-panel-row:hover {
   background: rgba(23, 58, 51, 0.05);
 }
 
-.dashboard-ver-todos:hover {
+a.dashboard-panel-row.dashboard-ver-todos:hover {
   background: rgba(23, 58, 51, 0.1);
 }
 
