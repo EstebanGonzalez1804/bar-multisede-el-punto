@@ -85,7 +85,7 @@ export async function modificarSede(
       [idSede]
     );
     const anterior = actuales[0];
-    if (!anterior) throw ApiError.notFound("Sede no encontrada.");
+    if (!anterior) throw ApiError.notFound("Location not found.");
 
     const { rows } = await client.query(
       `UPDATE sede SET nombre = $1, direccion = $2 WHERE id_sede = $3
@@ -133,7 +133,7 @@ async function obtenerSede(idSede: number, ejecutor: Pool | PoolClient): Promise
     [idSede]
   );
   if (!rows[0]) {
-    throw ApiError.notFound("Sede no encontrada.");
+    throw ApiError.notFound("Location not found.");
   }
   return mapRow(rows[0]);
 }
@@ -151,10 +151,10 @@ export async function inactivarSede(admin: JwtPayload, idSede: number): Promise<
       [idSede]
     );
     if (!rows[0]) {
-      throw ApiError.notFound("Sede no encontrada.");
+      throw ApiError.notFound("Location not found.");
     }
     if (rows[0].estado === "INACTIVO") {
-      throw ApiError.conflict("La sede ya está inactiva.", "SEDE_YA_INACTIVA");
+      throw ApiError.conflict("The location is already inactive.", "SEDE_YA_INACTIVA");
     }
 
     const { rows: pendientes } = await client.query(
@@ -166,7 +166,7 @@ export async function inactivarSede(admin: JwtPayload, idSede: number): Promise<
     );
     if (pendientes.length > 0) {
       throw ApiError.conflict(
-        "No se puede inactivar: la sede tiene mesas ocupadas o pedidos sin pagar por completo.",
+        "Cannot deactivate: the location has occupied tables or orders that are not fully paid.",
         "SEDE_NO_INACTIVABLE"
       );
     }
@@ -195,10 +195,10 @@ export async function activarSede(admin: JwtPayload, idSede: number): Promise<Se
       [idSede]
     );
     if (!rows[0]) {
-      throw ApiError.notFound("Sede no encontrada.");
+      throw ApiError.notFound("Location not found.");
     }
     if (rows[0].estado === "ACTIVO") {
-      throw ApiError.conflict("La sede ya está activa.", "SEDE_YA_ACTIVA");
+      throw ApiError.conflict("The location is already active.", "SEDE_YA_ACTIVA");
     }
 
     await client.query(`UPDATE sede SET estado = 'ACTIVO' WHERE id_sede = $1`, [idSede]);

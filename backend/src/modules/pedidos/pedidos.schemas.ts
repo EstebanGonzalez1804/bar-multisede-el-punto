@@ -8,7 +8,7 @@ export const crearPedidoSchema = z.object({
 /** HU-026 — Registro de un producto en el pedido. */
 export const registrarProductoEnPedidoSchema = z.object({
   idProducto: z.number().int().positive(),
-  cantidad: z.number().int().positive("La cantidad debe ser un entero mayor a cero."),
+  cantidad: z.number().int().positive("The quantity must be a whole number greater than zero."),
 });
 
 /** HU-030 / HU-032 — Filtros del listado de pedidos. */
@@ -26,16 +26,16 @@ export const registrarPagoSchema = z.object({
     .array(
       z.object({
         metodo: z.enum(["EFECTIVO", "TARJETA_CREDITO", "TARJETA_DEBITO"]),
-        valor: z.number().positive("El valor del pago debe ser mayor a cero."),
+        valor: z.number().positive("The payment value must be greater than zero."),
       })
     )
-    .min(1, "Agrega al menos un método de pago con su valor.")
+    .min(1, "Add at least one payment method with its value.")
     .max(6),
   productos: z
     .array(
       z.object({
         idProducto: z.number().int().positive(),
-        cantidad: z.number().int().positive("La cantidad debe ser al menos 1."),
+        cantidad: z.number().int().positive("The quantity must be at least 1."),
       })
     )
     .optional(),

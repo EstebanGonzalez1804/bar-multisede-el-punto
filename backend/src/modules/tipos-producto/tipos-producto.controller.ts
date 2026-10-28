@@ -7,7 +7,7 @@ import * as tiposProductoService from "./tipos-producto.service";
 function parseIdTipoProducto(req: Request): number {
   const id = Number(req.params.idTipoProducto);
   if (!Number.isInteger(id)) {
-    throw ApiError.badRequest("El id de tipo de producto no es válido.");
+    throw ApiError.badRequest("The product type id is not valid.");
   }
   return id;
 }
@@ -24,14 +24,14 @@ export const getTipoProducto = asyncHandler(async (req: Request, res: Response) 
 });
 
 export const postTipoProducto = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const { nombre } = datosTipoProductoSchema.parse(req.body);
   const tipoProducto = await tiposProductoService.crearTipoProducto(req.usuarioActual, nombre);
   res.status(201).json({ tipoProducto });
 });
 
 export const putTipoProducto = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const id = parseIdTipoProducto(req);
   const { nombre } = datosTipoProductoSchema.parse(req.body);
   const tipoProducto = await tiposProductoService.modificarTipoProducto(req.usuarioActual, id, nombre);
@@ -39,7 +39,7 @@ export const putTipoProducto = asyncHandler(async (req: Request, res: Response) 
 });
 
 export const putEstadoTipoProducto = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const id = parseIdTipoProducto(req);
   const { estado } = cambiarEstadoTipoProductoSchema.parse(req.body);
   const tipoProducto = await tiposProductoService.cambiarEstadoTipoProducto(req.usuarioActual, id, estado);

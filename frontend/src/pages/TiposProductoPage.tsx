@@ -36,7 +36,7 @@ export function TiposProductoPage() {
       const data = await tiposProductoApi.listarTiposProducto();
       setTipos(data);
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudieron cargar los tipos de producto."));
+      setError(getApiErrorMessage(err, "Product types could not be loaded."));
     } finally {
       setCargando(false);
     }
@@ -52,9 +52,9 @@ export function TiposProductoPage() {
     if (
       nuevoEstado === "INACTIVO" &&
       !(await confirmar({
-        titulo: `¿Inactivar el tipo ${tipo.nombre}?`,
-        mensaje: "También se inactivarán todos los productos de este tipo. Al activarlo de nuevo, los productos siguen inactivos hasta que los actives uno a uno.",
-        textoConfirmar: "Inactivar tipo y productos",
+        titulo: `Deactivate the type ${tipo.nombre}?`,
+        mensaje: "All products of this type will also be deactivated. When you activate the type again, the products stay inactive until you activate them one by one.",
+        textoConfirmar: "Deactivate type and products",
         peligro: true,
       }))
     ) {
@@ -65,12 +65,12 @@ export function TiposProductoPage() {
       const n = resultado.productosInactivados ?? 0;
       setMensaje(
         nuevoEstado === "ACTIVO"
-          ? "Tipo de producto activado. Sus productos siguen inactivos hasta que los actives uno a uno desde Productos."
-          : `Tipo de producto inactivado${n > 0 ? ` junto con ${n} producto${n === 1 ? "" : "s"} de este tipo` : ""}.`
+          ? "Product type activated. Its products stay inactive until you activate them one by one from Products."
+          : `Product type deactivated${n > 0 ? ` along with ${n} product${n === 1 ? "" : "s"} of this type` : ""}.`
       );
       await cargarTipos();
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo cambiar el estado del tipo de producto."));
+      setError(getApiErrorMessage(err, "The product type status could not be changed."));
     }
   }
 
@@ -101,7 +101,7 @@ export function TiposProductoPage() {
     setError(null);
 
     if (!nombre.trim()) {
-      setError("El nombre es obligatorio.");
+      setError("The name is required.");
       return;
     }
 
@@ -109,15 +109,15 @@ export function TiposProductoPage() {
     try {
       if (editandoId === null) {
         await tiposProductoApi.crearTipoProducto(nombre.trim());
-        setMensaje("Tipo de producto creado correctamente.");
+        setMensaje("Product type created successfully.");
       } else {
         await tiposProductoApi.modificarTipoProducto(editandoId, nombre.trim());
-        setMensaje("Tipo de producto actualizado correctamente.");
+        setMensaje("Product type updated successfully.");
       }
       cerrarFormulario();
       await cargarTipos();
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo guardar el tipo de producto."));
+      setError(getApiErrorMessage(err, "The product type could not be saved."));
     } finally {
       setGuardando(false);
     }
@@ -137,7 +137,7 @@ export function TiposProductoPage() {
       const data = await tiposProductoApi.obtenerTipoProducto(tipo.idTipoProducto);
       setDetalle(data);
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudieron cargar los productos de este tipo."));
+      setError(getApiErrorMessage(err, "The products of this type could not be loaded."));
     } finally {
       setCargandoDetalle(false);
     }
@@ -147,10 +147,10 @@ export function TiposProductoPage() {
     <div>
       <div className="panel">
         <div className="panel-header">
-          <h1 className="page-title">Tipos de producto</h1>
+          <h1 className="page-title">Product types</h1>
           {esAdministrador && !mostrarFormulario && (
             <button className="btn-secondary" onClick={abrirCreacion}>
-              + Nuevo tipo
+              + New type
             </button>
           )}
         </div>
@@ -160,47 +160,47 @@ export function TiposProductoPage() {
 
         {mostrarFormulario && (
           <form ref={formRef} className="row-subform" onSubmit={handleSubmit}>
-            <h2 className="subform-title">{editandoId === null ? "Nuevo tipo de producto" : "Editar tipo de producto"}</h2>
+            <h2 className="subform-title">{editandoId === null ? "New product type" : "Edit product type"}</h2>
             <div className="inline-form">
               <div className="field">
-                <label htmlFor="nombreTipo">Nombre</label>
+                <label htmlFor="nombreTipo">Name</label>
                 <input
                   id="nombreTipo"
                   type="text"
                   value={nombre}
                   onChange={(e) => setNombre(e.target.value)}
-                  placeholder="Licores"
+                  placeholder="Spirits"
                 />
               </div>
             </div>
             {editandoId === null && (
-              <p className="field-hint">La abreviación de 3 letras (para el código de los productos) se genera sola.</p>
+              <p className="field-hint">The 3-letter abbreviation (used in product codes) is generated automatically.</p>
             )}
             <div className="form-actions">
               <button type="submit" className="btn-primary" disabled={guardando}>
-                {guardando ? "Guardando..." : "Guardar"}
+                {guardando ? "Saving..." : "Save"}
               </button>
               <button type="button" className="btn-secondary" onClick={cerrarFormulario}>
-                Cancelar
+                Cancel
               </button>
             </div>
           </form>
         )}
 
         {cargando ? (
-          <p className="empty-state">Cargando...</p>
+          <p className="empty-state">Loading...</p>
         ) : tipos.length === 0 ? (
-          <p className="empty-state">Aún no hay tipos de producto registrados.</p>
+          <p className="empty-state">There are no registered product types yet.</p>
         ) : (
           <div className="table-scroll">
           <table>
             <thead>
               <tr>
-                <th>Nombre</th>
-                <th>Abreviación</th>
-                <th>Estado</th>
+                <th>Name</th>
+                <th>Abbreviation</th>
+                <th>Status</th>
                 <th>
-                  <span className="sr-only">Acciones</span>
+                  <span className="sr-only">Actions</span>
                 </th>
               </tr>
             </thead>
@@ -220,11 +220,11 @@ export function TiposProductoPage() {
                     <td>
                       <div className="table-actions">
                         <button className="btn-link" onClick={() => void toggleDetalle(tipo)}>
-                          {expandidoId === tipo.idTipoProducto ? "Ocultar productos" : "Ver productos"}
+                          {expandidoId === tipo.idTipoProducto ? "Hide products" : "View products"}
                         </button>
                         {esAdministrador && (
                           <button className="btn-link" onClick={() => abrirEdicion(tipo)}>
-                            Editar
+                            Edit
                           </button>
                         )}
                         {esAdministrador && (
@@ -232,7 +232,7 @@ export function TiposProductoPage() {
                             className={`btn-link ${tipo.estado === "ACTIVO" ? "danger" : ""}`}
                             onClick={() => void handleCambiarEstado(tipo)}
                           >
-                            {tipo.estado === "ACTIVO" ? "Inactivar" : "Activar"}
+                            {tipo.estado === "ACTIVO" ? "Deactivate" : "Activate"}
                           </button>
                         )}
                       </div>
@@ -242,7 +242,7 @@ export function TiposProductoPage() {
                     <tr className="fila-detalle">
                       <td colSpan={4}>
                         {cargandoDetalle ? (
-                          <p className="empty-state">Cargando productos...</p>
+                          <p className="empty-state">Loading products...</p>
                         ) : detalle && detalle.productos.length > 0 ? (
                           <ul className="lista-detalle">
                             {detalle.productos.map((p) => (
@@ -257,7 +257,7 @@ export function TiposProductoPage() {
                             ))}
                           </ul>
                         ) : (
-                          <p className="empty-state">Este tipo aún no tiene productos asociados.</p>
+                          <p className="empty-state">This type has no associated products yet.</p>
                         )}
                       </td>
                     </tr>

@@ -11,7 +11,7 @@ import type { JwtPayload, Perfil } from "../types/auth";
 export function authenticate(req: Request, _res: Response, next: NextFunction) {
   const header = req.headers.authorization;
   if (!header || !header.startsWith("Bearer ")) {
-    throw ApiError.unauthorized("Se requiere un token de autenticación.");
+    throw ApiError.unauthorized("An authentication token is required.");
   }
 
   const token = header.slice("Bearer ".length);
@@ -21,7 +21,7 @@ export function authenticate(req: Request, _res: Response, next: NextFunction) {
     req.usuarioActual = payload;
     next();
   } catch {
-    throw ApiError.unauthorized("Token inválido o expirado. Inicia sesión nuevamente.");
+    throw ApiError.unauthorized("Invalid or expired token. Please sign in again.");
   }
 }
 
@@ -32,11 +32,11 @@ export function authenticate(req: Request, _res: Response, next: NextFunction) {
 export function requireRole(...perfiles: Perfil[]) {
   return (req: Request, _res: Response, next: NextFunction) => {
     if (!req.usuarioActual) {
-      throw ApiError.unauthorized("Se requiere autenticación.");
+      throw ApiError.unauthorized("Authentication is required.");
     }
     if (!perfiles.includes(req.usuarioActual.perfil)) {
       throw ApiError.forbidden(
-        "Tu perfil no tiene permiso para realizar esta acción."
+        "Your role does not have permission to perform this action."
       );
     }
     next();

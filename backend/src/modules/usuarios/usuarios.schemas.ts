@@ -6,17 +6,17 @@ export const estadoUsuarioSchema = z.enum(["ACTIVO", "INACTIVO"]);
 
 /** HU-007 — Creación de usuarios. */
 export const crearUsuarioSchema = z.object({
-  nombre: z.string().min(1, "El nombre es obligatorio.").max(120),
+  nombre: z.string().min(1, "The name is required.").max(120),
   // null obligatorio y explícito para ADMINISTRADOR (CA-02); para
   // CAJERO/MESERO debe venir el id de una sede (CA-04).
   idSede: z.number().int().positive().nullable(),
   perfil: perfilSchema,
-  password: z.string().min(8, "La contraseña debe tener al menos 8 caracteres."),
+  password: z.string().min(8, "The password must be at least 8 characters long."),
 });
 
 /** HU-008 CA-01 — Modificación de nombre/sede/perfil (estilo "reemplazo"). */
 export const modificarUsuarioSchema = z.object({
-  nombre: z.string().min(1, "El nombre es obligatorio.").max(120),
+  nombre: z.string().min(1, "The name is required.").max(120),
   idSede: z.number().int().positive().nullable(),
   perfil: perfilSchema,
 });

@@ -23,40 +23,40 @@ const SOLO_ADMIN: Perfil[] = ["ADMINISTRADOR"];
  * corresponde; las rutas siguen protegidas igual en App.tsx y en el backend.
  */
 const ITEMS: ItemMenu[] = [
-  { to: "/", etiqueta: "Inicio", icono: ICONS.inicio, end: true },
-  { to: "/mesas", etiqueta: "Mesas", icono: ICONS.mesas },
-  { to: "/pedidos", etiqueta: "Pedidos", icono: ICONS.pedidos },
-  { to: "/cobros", etiqueta: "Cobros", icono: ICONS.cobros, perfiles: ADMIN_CAJERO },
-  { to: "/inventario", etiqueta: "Inventario", icono: ICONS.inventario },
-  { to: "/recepciones", etiqueta: "Recepciones", icono: ICONS.recepciones, perfiles: ADMIN_CAJERO },
-  { to: "/proveedores", etiqueta: "Proveedores", icono: ICONS.proveedores, perfiles: ADMIN_CAJERO },
-  { to: "/productos", etiqueta: "Productos", icono: ICONS.productos },
-  { to: "/tipos-producto", etiqueta: "Tipos de producto", icono: ICONS.tiposProducto },
-  { to: "/reportes", etiqueta: "Reportes", icono: ICONS.reportes, perfiles: ADMIN_CAJERO },
-  { to: "/usuarios", etiqueta: "Usuarios", icono: ICONS.usuarios, perfiles: SOLO_ADMIN },
-  { to: "/sedes", etiqueta: "Sedes", icono: ICONS.sedes, perfiles: SOLO_ADMIN },
-  { to: "/trazabilidad", etiqueta: "Trazabilidad", icono: ICONS.trazabilidad, perfiles: SOLO_ADMIN },
+  { to: "/", etiqueta: "Home", icono: ICONS.inicio, end: true },
+  { to: "/mesas", etiqueta: "Tables", icono: ICONS.mesas },
+  { to: "/pedidos", etiqueta: "Orders", icono: ICONS.pedidos },
+  { to: "/cobros", etiqueta: "Payments", icono: ICONS.cobros, perfiles: ADMIN_CAJERO },
+  { to: "/inventario", etiqueta: "Inventory", icono: ICONS.inventario },
+  { to: "/recepciones", etiqueta: "Receipts", icono: ICONS.recepciones, perfiles: ADMIN_CAJERO },
+  { to: "/proveedores", etiqueta: "Suppliers", icono: ICONS.proveedores, perfiles: ADMIN_CAJERO },
+  { to: "/productos", etiqueta: "Products", icono: ICONS.productos },
+  { to: "/tipos-producto", etiqueta: "Product types", icono: ICONS.tiposProducto },
+  { to: "/reportes", etiqueta: "Reports", icono: ICONS.reportes, perfiles: ADMIN_CAJERO },
+  { to: "/usuarios", etiqueta: "Users", icono: ICONS.usuarios, perfiles: SOLO_ADMIN },
+  { to: "/sedes", etiqueta: "Locations", icono: ICONS.sedes, perfiles: SOLO_ADMIN },
+  { to: "/trazabilidad", etiqueta: "Audit trail", icono: ICONS.trazabilidad, perfiles: SOLO_ADMIN },
 ];
 
 /** Título de la pestaña del navegador según la sección. */
 const TITULOS: Array<[RegExp, string]> = [
-  [/^\/$/, "Inicio"],
-  [/^\/mesas/, "Mesas"],
-  [/^\/pedidos\/mesa\//, "Pedido de mesa"],
-  [/^\/pedidos/, "Pedidos"],
-  [/^\/cobros/, "Cobros"],
-  [/^\/cobro\//, "Cobro"],
-  [/^\/cuenta\//, "Cuenta"],
-  [/^\/inventario/, "Inventario"],
-  [/^\/recepciones/, "Recepciones"],
-  [/^\/proveedores/, "Proveedores"],
-  [/^\/productos/, "Productos"],
-  [/^\/tipos-producto/, "Tipos de producto"],
-  [/^\/reportes/, "Reportes"],
-  [/^\/usuarios/, "Usuarios"],
-  [/^\/sedes/, "Sedes"],
-  [/^\/trazabilidad/, "Trazabilidad"],
-  [/^\/cambiar-password/, "Mi contraseña"],
+  [/^\/$/, "Home"],
+  [/^\/mesas/, "Tables"],
+  [/^\/pedidos\/mesa\//, "Table order"],
+  [/^\/pedidos/, "Orders"],
+  [/^\/cobros/, "Payments"],
+  [/^\/cobro\//, "Payment"],
+  [/^\/cuenta\//, "Bill"],
+  [/^\/inventario/, "Inventory"],
+  [/^\/recepciones/, "Receipts"],
+  [/^\/proveedores/, "Suppliers"],
+  [/^\/productos/, "Products"],
+  [/^\/tipos-producto/, "Product types"],
+  [/^\/reportes/, "Reports"],
+  [/^\/usuarios/, "Users"],
+  [/^\/sedes/, "Locations"],
+  [/^\/trazabilidad/, "Audit trail"],
+  [/^\/cambiar-password/, "My password"],
 ];
 
 function inicialesDe(nombre: string | undefined): string {
@@ -79,7 +79,7 @@ export function Layout() {
   useEffect(() => {
     setMenuAbierto(false);
     const titulo = TITULOS.find(([re]) => re.test(location.pathname))?.[1];
-    document.title = titulo ? `${titulo} · El Punto` : "El Punto — Gestión Operativa";
+    document.title = titulo ? `${titulo} · El Punto` : "El Punto — Operations Management";
   }, [location.pathname]);
 
   const perfil = usuario?.perfil;
@@ -91,7 +91,7 @@ export function Layout() {
         <button
           type="button"
           className="sidebar-toggle"
-          aria-label={menuAbierto ? "Cerrar menú" : "Abrir menú"}
+          aria-label={menuAbierto ? "Close menu" : "Open menu"}
           aria-expanded={menuAbierto}
           onClick={() => setMenuAbierto((abierto) => !abierto)}
         >
@@ -111,7 +111,7 @@ export function Layout() {
           <LogoWordmark size={24} />
         </div>
 
-        <nav className="sidebar-nav" aria-label="Menú principal">
+        <nav className="sidebar-nav" aria-label="Main menu">
           {items.map((i) => (
             <NavLink key={i.to} to={i.to} end={i.end}>
               <Icon path={i.icono} />
@@ -136,11 +136,11 @@ export function Layout() {
           <div className="sidebar-footer-acciones">
             <NavLink to="/cambiar-password" className="btn-sidebar">
               <Icon path={ICONS.password} size={15} strokeWidth={2} />
-              Mi contraseña
+              My password
             </NavLink>
             <button className="btn-sidebar" onClick={() => void cerrarSesion()}>
               <Icon path={ICONS.logout} size={15} strokeWidth={2} />
-              Cerrar sesión
+              Sign out
             </button>
           </div>
         </div>
@@ -154,8 +154,8 @@ export function Layout() {
 
       {segundosParaCierre !== null && (
         <div className="aviso-inactividad" role="alert" aria-live="assertive">
-          <strong>Tu sesión se cerrará en {segundosParaCierre} s por inactividad.</strong>
-          <span>Mueve el mouse, toca la pantalla o pulsa una tecla para seguir conectado.</span>
+          <strong>Your session will close in {segundosParaCierre} s due to inactivity.</strong>
+          <span>Move the mouse, tap the screen or press a key to stay signed in.</span>
         </div>
       )}
     </div>

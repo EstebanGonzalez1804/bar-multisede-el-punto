@@ -49,7 +49,7 @@ async function obtenerMesaConSede(idMesa: number, ejecutor: Queryable): Promise<
     [idMesa]
   );
   if (!rows[0]) {
-    throw ApiError.notFound("Mesa no encontrada.");
+    throw ApiError.notFound("Table not found.");
   }
   return mapRow(rows[0]);
 }
@@ -73,7 +73,7 @@ export async function crearMesa(admin: JwtPayload, datos: DatosMesa): Promise<Me
       idMesa = rows[0].id_mesa;
     } catch (err) {
       if (esViolacionUnicidad(err)) {
-        throw ApiError.conflict("Ya existe una mesa con ese identificador en la sede indicada.");
+        throw ApiError.conflict("A table with that identifier already exists at the specified location.");
       }
       throw err;
     }
@@ -104,7 +104,7 @@ export async function modificarMesa(admin: JwtPayload, idMesa: number, datos: Da
       [idMesa]
     );
     if (!existentes[0]) {
-      throw ApiError.notFound("Mesa no encontrada.");
+      throw ApiError.notFound("Table not found.");
     }
 
     // Solo se exige sede activa cuando la mesa cambia de sede; editar el
@@ -120,7 +120,7 @@ export async function modificarMesa(admin: JwtPayload, idMesa: number, datos: Da
       );
     } catch (err) {
       if (esViolacionUnicidad(err)) {
-        throw ApiError.conflict("Ya existe una mesa con ese identificador en la sede indicada.");
+        throw ApiError.conflict("A table with that identifier already exists at the specified location.");
       }
       throw err;
     }
@@ -153,13 +153,13 @@ export async function inactivarMesa(admin: JwtPayload, idMesa: number): Promise<
     );
     const mesa = rows[0];
     if (!mesa) {
-      throw ApiError.notFound("Mesa no encontrada.");
+      throw ApiError.notFound("Table not found.");
     }
     if (mesa.estado !== "LIBRE") {
       throw ApiError.conflict(
         mesa.estado === "OCUPADA"
-          ? "No se puede inactivar: la mesa tiene un pedido abierto."
-          : "La mesa ya está inactiva.",
+          ? "Cannot deactivate: the table has an open order."
+          : "The table is already inactive.",
         "MESA_NO_INACTIVABLE"
       );
     }
@@ -200,10 +200,10 @@ export async function activarMesa(admin: JwtPayload, idMesa: number): Promise<Me
     );
     const mesa = rows[0];
     if (!mesa) {
-      throw ApiError.notFound("Mesa no encontrada.");
+      throw ApiError.notFound("Table not found.");
     }
     if (mesa.estado !== "INACTIVA") {
-      throw ApiError.conflict("Solo se puede activar una mesa que esté inactiva.", "MESA_NO_ACTIVABLE");
+      throw ApiError.conflict("Only an inactive table can be activated.", "MESA_NO_ACTIVABLE");
     }
     await exigirSedeActiva(mesa.id_sede, client);
 

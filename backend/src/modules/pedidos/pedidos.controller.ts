@@ -14,7 +14,7 @@ import { enviarCuentaPdf } from "./cuenta.pdf";
 function parseIdMesa(req: Request): number {
   const idMesa = Number(req.params.idMesa);
   if (!Number.isInteger(idMesa)) {
-    throw ApiError.badRequest("El id de mesa no es válido.");
+    throw ApiError.badRequest("The table id is not valid.");
   }
   return idMesa;
 }
@@ -22,27 +22,27 @@ function parseIdMesa(req: Request): number {
 function parseIdPedido(req: Request): number {
   const idPedido = Number(req.params.idPedido);
   if (!Number.isInteger(idPedido)) {
-    throw ApiError.badRequest("El id de pedido no es válido.");
+    throw ApiError.badRequest("The order id is not valid.");
   }
   return idPedido;
 }
 
 export const postPedido = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const { idMesa } = crearPedidoSchema.parse(req.body);
   const pedido = await pedidosService.crearPedido(req.usuarioActual, idMesa);
   res.status(201).json({ pedido });
 });
 
 export const getPedidoAbiertoPorMesa = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const idMesa = parseIdMesa(req);
   const pedido = await pedidosService.obtenerPedidoAbiertoPorMesa(idMesa, req.usuarioActual);
   res.status(200).json({ pedido });
 });
 
 export const postLineaPedido = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const idPedido = parseIdPedido(req);
   const datos = registrarProductoEnPedidoSchema.parse(req.body);
   const pedido = await pedidosService.registrarProductoEnPedido(req.usuarioActual, idPedido, datos);
@@ -51,7 +51,7 @@ export const postLineaPedido = asyncHandler(async (req: Request, res: Response) 
 
 /** HU-030 — Consulta de pedidos por rol y sede, con filtros por estado y mesa/número. */
 export const getPedidos = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const q = listarPedidosQuerySchema.parse(req.query);
   const pedidos = await pedidosService.listarPedidos({
     idSede: resolveSedeScope(req.usuarioActual, q.idSede ?? null),
@@ -64,7 +64,7 @@ export const getPedidos = asyncHandler(async (req: Request, res: Response) => {
 
 /** HU-032 — Cuentas cerradas con saldo pendiente (Cajero: solo su sede). */
 export const getPedidosPendientesPago = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const q = listarPedidosQuerySchema.parse(req.query);
   const pedidos = await pedidosService.listarPedidos({
     idSede: resolveSedeScope(req.usuarioActual, q.idSede ?? null),
@@ -75,29 +75,29 @@ export const getPedidosPendientesPago = asyncHandler(async (req: Request, res: R
 });
 
 export const getPedido = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const pedido = await pedidosService.obtenerPedidoParaUsuario(req.usuarioActual, parseIdPedido(req));
   res.status(200).json({ pedido });
 });
 
 /** HU-031 — Cuenta en PDF (tirilla de 80 mm). Solo pedidos ya cerrados. */
 export const getCuentaPdf = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const pedido = await pedidosService.obtenerPedidoParaUsuario(req.usuarioActual, parseIdPedido(req));
   if (pedido.estadoPedido !== "CERRADO") {
-    throw ApiError.conflict("El pedido sigue abierto: ciérralo para generar la cuenta.", "PEDIDO_ABIERTO");
+    throw ApiError.conflict("The order is still open: close it to generate the bill.", "PEDIDO_ABIERTO");
   }
   enviarCuentaPdf(pedido, res);
 });
 
 export const postCerrarPedido = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const pedido = await pedidosService.cerrarPedido(req.usuarioActual, parseIdPedido(req));
   res.status(200).json({ pedido });
 });
 
 export const postPago = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const datos = registrarPagoSchema.parse(req.body);
   const resultado = await pedidosService.registrarPago(req.usuarioActual, parseIdPedido(req), datos);
   res.status(201).json(resultado);

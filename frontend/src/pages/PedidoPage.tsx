@@ -57,7 +57,7 @@ export function PedidoPage() {
       setPedido(pedidoActual);
       if (pedidoActual) await cargarInventario(pedidoActual.idSede);
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo cargar el pedido."));
+      setError(getApiErrorMessage(err, "The order could not be loaded."));
     } finally {
       setCargando(false);
     }
@@ -111,13 +111,13 @@ export function PedidoPage() {
     try {
       const actualizado = await pedidosApi.registrarProductoEnPedido(pedido.idPedido, seleccionado.idProducto, cantidad);
       setPedido(actualizado);
-      setMensaje(`Agregado: ${cantidad} × ${seleccionado.nombreProducto}.`);
+      setMensaje(`Added: ${cantidad} × ${seleccionado.nombreProducto}.`);
       setIdSeleccionado(null);
       setCantidad(1);
       // El inventario cambió (HU-026): se refresca la disponibilidad.
       await cargarInventario(pedido.idSede);
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo registrar el producto."));
+      setError(getApiErrorMessage(err, "The product could not be added."));
     } finally {
       setGuardando(false);
     }
@@ -126,14 +126,14 @@ export function PedidoPage() {
   async function handleCerrarPedido() {
     if (!pedido) return;
     const ok = await confirmar({
-      titulo: `¿Cerrar el pedido de ${pedido.identificadorMesa}?`,
+      titulo: `Close the order for ${pedido.identificadorMesa}?`,
       mensaje: (
         <>
-          Se genera la cuenta por <strong>{pesos(pedido.total)}</strong> y ya no se podrán agregar productos. La
-          mesa sigue ocupada hasta que se pague.
+          The bill is generated for <strong>{pesos(pedido.total)}</strong> and no more products can be added. The
+          table stays occupied until it is paid.
         </>
       ),
-      textoConfirmar: "Cerrar y generar cuenta",
+      textoConfirmar: "Close and generate bill",
     });
     if (!ok) return;
     setError(null);
@@ -142,9 +142,9 @@ export function PedidoPage() {
     try {
       const actualizado = await pedidosApi.cerrarPedido(pedido.idPedido);
       setPedido(actualizado);
-      setMensaje("Pedido cerrado. La cuenta quedó lista para cobrar en caja.");
+      setMensaje("Order closed. The bill is ready to be charged at the register.");
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo cerrar el pedido."));
+      setError(getApiErrorMessage(err, "The order could not be closed."));
     } finally {
       setProcesando(false);
     }
@@ -153,7 +153,7 @@ export function PedidoPage() {
   if (cargando) {
     return (
       <div className="panel">
-        <p className="empty-state">Cargando...</p>
+        <p className="empty-state">Loading...</p>
       </div>
     );
   }
@@ -162,9 +162,9 @@ export function PedidoPage() {
     return (
       <div className="panel">
         {error && <Aviso tipo="error">{error}</Aviso>}
-        <p className="empty-state">Esta mesa está libre: no hay un pedido abierto.</p>
+        <p className="empty-state">This table is free: there is no open order.</p>
         <Link to="/mesas" className="btn-secondary">
-          Volver a Mesas
+          Back to Tables
         </Link>
       </div>
     );
@@ -180,14 +180,14 @@ export function PedidoPage() {
         <div>
           <h1 className="page-title">
             {pedido.identificadorMesa}{" "}
-            <span className={`badge ${abierto ? "badge-success" : "badge-muted"}`}>{abierto ? "Abierto" : "Cerrado"}</span>
+            <span className={`badge ${abierto ? "badge-success" : "badge-muted"}`}>{abierto ? "Open" : "Closed"}</span>
           </h1>
           <p className="page-sub">
-            Pedido {pedido.identificadorPedido} · desde las {hora(pedido.fechaApertura)} · {pedido.nombreMesero}
+            Order {pedido.identificadorPedido} · since {hora(pedido.fechaApertura)} · {pedido.nombreMesero}
           </p>
         </div>
         <Link to="/mesas" className="btn-secondary">
-          Volver a Mesas
+          Back to Tables
         </Link>
       </div>
 
@@ -197,8 +197,8 @@ export function PedidoPage() {
       {!abierto && (
         <Aviso tipo="info">
           {pedido.estadoPago === "PARCIAL"
-            ? `La cuenta ya tiene pagos y un saldo pendiente de ${pesos(pedido.saldoPendiente)}. No se puede modificar.`
-            : "La cuenta está cerrada y pendiente de pago. Un pedido cerrado no se reabre: si el cliente pide algo más, se cobra esta cuenta y se abre una nueva en la mesa."}
+            ? `The bill already has payments and a pending balance of ${pesos(pedido.saldoPendiente)}. It cannot be modified.`
+            : "The bill is closed and pending payment. A closed order is not reopened: if the customer asks for something else, this bill is charged and a new one is opened for the table."}
         </Aviso>
       )}
 
@@ -206,25 +206,25 @@ export function PedidoPage() {
         {abierto && (
           <section className="panel" aria-labelledby="titulo-agregar">
             <h2 id="titulo-agregar" className="panel-title">
-              Agregar producto
+              Add product
             </h2>
 
             <div className="field">
-              <label htmlFor="buscarProducto">Buscar</label>
+              <label htmlFor="buscarProducto">Search</label>
               <input
                 id="buscarProducto"
                 type="search"
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                placeholder="Nombre o código, p. ej. Club"
+                placeholder="Name or code, e.g. Club"
                 autoComplete="off"
               />
             </div>
 
             {tipos.length > 1 && (
-              <div className="chips" role="group" aria-label="Filtrar por tipo de producto">
+              <div className="chips" role="group" aria-label="Filter by product type">
                 <button type="button" className={`chip${tipo === "" ? " activo" : ""}`} aria-pressed={tipo === ""} onClick={() => setTipo("")}>
-                  Todos
+                  All
                 </button>
                 {tipos.map((t) => (
                   <button
@@ -241,7 +241,7 @@ export function PedidoPage() {
             )}
 
             {filtrados.length === 0 ? (
-              <p className="empty-state">Ningún producto coincide con la búsqueda.</p>
+              <p className="empty-state">No product matches the search.</p>
             ) : (
               <ul className="picker-lista">
                 {filtrados.map((item) => {
@@ -259,7 +259,7 @@ export function PedidoPage() {
                         <span className="picker-nombre">{item.nombreProducto}</span>
                         <span className="picker-meta">
                           {precios[item.idProducto] ? pesos(precios[item.idProducto]) : ""}
-                          {agotado ? " · Agotado" : ` · ${item.cantidadDisponible} disponibles`}
+                          {agotado ? " · Out of stock" : ` · ${item.cantidadDisponible} available`}
                         </span>
                       </button>
                     </li>
@@ -273,13 +273,13 @@ export function PedidoPage() {
                 <>
                   <div className="picker-barra-producto">
                     <strong>{seleccionado.nombreProducto}</strong>
-                    <span className="picker-meta">Máximo {maxCantidad} disponibles</span>
+                    <span className="picker-meta">Maximum {maxCantidad} available</span>
                   </div>
-                  <div className="cantidad-selector" role="group" aria-label="Cantidad">
+                  <div className="cantidad-selector" role="group" aria-label="Quantity">
                     <button
                       type="button"
                       className="btn-secondary"
-                      aria-label="Una unidad menos"
+                      aria-label="One unit less"
                       disabled={cantidad <= 1}
                       onClick={() => setCantidad((c) => Math.max(1, c - 1))}
                     >
@@ -289,14 +289,14 @@ export function PedidoPage() {
                       type="number"
                       min={1}
                       max={maxCantidad}
-                      aria-label="Cantidad"
+                      aria-label="Quantity"
                       value={cantidad}
                       onChange={(e) => setCantidad(Math.max(1, Math.min(maxCantidad, Math.floor(Number(e.target.value)) || 1)))}
                     />
                     <button
                       type="button"
                       className="btn-secondary"
-                      aria-label="Una unidad más"
+                      aria-label="One unit more"
                       disabled={cantidad >= maxCantidad}
                       onClick={() => setCantidad((c) => Math.min(maxCantidad, c + 1))}
                     >
@@ -305,12 +305,12 @@ export function PedidoPage() {
                   </div>
                   <button type="button" className="btn-primary" disabled={guardando} onClick={() => void handleAgregar()}>
                     {guardando
-                      ? "Agregando..."
-                      : `Agregar${precios[seleccionado.idProducto] ? ` · ${pesos(Number(precios[seleccionado.idProducto]) * cantidad)}` : ""}`}
+                      ? "Adding..."
+                      : `Add${precios[seleccionado.idProducto] ? ` · ${pesos(Number(precios[seleccionado.idProducto]) * cantidad)}` : ""}`}
                   </button>
                 </>
               ) : (
-                <span className="picker-meta">Toca un producto para agregarlo al pedido.</span>
+                <span className="picker-meta">Tap a product to add it to the order.</span>
               )}
             </div>
           </section>
@@ -318,10 +318,10 @@ export function PedidoPage() {
 
         <section className="panel" aria-labelledby="titulo-cuenta">
           <h2 id="titulo-cuenta" className="panel-title">
-            Cuenta de la mesa
+            Table bill
           </h2>
           {grupos.length === 0 ? (
-            <p className="empty-state">Aún no hay productos en este pedido.</p>
+            <p className="empty-state">There are no products in this order yet.</p>
           ) : (
             <ul className="lista-cuenta">
               {grupos.map((g) => (
@@ -329,7 +329,7 @@ export function PedidoPage() {
                   <span className="lista-cuenta-cant num">{g.cantidad} ×</span>
                   <span className="lista-cuenta-nombre">
                     {g.nombreProducto}
-                    <span className="picker-meta"> {pesos(g.precioVenta)} c/u</span>
+                    <span className="picker-meta"> {pesos(g.precioVenta)} each</span>
                   </span>
                   <span className="lista-cuenta-valor num">{pesos(g.subtotal)}</span>
                 </li>
@@ -344,12 +344,12 @@ export function PedidoPage() {
           <div className="form-actions" style={{ marginTop: "1rem" }}>
             {abierto && pedido.lineas.length > 0 && (
               <button type="button" className="btn-primary" disabled={procesando} onClick={() => void handleCerrarPedido()}>
-                {procesando ? "Cerrando..." : "Cerrar pedido y generar cuenta"}
+                {procesando ? "Closing..." : "Close order and generate bill"}
               </button>
             )}
             {!abierto && (
               <Link to={`/cuenta/${pedido.idPedido}`} className="btn-primary">
-                Ver cuenta
+                View bill
               </Link>
             )}
           </div>

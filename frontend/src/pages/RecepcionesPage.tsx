@@ -58,7 +58,7 @@ export function RecepcionesPage() {
       });
       setRecepciones(data);
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudieron cargar las recepciones."));
+      setError(getApiErrorMessage(err, "Receipts could not be loaded."));
     } finally {
       setCargando(false);
     }
@@ -106,19 +106,19 @@ export function RecepcionesPage() {
     setError(null);
 
     if (!idProveedorNueva) {
-      setError("Debes seleccionar un proveedor.");
+      setError("You must select a supplier.");
       return;
     }
     if (esAdministrador && !idSedeNueva) {
-      setError("Debes seleccionar una sede.");
+      setError("You must select a location.");
       return;
     }
     if (!fechaNueva) {
-      setError("Debes indicar la fecha de la recepción.");
+      setError("You must enter the receipt date.");
       return;
     }
     if (fechaNueva > hoyBogota()) {
-      setError("La fecha de la recepción no puede ser posterior a hoy.");
+      setError("The receipt date cannot be later than today.");
       return;
     }
 
@@ -127,27 +127,27 @@ export function RecepcionesPage() {
       if (!linea.idProducto && !linea.cantidad) continue;
       const cantidad = Number(linea.cantidad);
       if (!linea.idProducto || !Number.isInteger(cantidad) || cantidad <= 0) {
-        setError("Cada producto de la recepción debe tener una cantidad entera mayor a cero.");
+        setError("Each product in the receipt must have a whole quantity greater than zero.");
         return;
       }
       lineasValidas.push({ idProducto: Number(linea.idProducto), cantidad });
     }
     if (lineasValidas.length === 0) {
-      setError("Agrega al menos un producto a la recepción.");
+      setError("Add at least one product to the receipt.");
       return;
     }
     const unidades = lineasValidas.reduce((acc, l) => acc + l.cantidad, 0);
     const proveedor = proveedores.find((p) => String(p.idProveedor) === idProveedorNueva)?.nombre ?? "";
     const ok = await confirmar({
-      titulo: "¿Registrar la recepción?",
+      titulo: "Record the receipt?",
       mensaje: (
         <>
-          {lineasValidas.length} producto{lineasValidas.length === 1 ? "" : "s"} ({unidades} unidades) de{" "}
-          <strong>{proveedor}</strong>, con fecha {fecha(fechaNueva)}. El inventario se actualiza de inmediato y la
-          recepción no se puede editar después.
+          {lineasValidas.length} product{lineasValidas.length === 1 ? "" : "s"} ({unidades} units) from{" "}
+          <strong>{proveedor}</strong>, dated {fecha(fechaNueva)}. Inventory is updated immediately and the
+          receipt cannot be edited afterwards.
         </>
       ),
-      textoConfirmar: "Registrar recepción",
+      textoConfirmar: "Record receipt",
     });
     if (!ok) return;
 
@@ -159,11 +159,11 @@ export function RecepcionesPage() {
         fechaRecepcion: fechaNueva,
         lineas: lineasValidas,
       });
-      setMensaje("Recepción registrada correctamente. El inventario ya quedó actualizado.");
+      setMensaje("Receipt recorded successfully. Inventory has been updated.");
       cerrarFormulario();
       await cargarRecepciones();
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo registrar la recepción."));
+      setError(getApiErrorMessage(err, "The receipt could not be recorded."));
     } finally {
       setGuardando(false);
     }
@@ -173,10 +173,10 @@ export function RecepcionesPage() {
     <div>
       <div className="panel">
         <div className="panel-header">
-          <h1 className="page-title">Recepciones de mercancía</h1>
+          <h1 className="page-title">Goods receipts</h1>
           {!mostrarFormulario && (
             <button className="btn-secondary" onClick={abrirFormulario}>
-              + Registrar recepción
+              + Record receipt
             </button>
           )}
         </div>
@@ -186,16 +186,16 @@ export function RecepcionesPage() {
 
         {mostrarFormulario && (
           <form className="row-subform" onSubmit={handleSubmit}>
-            <h2 className="subform-title">Nueva recepción</h2>
+            <h2 className="subform-title">New receipt</h2>
             <div className="inline-form">
               <div className="field">
-                <label htmlFor="proveedorNueva">Proveedor</label>
+                <label htmlFor="proveedorNueva">Supplier</label>
                 <select
                   id="proveedorNueva"
                   value={idProveedorNueva}
                   onChange={(e) => setIdProveedorNueva(e.target.value)}
                 >
-                  <option value="">Selecciona un proveedor</option>
+                  <option value="">Select a supplier</option>
                   {proveedores.filter((x) => x.estado === "ACTIVO").map((p) => (
                     <option key={p.idProveedor} value={p.idProveedor}>
                       {p.nombre}
@@ -205,9 +205,9 @@ export function RecepcionesPage() {
               </div>
               {esAdministrador && (
                 <div className="field">
-                  <label htmlFor="sedeNueva">Sede</label>
+                  <label htmlFor="sedeNueva">Location</label>
                   <select id="sedeNueva" value={idSedeNueva} onChange={(e) => setIdSedeNueva(e.target.value)}>
-                    <option value="">Selecciona una sede</option>
+                    <option value="">Select a location</option>
                     {sedes.filter((x) => x.estado === "ACTIVO").map((s) => (
                       <option key={s.idSede} value={s.idSede}>
                         {s.nombre}
@@ -217,7 +217,7 @@ export function RecepcionesPage() {
                 </div>
               )}
               <div className="field">
-                <label htmlFor="fechaNueva">Fecha</label>
+                <label htmlFor="fechaNueva">Date</label>
                 <input
                   id="fechaNueva"
                   type="date"
@@ -228,17 +228,17 @@ export function RecepcionesPage() {
               </div>
             </div>
 
-            <h3 className="subform-subtitle">Productos recibidos</h3>
+            <h3 className="subform-subtitle">Products received</h3>
             {lineas.map((linea, index) => (
               <div className="inline-form linea-recepcion" key={index}>
                 <div className="field field-ancho">
-                  <label htmlFor={`productoRecepcion${index}`}>Producto</label>
+                  <label htmlFor={`productoRecepcion${index}`}>Product</label>
                   <select
                     id={`productoRecepcion${index}`}
                     value={linea.idProducto}
                     onChange={(e) => actualizarLinea(index, { idProducto: e.target.value })}
                   >
-                    <option value="">Selecciona un producto</option>
+                    <option value="">Select a product</option>
                     {productos.map((p) => (
                       <option key={p.idProducto} value={p.idProducto}>
                         {p.nombre} · {p.codigo}
@@ -247,7 +247,7 @@ export function RecepcionesPage() {
                   </select>
                 </div>
                 <div className="field field-corto">
-                  <label htmlFor={`cantidadRecepcion${index}`}>Cantidad</label>
+                  <label htmlFor={`cantidadRecepcion${index}`}>Quantity</label>
                   <input
                     id={`cantidadRecepcion${index}`}
                     inputMode="numeric"
@@ -264,20 +264,20 @@ export function RecepcionesPage() {
                   onClick={() => quitarLinea(index)}
                   disabled={lineas.length === 1}
                 >
-                  Quitar
+                  Remove
                 </button>
               </div>
             ))}
             <button type="button" className="btn-link agregar-linea" onClick={agregarLinea}>
-              + Agregar otro producto
+              + Add another product
             </button>
 
             <div className="form-actions">
               <button type="submit" className="btn-primary" disabled={guardando}>
-                {guardando ? "Guardando..." : "Registrar recepción"}
+                {guardando ? "Saving..." : "Record receipt"}
               </button>
               <button type="button" className="btn-secondary" onClick={cerrarFormulario}>
-                Cancelar
+                Cancel
               </button>
             </div>
           </form>
@@ -285,9 +285,9 @@ export function RecepcionesPage() {
 
         <div className="toolbar">
           <div className="field">
-            <label htmlFor="filtroProveedor">Proveedor</label>
+            <label htmlFor="filtroProveedor">Supplier</label>
             <select id="filtroProveedor" value={filtroProveedor} onChange={(e) => setFiltroProveedor(e.target.value)}>
-              <option value="">Todos</option>
+              <option value="">All</option>
               {proveedores.map((p) => (
                 <option key={p.idProveedor} value={p.idProveedor}>
                   {p.nombre}
@@ -297,9 +297,9 @@ export function RecepcionesPage() {
           </div>
           {esAdministrador && (
             <div className="field">
-              <label htmlFor="filtroSedeRecepcion">Sede</label>
+              <label htmlFor="filtroSedeRecepcion">Location</label>
               <select id="filtroSedeRecepcion" value={filtroSede} onChange={(e) => setFiltroSede(e.target.value)}>
-                <option value="">Todas</option>
+                <option value="">All</option>
                 {sedes.map((s) => (
                   <option key={s.idSede} value={s.idSede}>
                     {s.nombre}
@@ -309,31 +309,31 @@ export function RecepcionesPage() {
             </div>
           )}
           <div className="field">
-            <label htmlFor="filtroDesde">Desde</label>
+            <label htmlFor="filtroDesde">From</label>
             <input id="filtroDesde" type="date" value={filtroDesde} onChange={(e) => setFiltroDesde(e.target.value)} />
           </div>
           <div className="field">
-            <label htmlFor="filtroHasta">Hasta</label>
+            <label htmlFor="filtroHasta">To</label>
             <input id="filtroHasta" type="date" value={filtroHasta} onChange={(e) => setFiltroHasta(e.target.value)} />
           </div>
         </div>
 
         {cargando ? (
-          <p className="empty-state">Cargando...</p>
+          <p className="empty-state">Loading...</p>
         ) : recepciones.length === 0 ? (
-          <p className="empty-state">No hay recepciones registradas con estos filtros.</p>
+          <p className="empty-state">No receipts recorded with these filters.</p>
         ) : (
           <div className="table-scroll">
           <table className="tabla-apilada">
             <thead>
               <tr>
-                <th>Fecha</th>
-                <th>Proveedor</th>
-                {esAdministrador && <th>Sede</th>}
-                <th>Registró</th>
-                <th>Hora de registro</th>
+                <th>Date</th>
+                <th>Supplier</th>
+                {esAdministrador && <th>Location</th>}
+                <th>Recorded by</th>
+                <th>Time recorded</th>
                 <th>
-                  <span className="sr-only">Detalle</span>
+                  <span className="sr-only">Details</span>
                 </th>
               </tr>
             </thead>
@@ -341,19 +341,19 @@ export function RecepcionesPage() {
               {recepciones.map((r) => (
                 <Fragment key={r.idRecepcion}>
                   <tr>
-                    <td data-label="Fecha" className="celda-titulo">
+                    <td data-label="Date" className="celda-titulo">
                       {fecha(r.fechaRecepcion)}
                     </td>
-                    <td data-label="Proveedor">{r.nombreProveedor}</td>
-                    {esAdministrador && <td data-label="Sede">{r.nombreSede}</td>}
-                    <td data-label="Registró">{r.nombreUsuario}</td>
-                    <td data-label="Hora">{hora(r.creadoEn)}</td>
+                    <td data-label="Supplier">{r.nombreProveedor}</td>
+                    {esAdministrador && <td data-label="Location">{r.nombreSede}</td>}
+                    <td data-label="Recorded by">{r.nombreUsuario}</td>
+                    <td data-label="Time">{hora(r.creadoEn)}</td>
                     <td data-label="" className="celda-acciones">
                       <button
                         className="btn-link"
                         onClick={() => setExpandidoId(expandidoId === r.idRecepcion ? null : r.idRecepcion)}
                       >
-                        {expandidoId === r.idRecepcion ? "Ocultar productos" : `Ver productos (${r.lineas.length})`}
+                        {expandidoId === r.idRecepcion ? "Hide products" : `View products (${r.lineas.length})`}
                       </button>
                     </td>
                   </tr>
@@ -364,7 +364,7 @@ export function RecepcionesPage() {
                           {r.lineas.map((l) => (
                             <li key={l.idProducto}>
                               <span>{l.nombreProducto}</span>
-                              <strong className="num">{l.cantidad} und.</strong>
+                              <strong className="num">{l.cantidad} units</strong>
                             </li>
                           ))}
                         </ul>

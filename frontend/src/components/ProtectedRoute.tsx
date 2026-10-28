@@ -14,7 +14,7 @@ export function ProtectedRoute({ children, perfilesPermitidos }: ProtectedRouteP
   if (cargando) {
     return (
       <div className="login-page">
-        <p>Cargando...</p>
+        <p>Loading...</p>
       </div>
     );
   }
@@ -26,8 +26,8 @@ export function ProtectedRoute({ children, perfilesPermitidos }: ProtectedRouteP
   if (perfilesPermitidos && !perfilesPermitidos.includes(usuario.perfil)) {
     return (
       <div className="panel">
-        <h2>Acceso no disponible</h2>
-        <p>Tu perfil no tiene permiso para ver esta sección.</p>
+        <h2>Access not available</h2>
+        <p>Your role does not have permission to view this section.</p>
         <Link to="/" className="btn-primary">
           Ir al inicio
         </Link>

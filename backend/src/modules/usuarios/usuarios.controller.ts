@@ -12,7 +12,7 @@ import * as usuariosService from "./usuarios.service";
 function parseIdUsuario(req: Request): number {
   const idUsuario = Number(req.params.idUsuario);
   if (!Number.isInteger(idUsuario)) {
-    throw ApiError.badRequest("El id de usuario no es válido.");
+    throw ApiError.badRequest("The user id is not valid.");
   }
   return idUsuario;
 }
@@ -24,14 +24,14 @@ export const getUsuarios = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const postUsuario = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const datos = crearUsuarioSchema.parse(req.body);
   const usuario = await usuariosService.crearUsuario(req.usuarioActual, datos);
   res.status(201).json({ usuario });
 });
 
 export const putUsuario = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const idUsuario = parseIdUsuario(req);
   const datos = modificarUsuarioSchema.parse(req.body);
   const usuario = await usuariosService.modificarUsuario(req.usuarioActual, idUsuario, datos);
@@ -39,7 +39,7 @@ export const putUsuario = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const putEstadoUsuario = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const idUsuario = parseIdUsuario(req);
   const { estado } = cambiarEstadoUsuarioSchema.parse(req.body);
   const usuario = await usuariosService.cambiarEstadoUsuario(req.usuarioActual, idUsuario, estado);

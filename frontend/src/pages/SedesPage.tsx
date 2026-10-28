@@ -31,7 +31,7 @@ export function SedesPage() {
     try {
       setSedes(await sedesApi.listarSedes());
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudieron cargar las sedes."));
+      setError(getApiErrorMessage(err, "Locations could not be loaded."));
     } finally {
       setCargando(false);
     }
@@ -68,10 +68,10 @@ export function SedesPage() {
     if (
       sede.estado === "ACTIVO" &&
       !(await confirmar({
-        titulo: `¿Inactivar ${sede.nombre}?`,
+        titulo: `Deactivate ${sede.nombre}?`,
         mensaje:
-          "No se podrán abrir pedidos, crear mesas ni registrar recepciones en esta sede. Solo es posible si no tiene mesas ocupadas ni cuentas por cobrar. Su historial se conserva.",
-        textoConfirmar: "Inactivar sede",
+          "Orders cannot be opened, tables created or receipts recorded at this location. It is only possible if it has no occupied tables or unpaid bills. Its history is kept.",
+        textoConfirmar: "Deactivate location",
         peligro: true,
       }))
     ) {
@@ -82,14 +82,14 @@ export function SedesPage() {
     try {
       if (sede.estado === "ACTIVO") {
         await sedesApi.inactivarSede(sede.idSede);
-        setMensaje(`${sede.nombre} inactivada. Su historial se conserva.`);
+        setMensaje(`${sede.nombre} deactivated. Its history is kept.`);
       } else {
         await sedesApi.activarSede(sede.idSede);
-        setMensaje(`${sede.nombre} activada.`);
+        setMensaje(`${sede.nombre} activated.`);
       }
       await cargarSedes();
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo cambiar el estado de la sede."));
+      setError(getApiErrorMessage(err, "The location status could not be changed."));
     }
   }
 
@@ -99,7 +99,7 @@ export function SedesPage() {
 
     // CA-02: campos obligatorios.
     if (!nombre.trim() || !direccion.trim()) {
-      setError("Nombre y dirección son obligatorios.");
+      setError("Name and address are required.");
       return;
     }
 
@@ -107,15 +107,15 @@ export function SedesPage() {
     try {
       if (editandoId === null) {
         const sede = await sedesApi.crearSede(nombre.trim(), direccion.trim());
-        setMensaje(`${sede.nombre} creada con el código ${sede.codigoSede}.`);
+        setMensaje(`${sede.nombre} created with code ${sede.codigoSede}.`);
       } else {
         await sedesApi.modificarSede(editandoId, nombre.trim(), direccion.trim());
-        setMensaje("Sede actualizada.");
+        setMensaje("Location updated.");
       }
       cerrarFormulario();
       await cargarSedes();
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo guardar la sede."));
+      setError(getApiErrorMessage(err, "The location could not be saved."));
     } finally {
       setGuardando(false);
     }
@@ -124,10 +124,10 @@ export function SedesPage() {
   return (
     <div className="panel">
       <div className="panel-header">
-        <h1 className="page-title">Sedes</h1>
+        <h1 className="page-title">Locations</h1>
         {!mostrarFormulario && (
           <button className="btn-secondary" onClick={abrirCreacion}>
-            + Nueva sede
+            + New location
           </button>
         )}
       </div>
@@ -137,14 +137,14 @@ export function SedesPage() {
 
       {mostrarFormulario && (
         <form ref={formRef} className="row-subform" onSubmit={handleSubmit}>
-          <h2 className="subform-title">{editandoId === null ? "Nueva sede" : "Editar sede"}</h2>
+          <h2 className="subform-title">{editandoId === null ? "New location" : "Edit location"}</h2>
           <div className="inline-form">
             <div className="field">
-              <label htmlFor="nombre">Nombre</label>
+              <label htmlFor="nombre">Name</label>
               <input id="nombre" type="text" value={nombre} onChange={(e) => setNombre(e.target.value)} placeholder="Sede Centro" />
             </div>
             <div className="field">
-              <label htmlFor="direccion">Dirección</label>
+              <label htmlFor="direccion">Address</label>
               <input
                 id="direccion"
                 type="text"
@@ -154,33 +154,33 @@ export function SedesPage() {
               />
             </div>
           </div>
-          {editandoId === null && <p className="field-hint">El código de la sede (SE01, SE02…) se asigna solo.</p>}
+          {editandoId === null && <p className="field-hint">The location code (SE01, SE02…) is assigned automatically.</p>}
           <div className="form-actions">
             <button type="submit" className="btn-primary" disabled={guardando}>
-              {guardando ? "Guardando..." : editandoId === null ? "Crear sede" : "Guardar cambios"}
+              {guardando ? "Saving..." : editandoId === null ? "Create location" : "Save changes"}
             </button>
             <button type="button" className="btn-secondary" onClick={cerrarFormulario}>
-              Cancelar
+              Cancel
             </button>
           </div>
         </form>
       )}
 
       {cargando ? (
-        <p className="empty-state">Cargando...</p>
+        <p className="empty-state">Loading...</p>
       ) : sedes.length === 0 ? (
-        <p className="empty-state">Aún no hay sedes registradas.</p>
+        <p className="empty-state">There are no registered locations yet.</p>
       ) : (
         <div className="table-scroll">
           <table>
             <thead>
               <tr>
-                <th>Código</th>
-                <th>Nombre</th>
-                <th>Dirección</th>
-                <th>Estado</th>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Address</th>
+                <th>Status</th>
                 <th>
-                  <span className="sr-only">Acciones</span>
+                  <span className="sr-only">Actions</span>
                 </th>
               </tr>
             </thead>
@@ -198,13 +198,13 @@ export function SedesPage() {
                   <td>
                     <div className="table-actions">
                       <button className="btn-link" onClick={() => abrirEdicion(sede)}>
-                        Editar
+                        Edit
                       </button>
                       <button
                         className={`btn-link ${sede.estado === "ACTIVO" ? "danger" : ""}`}
                         onClick={() => void handleCambiarEstado(sede)}
                       >
-                        {sede.estado === "ACTIVO" ? "Inactivar" : "Activar"}
+                        {sede.estado === "ACTIVO" ? "Deactivate" : "Activate"}
                       </button>
                     </div>
                   </td>

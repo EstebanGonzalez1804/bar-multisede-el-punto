@@ -5,7 +5,7 @@ import { crearSedeSchema } from "./sedes.schemas";
 import * as sedesService from "./sedes.service";
 
 export const postSede = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const { nombre, direccion } = crearSedeSchema.parse(req.body);
   const sede = await sedesService.crearSede(req.usuarioActual, nombre, direccion);
   res.status(201).json({ sede });
@@ -19,26 +19,26 @@ export const getSedes = asyncHandler(async (_req: Request, res: Response) => {
 function parseIdSede(req: Request): number {
   const idSede = Number(req.params.idSede);
   if (!Number.isInteger(idSede)) {
-    throw ApiError.badRequest("El id de sede no es válido.");
+    throw ApiError.badRequest("The location id is not valid.");
   }
   return idSede;
 }
 
 export const putSede = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const { nombre, direccion } = crearSedeSchema.parse(req.body);
   const sede = await sedesService.modificarSede(req.usuarioActual, parseIdSede(req), nombre.trim(), direccion.trim());
   res.status(200).json({ sede });
 });
 
 export const postInactivarSede = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const sede = await sedesService.inactivarSede(req.usuarioActual, parseIdSede(req));
   res.status(200).json({ sede });
 });
 
 export const postActivarSede = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const sede = await sedesService.activarSede(req.usuarioActual, parseIdSede(req));
   res.status(200).json({ sede });
 });

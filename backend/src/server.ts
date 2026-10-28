@@ -17,12 +17,12 @@ async function main() {
   const app = createApp();
   app.listen(env.port, () => {
     // eslint-disable-next-line no-console
-    console.log(`API escuchando en http://localhost:${env.port} (${env.nodeEnv})`);
+    console.log(`API listening on http://localhost:${env.port} (${env.nodeEnv})`);
   });
 }
 
 main().catch((err) => {
   // eslint-disable-next-line no-console
-  console.error("No se pudo iniciar el servidor:", err);
+  console.error("The server could not be started:", err);
   process.exit(1);
 });

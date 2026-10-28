@@ -15,5 +15,5 @@ export async function exportarReporteVentas(desde: string, hasta: string, idSede
     params: { desde, hasta, idSede },
     responseType: "blob",
   });
-  guardarBlob(data, `ventas_${desde}_${hasta}.xlsx`);
+  guardarBlob(data, `sales_${desde}_${hasta}.xlsx`);
 }

@@ -155,7 +155,7 @@ export async function obtenerPedidoConLineas(idPedido: number, ejecutor: Queryab
     [idPedido]
   );
   if (!rows[0]) {
-    throw ApiError.notFound("Pedido no encontrado.");
+    throw ApiError.notFound("Order not found.");
   }
 
   const { rows: lineaRows } = await ejecutor.query<LineaRow>(
@@ -211,15 +211,15 @@ export async function crearPedido(mesero: JwtPayload, idMesa: number): Promise<P
     );
     const mesa = rows[0];
     if (!mesa) {
-      throw ApiError.notFound("Mesa no encontrada.");
+      throw ApiError.notFound("Table not found.");
     }
     if (mesa.id_sede !== mesero.idSede) {
-      throw ApiError.forbidden("Solo puedes abrir pedidos sobre mesas de tu propia sede.");
+      throw ApiError.forbidden("You can only open orders on tables at your own location.");
     }
     await exigirSedeActiva(mesa.id_sede, client);
     if (mesa.estado !== "LIBRE") {
       throw ApiError.conflict(
-        mesa.estado === "OCUPADA" ? "La mesa ya tiene un pedido abierto." : "La mesa está inactiva.",
+        mesa.estado === "OCUPADA" ? "The table already has an open order." : "The table is inactive.",
         "MESA_NO_DISPONIBLE"
       );
     }
@@ -275,10 +275,10 @@ export async function obtenerPedidoAbiertoPorMesa(idMesa: number, mesero: JwtPay
   );
   const mesa = rows[0];
   if (!mesa) {
-    throw ApiError.notFound("Mesa no encontrada.");
+    throw ApiError.notFound("Table not found.");
   }
   if (mesa.id_sede !== mesero.idSede) {
-    throw ApiError.forbidden("Solo puedes operar mesas de tu propia sede.");
+    throw ApiError.forbidden("You can only operate tables at your own location.");
   }
   if (mesa.id_pedido === null) {
     return null;
@@ -318,10 +318,10 @@ export async function registrarProductoEnPedido(
     );
     const pedido = pedidoRows[0];
     if (!pedido) {
-      throw ApiError.notFound("Pedido no encontrado.");
+      throw ApiError.notFound("Order not found.");
     }
     if (pedido.id_sede !== mesero.idSede) {
-      throw ApiError.forbidden("Solo puedes registrar productos en pedidos de tu propia sede.");
+      throw ApiError.forbidden("You can only add products to orders at your own location.");
     }
     if (pedido.estado_pedido !== "ABIERTO") {
       // HU-027 CA-03: con un pago registrado no se agrega nada, bajo ninguna
@@ -329,8 +329,8 @@ export async function registrarProductoEnPedido(
       const { rows: pagos } = await client.query(`SELECT 1 FROM pago WHERE id_pedido = $1 LIMIT 1`, [idPedido]);
       throw ApiError.conflict(
         pagos.length > 0
-          ? "El pedido ya tiene un pago registrado: no se le pueden agregar productos."
-          : "El pedido está cerrado y no se puede reabrir: cuando se pague la cuenta y la mesa quede libre, abre una cuenta nueva.",
+          ? "The order already has a recorded payment: products can no longer be added."
+          : "The order is closed and cannot be reopened: once the bill is paid and the table is free, open a new bill.",
         pagos.length > 0 ? "PEDIDO_CON_PAGO" : "PEDIDO_CERRADO"
       );
     }
@@ -342,11 +342,11 @@ export async function registrarProductoEnPedido(
     }>(`SELECT estado, valor_venta, valor_compra FROM producto WHERE id_producto = $1`, [datos.idProducto]);
     const producto = productoRows[0];
     if (!producto) {
-      throw ApiError.notFound("El producto indicado no existe.");
+      throw ApiError.notFound("The specified product does not exist.");
     }
     // HU-026 CA-03: un producto inactivo no puede agregarse a un pedido nuevo.
     if (producto.estado !== "ACTIVO") {
-      throw ApiError.conflict("Este producto está inactivo y no se puede agregar al pedido.", "PRODUCTO_INACTIVO");
+      throw ApiError.conflict("This product is inactive and cannot be added to the order.", "PRODUCTO_INACTIVO");
     }
 
     // HU-023 CA-01: bloqueo preventivo antes de crear la línea, para dar un
@@ -356,8 +356,8 @@ export async function registrarProductoEnPedido(
     if (disponible < datos.cantidad) {
       throw ApiError.conflict(
         disponible === 0
-          ? "Este producto está agotado en esta sede."
-          : `Solo hay ${disponible} unidad(es) disponibles de este producto en esta sede.`,
+          ? "This product is out of stock at this location."
+          : `Only ${disponible} unit(s) of this product available at this location.`,
         "PRODUCTO_AGOTADO"
       );
     }
@@ -406,7 +406,7 @@ export async function registrarProductoEnPedido(
 /** Cajero/Mesero solo operan sobre su sede; el Administrador sobre cualquiera. */
 function exigirAccesoSede(usuario: JwtPayload, idSedePedido: number): void {
   if (usuario.perfil !== "ADMINISTRADOR" && usuario.idSede !== idSedePedido) {
-    throw ApiError.forbidden("Solo puedes operar pedidos de tu propia sede.");
+    throw ApiError.forbidden("You can only operate orders at your own location.");
   }
 }
 
@@ -424,17 +424,17 @@ export async function cerrarPedido(mesero: JwtPayload, idPedido: number): Promis
       [idPedido]
     );
     const pedido = rows[0];
-    if (!pedido) throw ApiError.notFound("Pedido no encontrado.");
+    if (!pedido) throw ApiError.notFound("Order not found.");
     exigirAccesoSede(mesero, pedido.id_sede);
     if (pedido.estado_pedido !== "ABIERTO") {
-      throw ApiError.conflict("El pedido ya está cerrado.", "PEDIDO_YA_CERRADO");
+      throw ApiError.conflict("The order is already closed.", "PEDIDO_YA_CERRADO");
     }
 
     const { rows: lineas } = await client.query(`SELECT 1 FROM detalle_pedido WHERE id_pedido = $1 LIMIT 1`, [
       idPedido,
     ]);
     if (lineas.length === 0) {
-      throw ApiError.conflict("No se puede cerrar un pedido sin productos registrados.", "PEDIDO_SIN_PRODUCTOS");
+      throw ApiError.conflict("An order without products cannot be closed.", "PEDIDO_SIN_PRODUCTOS");
     }
 
     await client.query(
@@ -587,7 +587,7 @@ export interface ResultadoPago {
 }
 
 function formatoPesos(centavos: number): string {
-  return `$${(centavos / 100).toLocaleString("es-CO")}`;
+  return `$${(centavos / 100).toLocaleString("en-US")}`;
 }
 
 /**
@@ -628,24 +628,24 @@ export async function registrarPago(
       [idPedido]
     );
     const pedido = rows[0];
-    if (!pedido) throw ApiError.notFound("Pedido no encontrado.");
+    if (!pedido) throw ApiError.notFound("Order not found.");
     exigirAccesoSede(usuario, pedido.id_sede);
     if (pedido.estado_pedido !== "CERRADO") {
-      throw ApiError.conflict("El pedido sigue abierto: debe cerrarse (generar la cuenta) antes de cobrar.", "PEDIDO_ABIERTO");
+      throw ApiError.conflict("The order is still open: it must be closed (bill generated) before payment.", "PEDIDO_ABIERTO");
     }
     if (pedido.estado_pago === "PAGADO") {
-      throw ApiError.conflict("Este pedido ya está pagado por completo.", "PEDIDO_YA_PAGADO");
+      throw ApiError.conflict("This order is already fully paid.", "PEDIDO_YA_PAGADO");
     }
 
     const actual = await obtenerPedidoConLineas(idPedido, client);
     const saldoCent = aCentavos(actual.saldoPendiente);
 
     if (entrada.lineas.length === 0) {
-      throw ApiError.badRequest("Agrega al menos un método de pago con su valor.");
+      throw ApiError.badRequest("Add at least one payment method with its value.");
     }
     for (const l of entrada.lineas) {
       if (!(aCentavos(l.valor) > 0)) {
-        throw ApiError.badRequest("Cada valor de pago debe ser mayor a cero.");
+        throw ApiError.badRequest("Each payment value must be greater than zero.");
       }
     }
     const sumaCent = entrada.lineas.reduce((acc, l) => acc + aCentavos(l.valor), 0);
@@ -655,28 +655,28 @@ export async function registrarPago(
     if (entrada.modalidad === "PRODUCTOS") {
       if (entrada.lineas.length !== 1) {
         throw ApiError.badRequest(
-          "El pago por productos se cobra con un solo método. Si otra persona paga con otro método, registra otro pago por productos."
+          "A payment by products is charged with a single method. If another person pays with a different method, record another payment by products."
         );
       }
       const pedidos = entrada.productos ?? [];
       if (pedidos.length === 0) {
-        throw ApiError.badRequest("Selecciona al menos un producto de la cuenta.");
+        throw ApiError.badRequest("Select at least one product from the bill.");
       }
       const idsVistos = new Set<number>();
       let esperadoCent = 0;
       for (const item of pedidos) {
         if (idsVistos.has(item.idProducto)) {
-          throw ApiError.badRequest("Un producto no puede repetirse en la selección.");
+          throw ApiError.badRequest("A product cannot be repeated in the selection.");
         }
         idsVistos.add(item.idProducto);
         const lineasProducto = actual.lineas.filter((l) => l.idProducto === item.idProducto);
         if (lineasProducto.length === 0) {
-          throw ApiError.badRequest("Alguno de los productos seleccionados no pertenece a este pedido.");
+          throw ApiError.badRequest("One of the selected products does not belong to this order.");
         }
         const pendiente = lineasProducto.reduce((acc, l) => acc + l.cantidadPendiente, 0);
         if (item.cantidad > pendiente) {
           throw ApiError.conflict(
-            `Solo quedan ${pendiente} unidad(es) por pagar de ${lineasProducto[0].nombreProducto}.`,
+            `Only ${pendiente} unit(s) left to pay of ${lineasProducto[0].nombreProducto}.`,
             "CANTIDAD_SUPERA_PENDIENTE"
           );
         }
@@ -694,20 +694,20 @@ export async function registrarPago(
       }
       if (esperadoCent > saldoCent) {
         throw ApiError.conflict(
-          `Los productos seleccionados (${formatoPesos(esperadoCent)}) superan el saldo pendiente (${formatoPesos(saldoCent)}).`,
+          `The selected products (${formatoPesos(esperadoCent)}) exceed the pending balance (${formatoPesos(saldoCent)}).`,
           "PAGO_SUPERA_SALDO"
         );
       }
       if (sumaCent !== esperadoCent) {
         throw ApiError.conflict(
-          `El valor del pago debe ser igual al de los productos seleccionados (${formatoPesos(esperadoCent)}).`,
+          `The payment value must equal the value of the selected products (${formatoPesos(esperadoCent)}).`,
           "PAGO_NO_COINCIDE"
         );
       }
     } else if (entrada.modalidad === "ABONO") {
       if (sumaCent > saldoCent) {
         throw ApiError.conflict(
-          `El abono (${formatoPesos(sumaCent)}) supera el saldo pendiente (${formatoPesos(saldoCent)}).`,
+          `The partial payment (${formatoPesos(sumaCent)}) exceeds the pending balance (${formatoPesos(saldoCent)}).`,
           "PAGO_SUPERA_SALDO"
         );
       }
@@ -715,18 +715,18 @@ export async function registrarPago(
       // TOTAL: un único pago por el saldo exacto (un solo método).
       if (entrada.lineas.length !== 1) {
         throw ApiError.badRequest(
-          "El pago completo es un único pago con un solo método. Para combinar métodos o pagar por partes usa un abono."
+          "A full payment is a single payment with a single method. To combine methods or pay in parts, use a partial payment."
         );
       }
       if (sumaCent < saldoCent) {
         throw ApiError.conflict(
-          `El valor no cubre el total de la cuenta. Saldo pendiente restante: ${formatoPesos(saldoCent - sumaCent)}.`,
+          `The value does not cover the bill total. Remaining pending balance: ${formatoPesos(saldoCent - sumaCent)}.`,
           "PAGO_INSUFICIENTE"
         );
       }
       if (sumaCent > saldoCent) {
         throw ApiError.conflict(
-          `La suma de los métodos (${formatoPesos(sumaCent)}) supera el saldo de la cuenta (${formatoPesos(saldoCent)}).`,
+          `The sum of the methods (${formatoPesos(sumaCent)}) exceeds the bill balance (${formatoPesos(saldoCent)}).`,
           "PAGO_SUPERA_SALDO"
         );
       }

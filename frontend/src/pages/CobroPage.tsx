@@ -16,15 +16,15 @@ interface LineaAbono {
 const METODOS: MetodoPago[] = ["EFECTIVO", "TARJETA_CREDITO", "TARJETA_DEBITO"];
 
 const MODALIDADES: { value: ModalidadPago; titulo: string; ayuda: string }[] = [
-  { value: "TOTAL", titulo: "Pago completo", ayuda: "Un solo pago por todo el saldo." },
-  { value: "PRODUCTOS", titulo: "Por productos", ayuda: "Cada persona paga lo que consumió." },
-  { value: "ABONO", titulo: "Abono por monto", ayuda: "Un valor libre, hasta el saldo." },
+  { value: "TOTAL", titulo: "Full payment", ayuda: "One single payment for the whole balance." },
+  { value: "PRODUCTOS", titulo: "By products", ayuda: "Each person pays what they consumed." },
+  { value: "ABONO", titulo: "Partial payment by amount", ayuda: "Any amount, up to the balance." },
 ];
 
 const ETIQUETAS_MODALIDAD: Record<ModalidadPago, string> = {
-  TOTAL: "Pago completo",
-  ABONO: "Abono",
-  PRODUCTOS: "Por productos",
+  TOTAL: "Full payment",
+  ABONO: "Partial payment",
+  PRODUCTOS: "By products",
 };
 
 const aCentavos = (v: string | number) => Math.round(Number(v) * 100);
@@ -107,7 +107,7 @@ export function CobroPage() {
     pedidosApi
       .obtenerPedido(Number(idPedido))
       .then((p) => activo && setPedido(p))
-      .catch((err) => activo && setError(getApiErrorMessage(err, "No se pudo cargar la cuenta.")))
+      .catch((err) => activo && setError(getApiErrorMessage(err, "The bill could not be loaded.")))
       .finally(() => activo && setCargando(false));
     return () => {
       activo = false;
@@ -158,31 +158,31 @@ export function CobroPage() {
 
     if (modalidad === "ABONO") {
       if (abonos.some((l) => !(Number(l.valor) > 0))) {
-        setError("Cada método del abono debe tener un valor mayor a cero.");
+        setError("Each payment method in a partial payment must have a value greater than zero.");
         return;
       }
       if (abonoCent > saldoCent) {
-        setError(`El abono (${pesos(abonoCent / 100)}) supera el saldo pendiente (${pesos(saldoCent / 100)}).`);
+        setError(`The partial payment (${pesos(abonoCent / 100)}) exceeds the pending balance (${pesos(saldoCent / 100)}).`);
         return;
       }
       lineas = abonos.map((l) => ({ metodo: l.metodo, valor: Number(l.valor) }));
     } else {
       if (modalidad === "PRODUCTOS" && productosElegidos.length === 0) {
-        setError("Elige al menos un producto y la cantidad que va a pagar.");
+        setError("Choose at least one product and the quantity to be paid.");
         return;
       }
       if (modalidad === "PRODUCTOS" && aCobrarCent > saldoCent) {
         setError(
-          `Los productos elegidos (${pesos(aCobrarCent / 100)}) superan el saldo pendiente (${pesos(saldoCent / 100)}). Usa “Pago completo”.`
+          `The selected products (${pesos(aCobrarCent / 100)}) exceed the pending balance (${pesos(saldoCent / 100)}). Use “Full payment”.`
         );
         return;
       }
       lineas = [{ metodo, valor: aCobrarCent / 100 }];
     }
 
-    const resumenMetodos = lineas.map((l) => `${pesos(l.valor)} en ${ETIQUETAS_METODO[l.metodo].toLowerCase()}`).join(" + ");
+    const resumenMetodos = lineas.map((l) => `${pesos(l.valor)} by ${ETIQUETAS_METODO[l.metodo].toLowerCase()}`).join(" + ");
     const ok = await confirmar({
-      titulo: `¿Registrar pago de ${pesos(aCobrarCent / 100)}?`,
+      titulo: `Record a payment of ${pesos(aCobrarCent / 100)}?`,
       mensaje: (
         <>
           <p style={{ margin: "0 0 0.5rem" }}>
@@ -192,12 +192,12 @@ export function CobroPage() {
             <p style={{ margin: "0 0 0.5rem" }}>{productosElegidos.map((p) => `${p.cantidad} × ${p.nombre}`).join(", ")}</p>
           )}
           <p style={{ margin: 0 }}>
-            Saldo después del pago: <strong>{pesos((saldoCent - aCobrarCent) / 100)}</strong>. Un pago registrado no se
-            puede modificar ni anular.
+            Balance after payment: <strong>{pesos((saldoCent - aCobrarCent) / 100)}</strong>. A recorded payment cannot be
+            edited or voided.
           </p>
         </>
       ),
-      textoConfirmar: "Registrar pago",
+      textoConfirmar: "Record payment",
     });
     if (!ok) return;
 
@@ -214,11 +214,11 @@ export function CobroPage() {
       if (resultado.pedido.estadoPago === "PAGADO") setModalidad("TOTAL");
       setMensaje(
         resultado.pedido.estadoPago === "PAGADO"
-          ? `Pago registrado. La cuenta quedó pagada y ${resultado.pedido.identificadorMesa} se liberó.`
-          : `Pago de ${pesos(aCobrarCent / 100)} registrado. Saldo pendiente: ${pesos(resultado.pedido.saldoPendiente)}.`
+          ? `Payment recorded. The bill is fully paid and ${resultado.pedido.identificadorMesa} was freed.`
+          : `Payment of ${pesos(aCobrarCent / 100)} recorded. Pending balance: ${pesos(resultado.pedido.saldoPendiente)}.`
       );
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo registrar el pago."));
+      setError(getApiErrorMessage(err, "The payment could not be recorded."));
     } finally {
       setGuardando(false);
     }
@@ -227,7 +227,7 @@ export function CobroPage() {
   if (cargando) {
     return (
       <div className="panel">
-        <p className="empty-state">Cargando...</p>
+        <p className="empty-state">Loading...</p>
       </div>
     );
   }
@@ -237,7 +237,7 @@ export function CobroPage() {
       <div className="panel">
         {error && <Aviso tipo="error">{error}</Aviso>}
         <Link to="/cobros" className="btn-secondary">
-          Volver a Cobros
+          Back to Payments
         </Link>
       </div>
     );
@@ -253,38 +253,38 @@ export function CobroPage() {
       <div className="page-head">
         <div>
           <h1 className="page-title">
-            Cobro · {pedido.identificadorMesa}{" "}
+            Payment · {pedido.identificadorMesa}{" "}
             <span className={`badge ${pagado ? "badge-success" : "badge-warning"}`}>{etiquetaEstadoPago(pedido.estadoPago)}</span>
           </h1>
           <p className="page-sub">
-            Pedido {pedido.identificadorPedido} · {pedido.nombreSede} · atendió {pedido.nombreMesero}
+            Order {pedido.identificadorPedido} · {pedido.nombreSede} · served by {pedido.nombreMesero}
           </p>
         </div>
         <div className="page-head-acciones">
           <Link to={`/cuenta/${pedido.idPedido}`} className="btn-secondary">
-            Ver cuenta
+            View bill
           </Link>
           <Link to="/cobros" className="btn-secondary">
-            Volver a Cobros
+            Back to Payments
           </Link>
         </div>
       </div>
 
       {error && <Aviso tipo="error">{error}</Aviso>}
       {mensaje && !error && <Aviso tipo="exito">{mensaje}</Aviso>}
-      {!cerrado && <Aviso tipo="info">El pedido sigue abierto: el mesero debe cerrarlo antes de cobrar.</Aviso>}
+      {!cerrado && <Aviso tipo="info">The order is still open: the waiter must close it before payment.</Aviso>}
 
       <div className="cobro-resumen">
         <div>
-          <span className="cobro-etiqueta">Total de la cuenta</span>
+          <span className="cobro-etiqueta">Bill total</span>
           <strong className="num">{pesos(pedido.total)}</strong>
         </div>
         <div>
-          <span className="cobro-etiqueta">Pagado</span>
+          <span className="cobro-etiqueta">Paid</span>
           <strong className="num">{pesos(pedido.totalPagado)}</strong>
         </div>
         <div className={pagado ? "cobro-saldo cobro-saldo-ok" : "cobro-saldo"}>
-          <span className="cobro-etiqueta">Saldo pendiente</span>
+          <span className="cobro-etiqueta">Pending balance</span>
           <strong className="num">{pesos(pedido.saldoPendiente)}</strong>
         </div>
       </div>
@@ -293,11 +293,11 @@ export function CobroPage() {
         {puedeCobrar && (
           <section className="panel" aria-labelledby="titulo-registrar">
             <h2 id="titulo-registrar" className="panel-title">
-              Registrar pago
+              Record payment
             </h2>
 
             <fieldset className="grupo-campos">
-              <legend>1. ¿Cómo paga?</legend>
+              <legend>1. How is it paid?</legend>
               <div className="modalidades">
                 {MODALIDADES.map((m) => (
                   <label key={m.value} className={`modalidad${modalidad === m.value ? " activa" : ""}`}>
@@ -317,15 +317,15 @@ export function CobroPage() {
 
             {modalidad === "PRODUCTOS" && (
               <fieldset className="grupo-campos">
-                <legend>2. ¿Qué productos paga?</legend>
+                <legend>2. Which products are paid?</legend>
                 {abonadoSinAsignarCent > 0 && (
                   <p className="nota-cobro">
-                    Esta cuenta tiene {pesos(abonadoSinAsignarCent / 100)} en abonos que no corresponden a productos. Si
-                    lo elegido supera el saldo, usa “Pago completo”.
+                    This bill has {pesos(abonadoSinAsignarCent / 100)} in partial payments not assigned to products. If
+                    the selection exceeds the balance, use “Full payment”.
                   </p>
                 )}
                 {pendientes.length === 0 ? (
-                  <p className="empty-state">Todos los productos ya están pagados.</p>
+                  <p className="empty-state">All products are already paid.</p>
                 ) : (
                   <ul className="selector-productos">
                     {pendientes.map((prod) => {
@@ -336,14 +336,14 @@ export function CobroPage() {
                           <div className="selector-producto-info">
                             <span className="selector-producto-nombre">{prod.nombre}</span>
                             <span className="picker-meta">
-                              {pesos(precioUnit / 100)} c/u · faltan {prod.pendiente}
+                              {pesos(precioUnit / 100)} each · {prod.pendiente} left
                             </span>
                           </div>
-                          <div className="cantidad-selector" role="group" aria-label={`Unidades de ${prod.nombre}`}>
+                          <div className="cantidad-selector" role="group" aria-label={`Units of ${prod.nombre}`}>
                             <button
                               type="button"
                               className="btn-secondary"
-                              aria-label={`Quitar una unidad de ${prod.nombre}`}
+                              aria-label={`Remove one unit of ${prod.nombre}`}
                               disabled={elegido === 0}
                               onClick={() => fijarCantidad(prod, elegido - 1)}
                             >
@@ -353,14 +353,14 @@ export function CobroPage() {
                               type="number"
                               min={0}
                               max={prod.pendiente}
-                              aria-label={`Unidades de ${prod.nombre} que paga ahora`}
+                              aria-label={`Units of ${prod.nombre} paid now`}
                               value={elegido}
                               onChange={(e) => fijarCantidad(prod, Number(e.target.value))}
                             />
                             <button
                               type="button"
                               className="btn-secondary"
-                              aria-label={`Agregar una unidad de ${prod.nombre}`}
+                              aria-label={`Add one unit of ${prod.nombre}`}
                               disabled={elegido >= prod.pendiente}
                               onClick={() => fijarCantidad(prod, elegido + 1)}
                             >
@@ -372,7 +372,7 @@ export function CobroPage() {
                               disabled={elegido === prod.pendiente}
                               onClick={() => fijarCantidad(prod, prod.pendiente)}
                             >
-                              Todas
+                              All
                             </button>
                           </div>
                           <span className="selector-producto-valor num">
@@ -387,13 +387,13 @@ export function CobroPage() {
             )}
 
             <fieldset className="grupo-campos">
-              <legend>{modalidad === "PRODUCTOS" ? "3." : "2."} ¿Con qué paga?</legend>
+              <legend>{modalidad === "PRODUCTOS" ? "3." : "2."} Payment method</legend>
               {modalidad === "ABONO" ? (
                 <>
                   {abonos.map((l, i) => (
                     <div className="inline-form linea-abono" key={i}>
                       <div className="field">
-                        <label htmlFor={`metodo${i}`}>Método</label>
+                        <label htmlFor={`metodo${i}`}>Method</label>
                         <select
                           id={`metodo${i}`}
                           value={l.metodo}
@@ -408,7 +408,7 @@ export function CobroPage() {
                       </div>
                       <div className="field">
                         <label htmlFor={`valor${i}`}>
-                          Valor
+                          Amount
                           {Number(l.valor) > 0 && <span className="etiqueta-valor"> · {pesos(l.valor)}</span>}
                         </label>
                         <input
@@ -428,7 +428,7 @@ export function CobroPage() {
                           className="btn-link danger"
                           onClick={() => setAbonos((actual) => actual.filter((_, idx) => idx !== i))}
                         >
-                          Quitar
+                          Remove
                         </button>
                       )}
                     </div>
@@ -439,12 +439,12 @@ export function CobroPage() {
                       className="btn-link"
                       onClick={() => setAbonos((actual) => [...actual, { metodo: "TARJETA_DEBITO", valor: "" }])}
                     >
-                      + Combinar con otro método
+                      + Combine with another method
                     </button>
                   )}
                 </>
               ) : (
-                <div className="metodos" role="radiogroup" aria-label="Método de pago">
+                <div className="metodos" role="radiogroup" aria-label="Payment method">
                   {METODOS.map((m) => (
                     <label key={m} className={`metodo${metodo === m ? " activo" : ""}`}>
                       <input type="radio" name="metodo" value={m} checked={metodo === m} onChange={() => setMetodo(m)} />
@@ -457,11 +457,11 @@ export function CobroPage() {
 
             <div className="cobro-total">
               <div>
-                <span className="cobro-etiqueta">Valor a cobrar</span>
+                <span className="cobro-etiqueta">Amount to charge</span>
                 <strong className="cobro-total-valor num">{pesos(aCobrarCent / 100)}</strong>
               </div>
               <div className="cobro-total-saldo">
-                <span className="cobro-etiqueta">Saldo después del pago</span>
+                <span className="cobro-etiqueta">Balance after payment</span>
                 <span className={`num${saldoDespuesCent < 0 ? " texto-peligro" : ""}`}>{pesos(saldoDespuesCent / 100)}</span>
               </div>
             </div>
@@ -472,16 +472,16 @@ export function CobroPage() {
               disabled={guardando || aCobrarCent <= 0}
               onClick={() => void handleRegistrar()}
             >
-              {guardando ? "Registrando..." : aCobrarCent > 0 ? `Registrar pago de ${pesos(aCobrarCent / 100)}` : "Registrar pago"}
+              {guardando ? "Recording..." : aCobrarCent > 0 ? `Record payment of ${pesos(aCobrarCent / 100)}` : "Record payment"}
             </button>
-            <p className="field-hint">Un pago registrado no se puede modificar ni anular.</p>
+            <p className="field-hint">A recorded payment cannot be edited or voided.</p>
           </section>
         )}
 
         <div>
           <section className="panel" aria-labelledby="titulo-detalle">
             <h2 id="titulo-detalle" className="panel-title">
-              Detalle de la cuenta
+              Bill details
             </h2>
             <ul className="lista-cuenta">
               {grupos.map((g) => (
@@ -491,9 +491,9 @@ export function CobroPage() {
                     {g.nombreProducto}
                     <span className="picker-meta">
                       {" "}
-                      {pesos(g.precioVenta)} c/u
+                      {pesos(g.precioVenta)} each
                       {g.cantidadPagada > 0 &&
-                        (g.cantidadPagada >= g.cantidad ? " · pagado" : ` · ${g.cantidadPagada} pagado${g.cantidadPagada === 1 ? "" : "s"}`)}
+                        (g.cantidadPagada >= g.cantidad ? " · paid" : ` · ${g.cantidadPagada} paid`)}
                     </span>
                   </span>
                   <span className="lista-cuenta-valor num">{pesos(g.subtotal)}</span>
@@ -508,10 +508,10 @@ export function CobroPage() {
 
           <section className="panel" aria-labelledby="titulo-pagos">
             <h2 id="titulo-pagos" className="panel-title">
-              Pagos registrados
+              Recorded payments
             </h2>
             {pedido.pagos.length === 0 ? (
-              <p className="empty-state">Aún no se ha registrado ningún pago.</p>
+              <p className="empty-state">No payment has been recorded yet.</p>
             ) : (
               <ul className="lista-pagos">
                 {pedido.pagos.map((p) => (

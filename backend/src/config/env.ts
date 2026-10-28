@@ -4,7 +4,7 @@ function required(name: string): string {
   const value = process.env[name];
   if (!value || value.trim() === "") {
     throw new Error(
-      `Falta la variable de entorno obligatoria "${name}". Revisa tu archivo .env (usa .env.example como referencia).`
+      `Missing required environment variable "${name}". Check your .env file (use .env.example as a reference).`
     );
   }
   return value;

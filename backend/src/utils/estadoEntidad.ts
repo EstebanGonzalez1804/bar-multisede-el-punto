@@ -11,10 +11,10 @@ import { ApiError } from "./ApiError";
 export async function exigirSedeActiva(idSede: number, client: PoolClient): Promise<void> {
   const { rows } = await client.query<{ estado: string }>(`SELECT estado FROM sede WHERE id_sede = $1`, [idSede]);
   if (!rows[0]) {
-    throw ApiError.notFound("La sede indicada no existe.");
+    throw ApiError.notFound("The specified location does not exist.");
   }
   if (rows[0].estado !== "ACTIVO") {
-    throw ApiError.conflict("La sede está inactiva: no se pueden registrar operaciones nuevas en ella.", "SEDE_INACTIVA");
+    throw ApiError.conflict("The location is inactive: no new operations can be recorded there.", "SEDE_INACTIVA");
   }
 }
 
@@ -24,10 +24,10 @@ export async function exigirProveedorActivo(idProveedor: number, client: PoolCli
     [idProveedor]
   );
   if (!rows[0]) {
-    throw ApiError.notFound("El proveedor indicado no existe.");
+    throw ApiError.notFound("The specified supplier does not exist.");
   }
   if (rows[0].estado !== "ACTIVO") {
-    throw ApiError.conflict("El proveedor está inactivo y no se puede usar en recepciones nuevas.", "PROVEEDOR_INACTIVO");
+    throw ApiError.conflict("The supplier is inactive and cannot be used in new receipts.", "PROVEEDOR_INACTIVO");
   }
 }
 
@@ -37,11 +37,11 @@ export async function exigirTipoProductoActivo(idTipoProducto: number, client: P
     [idTipoProducto]
   );
   if (!rows[0]) {
-    throw ApiError.notFound("El tipo de producto indicado no existe.");
+    throw ApiError.notFound("The specified product type does not exist.");
   }
   if (rows[0].estado !== "ACTIVO") {
     throw ApiError.conflict(
-      "El tipo de producto está inactivo y no se puede usar para productos nuevos.",
+      "The product type is inactive and cannot be used for new products.",
       "TIPO_PRODUCTO_INACTIVO"
     );
   }

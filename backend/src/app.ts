@@ -41,7 +41,7 @@ export function createApp() {
   // 404 para cualquier ruta no reconocida.
   app.use((req, res) => {
     res.status(404).json({
-      error: { code: "RUTA_NO_ENCONTRADA", message: `No existe la ruta ${req.method} ${req.path}` },
+      error: { code: "RUTA_NO_ENCONTRADA", message: `Route not found: ${req.method} ${req.path}` },
     });
   });
 

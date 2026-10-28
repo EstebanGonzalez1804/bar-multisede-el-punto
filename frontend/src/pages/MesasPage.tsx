@@ -69,7 +69,7 @@ export function MesasPage() {
         // visible si ya había datos en pantalla; solo se reporta si falla
         // la carga inicial.
         if (!silencioso) {
-          setError(getApiErrorMessage(err, "No se pudieron cargar las mesas."));
+          setError(getApiErrorMessage(err, "Tables could not be loaded."));
         }
       } finally {
         if (!silencioso) setCargando(false);
@@ -110,7 +110,7 @@ export function MesasPage() {
       await pedidosApi.abrirPedido(mesa.idMesa);
       navigate(`/pedidos/mesa/${mesa.idMesa}`);
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo abrir el pedido."));
+      setError(getApiErrorMessage(err, "The order could not be opened."));
       setAccionEnCurso(null);
     }
   }
@@ -142,11 +142,11 @@ export function MesasPage() {
     setError(null);
 
     if (!formulario.idSede) {
-      setError("Debes seleccionar una sede.");
+      setError("You must select a location.");
       return;
     }
     if (!formulario.identificador.trim()) {
-      setError("El identificador de la mesa es obligatorio.");
+      setError("The table identifier is required.");
       return;
     }
 
@@ -159,15 +159,15 @@ export function MesasPage() {
     try {
       if (editandoId === null) {
         await mesasApi.crearMesa(datos);
-        setMensaje("Mesa creada correctamente.");
+        setMensaje("Table created successfully.");
       } else {
         await mesasApi.modificarMesa(editandoId, datos);
-        setMensaje("Mesa actualizada correctamente.");
+        setMensaje("Table updated successfully.");
       }
       cerrarFormulario();
       await cargarMesas();
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo guardar la mesa."));
+      setError(getApiErrorMessage(err, "The table could not be saved."));
     } finally {
       setGuardando(false);
     }
@@ -175,9 +175,9 @@ export function MesasPage() {
 
   async function handleInactivar(mesa: Mesa) {
     const ok = await confirmar({
-      titulo: `¿Inactivar ${mesa.identificador}?`,
-      mensaje: "La mesa deja de aparecer para abrir pedidos. Puedes activarla de nuevo cuando quieras.",
-      textoConfirmar: "Inactivar mesa",
+      titulo: `Deactivate ${mesa.identificador}?`,
+      mensaje: "The table no longer appears for opening orders. You can activate it again at any time.",
+      textoConfirmar: "Deactivate table",
       peligro: true,
     });
     if (!ok) return;
@@ -185,10 +185,10 @@ export function MesasPage() {
     setError(null);
     try {
       await mesasApi.inactivarMesa(mesa.idMesa);
-      setMensaje(`${mesa.identificador} inactivada.`);
+      setMensaje(`${mesa.identificador} deactivated.`);
       await cargarMesas();
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo inactivar la mesa."));
+      setError(getApiErrorMessage(err, "The table could not be deactivated."));
     } finally {
       setAccionEnCurso(null);
     }
@@ -199,10 +199,10 @@ export function MesasPage() {
     setError(null);
     try {
       await mesasApi.activarMesa(mesa.idMesa);
-      setMensaje(`${mesa.identificador} activada; queda libre.`);
+      setMensaje(`${mesa.identificador} activated; it is now free.`);
       await cargarMesas();
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo activar la mesa."));
+      setError(getApiErrorMessage(err, "The table could not be activated."));
     } finally {
       setAccionEnCurso(null);
     }
@@ -270,7 +270,7 @@ export function MesasPage() {
                     {esMesero && (
                       <>
                         <div className="mesa-card-info">
-                          {libre ? "Disponible para un nuevo pedido" : ocupada ? "Pedido en curso" : "Mesa inactiva"}
+                          {libre ? "Available for a new order" : ocupada ? "Order in progress" : "Inactive table"}
                         </div>
                         {libre && (
                           <button
@@ -279,7 +279,7 @@ export function MesasPage() {
                             disabled={accionEnCurso === mesa.idMesa}
                           >
                             <Icon path={ICONS.plus} size={15} strokeWidth={2.2} />
-                            Abrir pedido
+                            Open order
                           </button>
                         )}
                         {ocupada && (
@@ -288,7 +288,7 @@ export function MesasPage() {
                             onClick={() => navigate(`/pedidos/mesa/${mesa.idMesa}`)}
                           >
                             <Icon path={ICONS.receipt} size={15} strokeWidth={2.2} />
-                            Ver pedido
+                            View order
                           </button>
                         )}
                       </>
@@ -301,7 +301,7 @@ export function MesasPage() {
                           onClick={() => abrirEdicion(mesa)}
                           disabled={accionEnCurso === mesa.idMesa}
                         >
-                          Editar
+                          Edit
                         </button>
                         {mesa.estado === "INACTIVA" ? (
                           <button
@@ -309,16 +309,16 @@ export function MesasPage() {
                             onClick={() => void handleActivar(mesa)}
                             disabled={accionEnCurso === mesa.idMesa}
                           >
-                            Activar
+                            Activate
                           </button>
                         ) : (
                           <button
                             className="btn-link danger"
                             onClick={() => void handleInactivar(mesa)}
                             disabled={mesa.estado === "OCUPADA" || accionEnCurso === mesa.idMesa}
-                            title={mesa.estado === "OCUPADA" ? "Solo se puede inactivar una mesa libre" : undefined}
+                            title={mesa.estado === "OCUPADA" ? "Only a free table can be deactivated" : undefined}
                           >
-                            Inactivar
+                            Deactivate
                           </button>
                         )}
                       </div>
@@ -332,15 +332,15 @@ export function MesasPage() {
     <div>
       <div className="panel">
         <div className="panel-header">
-          <h1 className="page-title">Mesas</h1>
+          <h1 className="page-title">Tables</h1>
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <div className="live-indicator">
               <span className="live-dot" />
-              <span>En vivo · se actualiza sola</span>
+              <span>Live · updates automatically</span>
             </div>
             {esAdministrador && !mostrarFormulario && (
               <button className="btn-secondary" onClick={abrirCreacion}>
-                + Nueva mesa
+                + New table
               </button>
             )}
           </div>
@@ -352,9 +352,9 @@ export function MesasPage() {
         {esAdministrador && (
           <div className="toolbar">
             <div className="field">
-              <label htmlFor="filtroSede">Sede</label>
+              <label htmlFor="filtroSede">Location</label>
               <select id="filtroSede" value={filtroSede} onChange={(e) => setFiltroSede(e.target.value)}>
-                <option value="">Todas</option>
+                <option value="">All</option>
                 {sedes.map((s) => (
                   <option key={s.idSede} value={s.idSede}>
                     {s.codigoSede} — {s.nombre}
@@ -367,16 +367,16 @@ export function MesasPage() {
 
         {mostrarFormulario && (
           <form ref={formRef} className="row-subform" onSubmit={handleSubmitFormulario}>
-            <h2 className="subform-title">{editandoId === null ? "Nueva mesa" : "Editar mesa"}</h2>
+            <h2 className="subform-title">{editandoId === null ? "New table" : "Edit table"}</h2>
             <div className="inline-form">
               <div className="field">
-                <label htmlFor="idSedeMesa">Sede</label>
+                <label htmlFor="idSedeMesa">Location</label>
                 <select
                   id="idSedeMesa"
                   value={formulario.idSede}
                   onChange={(e) => setFormulario((f) => ({ ...f, idSede: e.target.value }))}
                 >
-                  <option value="">Selecciona una sede</option>
+                  <option value="">Select a location</option>
                   {sedes.filter((x) => x.estado === "ACTIVO").map((s) => (
                     <option key={s.idSede} value={s.idSede}>
                       {s.codigoSede} — {s.nombre}
@@ -385,7 +385,7 @@ export function MesasPage() {
                 </select>
               </div>
               <div className="field">
-                <label htmlFor="identificador">Identificador</label>
+                <label htmlFor="identificador">Identifier</label>
                 <input
                   id="identificador"
                   type="text"
@@ -397,10 +397,10 @@ export function MesasPage() {
             </div>
             <div className="form-actions">
               <button type="submit" className="btn-primary" disabled={guardando}>
-                {guardando ? "Guardando..." : "Guardar"}
+                {guardando ? "Saving..." : "Save"}
               </button>
               <button type="button" className="btn-secondary" onClick={cerrarFormulario}>
-                Cancelar
+                Cancel
               </button>
             </div>
           </form>
@@ -410,19 +410,19 @@ export function MesasPage() {
           <div style={{ display: "flex", gap: 10, marginBottom: 18, flexWrap: "wrap" }}>
             <span className="legend-chip">
               <span className="legend-dot" style={{ background: "var(--color-success-bg)", border: "1.5px solid var(--color-primary)" }} />
-              Libre · {libres}
+              Free · {libres}
             </span>
             <span className="legend-chip">
               <span className="legend-dot" style={{ background: "var(--color-primary)" }} />
-              Ocupada · {ocupadas}
+              Occupied · {ocupadas}
             </span>
           </div>
         )}
 
         {cargando ? (
-          <p className="empty-state">Cargando...</p>
+          <p className="empty-state">Loading...</p>
         ) : mesas.length === 0 ? (
-          <p className="empty-state">No hay mesas registradas.</p>
+          <p className="empty-state">There are no registered tables.</p>
         ) : (
           esAdministrador ? (
             <div>
@@ -436,7 +436,7 @@ export function MesasPage() {
                       {g.nombre}
                       <small>
                         {" "}
-                        · {g.mesas.length} mesa{g.mesas.length === 1 ? "" : "s"} · {ocup} ocupada{ocup === 1 ? "" : "s"}
+                        · {g.mesas.length} table{g.mesas.length === 1 ? "" : "s"} · {ocup} occupied
                       </small>
                     </h3>
                     <div className="mesas-grid">{g.mesas.map((m) => renderMesa(m, true))}</div>

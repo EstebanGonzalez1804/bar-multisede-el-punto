@@ -33,7 +33,7 @@ export function CobrosPage() {
         setPedidos(await pedidosApi.listarPedidosPendientesPago(busqueda.trim() || undefined));
         setError(null);
       } catch (err) {
-        if (!silencioso) setError(getApiErrorMessage(err, "No se pudieron cargar las cuentas por cobrar."));
+        if (!silencioso) setError(getApiErrorMessage(err, "Unpaid bills could not be loaded."));
       } finally {
         if (!silencioso) setCargando(false);
       }
@@ -51,22 +51,22 @@ export function CobrosPage() {
   return (
     <div className="panel">
       <div className="panel-header">
-        <h1 className="page-title">Cuentas por cobrar</h1>
+        <h1 className="page-title">Unpaid bills</h1>
         <div className="live-indicator">
           <span className="live-dot" />
-          <span>En vivo · se actualiza sola</span>
+          <span>Live · updates automatically</span>
         </div>
       </div>
 
       <div className="toolbar">
         <div className="field field-busqueda">
-          <label htmlFor="busquedaCobro">Buscar</label>
+          <label htmlFor="busquedaCobro">Search</label>
           <input
             id="busquedaCobro"
             type="search"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="N.º de pedido o mesa, p. ej. Mesa 3"
+            placeholder="Order no. or table, e.g. Mesa 3"
           />
         </div>
       </div>
@@ -74,53 +74,53 @@ export function CobrosPage() {
       {error && <Aviso tipo="error">{error}</Aviso>}
 
       {cargando ? (
-        <p className="empty-state">Cargando...</p>
+        <p className="empty-state">Loading...</p>
       ) : pedidos.length === 0 ? (
         <p className="empty-state">
-          {busqueda.trim() ? "Ninguna cuenta coincide con la búsqueda." : "No hay cuentas pendientes de pago."}
+          {busqueda.trim() ? "No bill matches the search." : "There are no bills pending payment."}
         </p>
       ) : (
         <div className="table-scroll">
           <table className="tabla-apilada">
             <thead>
               <tr>
-                <th>Mesa</th>
-                <th>Pedido</th>
-                {esAdministrador && <th>Sede</th>}
-                <th>Estado</th>
-                <th>Abierto</th>
+                <th>Table</th>
+                <th>Order</th>
+                {esAdministrador && <th>Location</th>}
+                <th>Status</th>
+                <th>Opened</th>
                 <th className="num">Total</th>
-                <th className="num">Saldo</th>
+                <th className="num">Balance</th>
                 <th>
-                  <span className="sr-only">Acciones</span>
+                  <span className="sr-only">Actions</span>
                 </th>
               </tr>
             </thead>
             <tbody>
               {pedidos.map((p) => (
                 <tr key={p.idPedido}>
-                  <td data-label="Mesa" className="celda-titulo">
+                  <td data-label="Table" className="celda-titulo">
                     {p.identificadorMesa}
                   </td>
-                  <td data-label="Pedido">{p.identificadorPedido}</td>
-                  {esAdministrador && <td data-label="Sede">{p.nombreSede}</td>}
-                  <td data-label="Estado">
+                  <td data-label="Order">{p.identificadorPedido}</td>
+                  {esAdministrador && <td data-label="Location">{p.nombreSede}</td>}
+                  <td data-label="Status">
                     <span className="badge badge-warning">{etiquetaEstadoPago(p.estadoPago)}</span>
                   </td>
-                  <td data-label="Abierto">{fechaHora(p.fechaApertura)}</td>
+                  <td data-label="Opened">{fechaHora(p.fechaApertura)}</td>
                   <td data-label="Total" className="num">
                     {pesos(p.total)}
                   </td>
-                  <td data-label="Saldo" className="num">
+                  <td data-label="Balance" className="num">
                     <strong>{pesos(p.saldoPendiente)}</strong>
                   </td>
                   <td data-label="" className="celda-acciones">
                     <div className="table-actions">
                       <Link className="btn-link" to={`/cuenta/${p.idPedido}`}>
-                        Ver cuenta
+                        View bill
                       </Link>
                       <Link className="btn-primary btn-compacto" to={`/cobro/${p.idPedido}`}>
-                        Cobrar
+                        Charge
                       </Link>
                     </div>
                   </td>

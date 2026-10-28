@@ -45,7 +45,7 @@ export function InventarioPage() {
     try {
       setItems(await inventarioApi.listarInventario(filtroSede ? Number(filtroSede) : undefined));
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo cargar el inventario."));
+      setError(getApiErrorMessage(err, "Inventory could not be loaded."));
     } finally {
       setCargando(false);
     }
@@ -108,34 +108,34 @@ export function InventarioPage() {
 
     const cantidad = Number(cantidadAjuste);
     if (!idProductoAjuste || !itemAjuste) {
-      setError("Elige el producto que vas a ajustar.");
+      setError("Choose the product you are going to adjust.");
       return;
     }
     if (!Number.isInteger(cantidad) || cantidad === 0) {
-      setError("La cantidad debe ser un entero distinto de cero (negativo para restar).");
+      setError("The quantity must be a non-zero integer (negative to subtract).");
       return;
     }
     if (!motivoAjuste) {
-      setError("Elige el motivo del ajuste.");
+      setError("Choose the reason for the adjustment.");
       return;
     }
     const resultante = itemAjuste.cantidadDisponible + cantidad;
     if (resultante < 0) {
-      setError(`No puedes restar más de lo disponible (${itemAjuste.cantidadDisponible}).`);
+      setError(`You cannot subtract more than what is available (${itemAjuste.cantidadDisponible}).`);
       return;
     }
     const motivo = MOTIVOS_AJUSTE.find((m) => m.value === motivoAjuste)?.label ?? motivoAjuste;
     const ok = await confirmar({
-      titulo: "¿Registrar ajuste de inventario?",
+      titulo: "Record inventory adjustment?",
       mensaje: (
         <>
           <strong>{itemAjuste.nombreProducto}</strong>
-          {esAdministrador ? ` · ${itemAjuste.nombreSede}` : ""}: pasa de {itemAjuste.cantidadDisponible} a{" "}
-          <strong>{resultante}</strong> unidades ({cantidad > 0 ? `+${cantidad}` : cantidad}). Motivo: {motivo}. Se aplica de
-          inmediato y queda en la trazabilidad.
+          {esAdministrador ? ` · ${itemAjuste.nombreSede}` : ""}: goes from {itemAjuste.cantidadDisponible} to{" "}
+          <strong>{resultante}</strong> units ({cantidad > 0 ? `+${cantidad}` : cantidad}). Reason: {motivo}. It is applied
+          immediately and recorded in the audit trail.
         </>
       ),
-      textoConfirmar: "Registrar ajuste",
+      textoConfirmar: "Record adjustment",
     });
     if (!ok) return;
 
@@ -147,11 +147,11 @@ export function InventarioPage() {
         cantidadAjuste: cantidad,
         motivo: motivoAjuste,
       });
-      setMensaje(`Ajuste registrado: ${itemAjuste.nombreProducto} queda en ${resultante} unidades.`);
+      setMensaje(`Adjustment recorded: ${itemAjuste.nombreProducto} now has ${resultante} units.`);
       setMostrarFormulario(false);
       await cargarInventario();
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo registrar el ajuste."));
+      setError(getApiErrorMessage(err, "The adjustment could not be recorded."));
     } finally {
       setGuardando(false);
     }
@@ -162,10 +162,10 @@ export function InventarioPage() {
   return (
     <div className="panel">
       <div className="panel-header">
-        <h1 className="page-title">Inventario</h1>
+        <h1 className="page-title">Inventory</h1>
         {puedeAjustar && !mostrarFormulario && (
           <button className="btn-secondary" onClick={() => abrirFormulario()}>
-            + Registrar ajuste
+            + Record adjustment
           </button>
         )}
       </div>
@@ -175,10 +175,10 @@ export function InventarioPage() {
 
       {mostrarFormulario && (
         <form ref={formularioRef} className="row-subform" onSubmit={handleSubmit}>
-          <h2 className="subform-title">Ajuste de inventario</h2>
+          <h2 className="subform-title">Inventory adjustment</h2>
           <div className="inline-form">
             <div className="field field-ancho">
-              <label htmlFor="productoAjuste">Producto</label>
+              <label htmlFor="productoAjuste">Product</label>
               <select
                 id="productoAjuste"
                 value={idProductoAjuste && idSedeAjuste ? `${idProductoAjuste}-${idSedeAjuste}` : ""}
@@ -188,18 +188,18 @@ export function InventarioPage() {
                   setIdSedeAjuste(idSede ?? "");
                 }}
               >
-                <option value="">Elige un producto</option>
+                <option value="">Choose a product</option>
                 {items.map((item) => (
                   <option key={`${item.idProducto}-${item.idSede}`} value={`${item.idProducto}-${item.idSede}`}>
                     {item.nombreProducto}
-                    {item.estadoProducto === "INACTIVO" ? " (inactivo)" : ""}
-                    {esAdministrador ? ` · ${item.nombreSede}` : ""} · hay {item.cantidadDisponible}
+                    {item.estadoProducto === "INACTIVO" ? " (inactive)" : ""}
+                    {esAdministrador ? ` · ${item.nombreSede}` : ""} · {item.cantidadDisponible} in stock
                   </option>
                 ))}
               </select>
             </div>
             <div className="field field-corto">
-              <label htmlFor="cantidadAjuste">Sumar o restar</label>
+              <label htmlFor="cantidadAjuste">Add or subtract</label>
               <input
                 id="cantidadAjuste"
                 type="number"
@@ -207,13 +207,13 @@ export function InventarioPage() {
                 step={1}
                 value={cantidadAjuste}
                 onChange={(e) => setCantidadAjuste(e.target.value)}
-                placeholder="p. ej. -2"
+                placeholder="e.g. -2"
               />
             </div>
             <div className="field">
-              <label htmlFor="motivoAjuste">Motivo</label>
+              <label htmlFor="motivoAjuste">Reason</label>
               <select id="motivoAjuste" value={motivoAjuste} onChange={(e) => setMotivoAjuste(e.target.value as MotivoAjuste)}>
-                <option value="">Elige un motivo</option>
+                <option value="">Choose a reason</option>
                 {MOTIVOS_AJUSTE.map((m) => (
                   <option key={m.value} value={m.value}>
                     {m.label}
@@ -224,15 +224,15 @@ export function InventarioPage() {
           </div>
           <p className="field-hint">
             {itemAjuste && Number.isInteger(cantidadNum) && cantidadNum !== 0
-              ? `Quedará en ${itemAjuste.cantidadDisponible + cantidadNum} unidades (hoy hay ${itemAjuste.cantidadDisponible}).`
-              : "Número positivo para sumar (p. ej. un conteo mayor) y negativo para restar (pérdida, daño, rotura). Se aplica de inmediato."}
+              ? `It will become ${itemAjuste.cantidadDisponible + cantidadNum} units (currently ${itemAjuste.cantidadDisponible}).`
+              : "Positive number to add (e.g. a higher count) and negative to subtract (loss, damage, breakage). It is applied immediately."}
           </p>
           <div className="form-actions">
             <button type="submit" className="btn-primary" disabled={guardando}>
-              {guardando ? "Guardando..." : "Registrar ajuste"}
+              {guardando ? "Saving..." : "Record adjustment"}
             </button>
             <button type="button" className="btn-secondary" onClick={() => setMostrarFormulario(false)}>
-              Cancelar
+              Cancel
             </button>
           </div>
         </form>
@@ -240,20 +240,20 @@ export function InventarioPage() {
 
       <div className="toolbar">
         <div className="field field-busqueda">
-          <label htmlFor="busquedaInventario">Buscar</label>
+          <label htmlFor="busquedaInventario">Search</label>
           <input
             id="busquedaInventario"
             type="search"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Nombre o código"
+            placeholder="Name or code"
           />
         </div>
         {esAdministrador && (
           <div className="field">
-            <label htmlFor="filtroSedeInventario">Sede</label>
+            <label htmlFor="filtroSedeInventario">Location</label>
             <select id="filtroSedeInventario" value={filtroSede} onChange={(e) => setFiltroSede(e.target.value)}>
-              <option value="">Todas</option>
+              <option value="">All</option>
               {sedes.map((s) => (
                 <option key={s.idSede} value={s.idSede}>
                   {s.nombre}
@@ -264,42 +264,42 @@ export function InventarioPage() {
         )}
         <label className="check">
           <input type="checkbox" checked={soloAgotados} onChange={(e) => setSoloAgotados(e.target.checked)} />
-          Solo agotados
+          Out of stock only
         </label>
         {inactivosOcultos > 0 && (
           <label className="check">
             <input type="checkbox" checked={verInactivos} onChange={(e) => setVerInactivos(e.target.checked)} />
-            Ver productos inactivos
+            Show inactive products
           </label>
         )}
       </div>
 
       {cargando ? (
-        <p className="empty-state">Cargando...</p>
+        <p className="empty-state">Loading...</p>
       ) : visibles.length === 0 ? (
-        <p className="empty-state">No hay productos que coincidan.</p>
+        <p className="empty-state">No products match.</p>
       ) : (
         secciones.map((sec) => (
           <section key={sec.clave} className="seccion-tabla">
             {sec.titulo && (
               <h2 className="sede-grupo-titulo">
                 {sec.titulo}
-                <small> · {sec.items.length} productos</small>
+                <small> · {sec.items.length} products</small>
               </h2>
             )}
             <div className="table-scroll">
               <table className="tabla-apilada">
                 <thead>
                   <tr>
-                    <th>Producto</th>
-                    <th>Código</th>
-                    <th>Tipo</th>
-                    {esAdministrador && !agrupar && <th>Sede</th>}
-                    <th className="num">Disponible</th>
-                    <th>Estado</th>
+                    <th>Product</th>
+                    <th>Code</th>
+                    <th>Type</th>
+                    {esAdministrador && !agrupar && <th>Location</th>}
+                    <th className="num">Available</th>
+                    <th>Status</th>
                     {puedeAjustar && (
                       <th>
-                        <span className="sr-only">Acciones</span>
+                        <span className="sr-only">Actions</span>
                       </th>
                     )}
                   </tr>
@@ -307,30 +307,30 @@ export function InventarioPage() {
                 <tbody>
                   {sec.items.map((item) => (
                     <tr key={`${item.idProducto}-${item.idSede}`}>
-                      <td data-label="Producto" className="celda-titulo">
+                      <td data-label="Product" className="celda-titulo">
                         {item.nombreProducto}
                       </td>
-                      <td data-label="Código" className="texto-suave">
+                      <td data-label="Code" className="texto-suave">
                         {item.codigoProducto}
                       </td>
-                      <td data-label="Tipo">{item.nombreTipoProducto}</td>
-                      {esAdministrador && !agrupar && <td data-label="Sede">{item.nombreSede}</td>}
-                      <td data-label="Disponible" className="num">
+                      <td data-label="Type">{item.nombreTipoProducto}</td>
+                      {esAdministrador && !agrupar && <td data-label="Location">{item.nombreSede}</td>}
+                      <td data-label="Available" className="num">
                         <strong>{item.cantidadDisponible}</strong>
                       </td>
-                      <td data-label="Estado">
+                      <td data-label="Status">
                         {item.estadoProducto === "INACTIVO" ? (
-                          <span className="badge badge-muted">Producto inactivo</span>
+                          <span className="badge badge-muted">Inactive product</span>
                         ) : item.cantidadDisponible === 0 ? (
-                          <span className="badge badge-danger">Agotado</span>
+                          <span className="badge badge-danger">Out of stock</span>
                         ) : (
-                          <span className="badge badge-success">Disponible</span>
+                          <span className="badge badge-success">Available</span>
                         )}
                       </td>
                       {puedeAjustar && (
                         <td data-label="" className="celda-acciones">
                           <button className="btn-link" onClick={() => abrirFormulario(item)}>
-                            Ajustar
+                            Adjust
                           </button>
                         </td>
                       )}

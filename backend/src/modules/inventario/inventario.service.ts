@@ -98,7 +98,7 @@ export async function registrarAjuste(usuario: JwtPayload, datos: DatosAjuste): 
       [datos.idProducto]
     );
     if (!productoRows[0]) {
-      throw ApiError.notFound("El producto indicado no existe.");
+      throw ApiError.notFound("The specified product does not exist.");
     }
 
     const { rows: sedeRows } = await client.query<{ nombre: string }>(
@@ -106,7 +106,7 @@ export async function registrarAjuste(usuario: JwtPayload, datos: DatosAjuste): 
       [datos.idSede]
     );
     if (!sedeRows[0]) {
-      throw ApiError.notFound("La sede indicada no existe.");
+      throw ApiError.notFound("The specified location does not exist.");
     }
 
     const { cantidadAnterior, cantidadResultante } = await aplicarMovimientoInventario(

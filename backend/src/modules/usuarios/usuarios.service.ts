@@ -57,7 +57,7 @@ async function obtenerUsuarioConSede(idUsuario: number, ejecutor: Queryable): Pr
     [idUsuario]
   );
   if (!rows[0]) {
-    throw ApiError.notFound("Usuario no encontrado.");
+    throw ApiError.notFound("User not found.");
   }
   return mapRow(rows[0]);
 }
@@ -71,13 +71,13 @@ async function obtenerUsuarioConSede(idUsuario: number, ejecutor: Queryable): Pr
 function validarSedeSegunPerfil(idSede: number | null, perfil: Perfil): void {
   if (perfil === "ADMINISTRADOR" && idSede !== null) {
     throw ApiError.badRequest(
-      "Un usuario Administrador no se asocia a una sede.",
+      "An Administrator user is not associated with a location.",
       "SEDE_NO_APLICA_ADMINISTRADOR"
     );
   }
   if (perfil !== "ADMINISTRADOR" && idSede === null) {
     throw ApiError.badRequest(
-      "Los perfiles Cajero y Mesero requieren una sede.",
+      "Cashier and Waiter roles require a location.",
       "SEDE_OBLIGATORIA"
     );
   }
@@ -177,7 +177,7 @@ async function exigirOtroAdministradorActivo(client: PoolClient, idUsuario: numb
   );
   if (rows.length === 0) {
     throw ApiError.conflict(
-      "Es el único administrador activo: crea o activa otro administrador antes de hacer este cambio.",
+      "This is the only active administrator: create or activate another administrator before making this change.",
       "ULTIMO_ADMINISTRADOR"
     );
   }
@@ -198,12 +198,12 @@ export async function modificarUsuario(
       estado: string;
     }>(`SELECT id_usuario, id_sede, perfil, estado FROM usuario WHERE id_usuario = $1 FOR UPDATE`, [idUsuario]);
     if (!existentes[0]) {
-      throw ApiError.notFound("Usuario no encontrado.");
+      throw ApiError.notFound("User not found.");
     }
 
     const dejaDeSerAdmin = existentes[0].perfil === "ADMINISTRADOR" && datos.perfil !== "ADMINISTRADOR";
     if (dejaDeSerAdmin && idUsuario === admin.idUsuario) {
-      throw ApiError.conflict("No puedes cambiar tu propio perfil de Administrador.", "PERFIL_PROPIO");
+      throw ApiError.conflict("You cannot change your own Administrator role.", "PERFIL_PROPIO");
     }
     if (dejaDeSerAdmin && existentes[0].estado === "ACTIVO") {
       await exigirOtroAdministradorActivo(client, idUsuario);
@@ -249,13 +249,13 @@ export async function cambiarEstadoUsuario(
     );
     const usuario = rows[0];
     if (!usuario) {
-      throw ApiError.notFound("Usuario no encontrado.");
+      throw ApiError.notFound("User not found.");
     }
     if (usuario.estado === estado) {
-      throw ApiError.conflict(`El usuario ya está en estado ${estado}.`);
+      throw ApiError.conflict(`The user is already ${estado === "ACTIVO" ? "active" : "inactive"}.`);
     }
     if (estado === "INACTIVO" && idUsuario === admin.idUsuario) {
-      throw ApiError.conflict("No puedes inactivar tu propio usuario.", "INACTIVAR_PROPIO");
+      throw ApiError.conflict("You cannot deactivate your own user.", "INACTIVAR_PROPIO");
     }
     if (estado === "INACTIVO" && usuario.perfil === "ADMINISTRADOR") {
       await exigirOtroAdministradorActivo(client, idUsuario);

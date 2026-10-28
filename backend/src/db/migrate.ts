@@ -55,10 +55,10 @@ export async function runMigrations(): Promise<void> {
       await client.query("INSERT INTO schema_migrations (nombre_archivo) VALUES ($1)", [archivo]);
       await client.query("COMMIT");
       // eslint-disable-next-line no-console
-      console.log(`Migración aplicada: ${archivo}`);
+      console.log(`Migration applied: ${archivo}`);
     } catch (err) {
       await client.query("ROLLBACK");
-      throw new Error(`Falló la migración "${archivo}": ${(err as Error).message}`);
+      throw new Error(`Migration failed: "${archivo}": ${(err as Error).message}`);
     } finally {
       client.release();
     }
@@ -70,7 +70,7 @@ if (require.main === module) {
   runMigrations()
     .then(() => {
       // eslint-disable-next-line no-console
-      console.log("Migraciones al día.");
+      console.log("Migrations up to date.");
       process.exit(0);
     })
     .catch((err) => {

@@ -13,7 +13,7 @@ function DetalleEvento({ evento }: { evento: EventoTrazabilidad }) {
   if (datos.length === 0) return null;
   return (
     <details className="detalle-desplegable">
-      <summary>Ver datos</summary>
+      <summary>View data</summary>
       <ul className="detalle-evento">
         {datos.map((d) => (
           <li key={d.etiqueta}>
@@ -58,7 +58,7 @@ export function TrazabilidadPage() {
       setEventos(data.eventos);
       setTiposEvento(data.tiposEvento);
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo consultar la trazabilidad."));
+      setError(getApiErrorMessage(err, "The audit trail could not be loaded."));
     } finally {
       setCargando(false);
     }
@@ -83,14 +83,14 @@ export function TrazabilidadPage() {
   return (
     <div className="panel">
       <div className="panel-header">
-        <h2 style={{ margin: 0 }}>Trazabilidad</h2>
+        <h2 style={{ margin: 0 }}>Audit trail</h2>
       </div>
 
       <form className="inline-form" onSubmit={handleFiltrar} style={{ marginBottom: "1rem" }}>
         <div className="field">
-          <label htmlFor="usuarioTraza">Usuario</label>
+          <label htmlFor="usuarioTraza">User</label>
           <select id="usuarioTraza" value={idUsuario} onChange={(e) => setIdUsuario(e.target.value)}>
-            <option value="">Todos</option>
+            <option value="">All</option>
             {usuarios.map((u) => (
               <option key={u.idUsuario} value={u.idUsuario}>
                 {u.codigoUsuario} — {u.nombre}
@@ -99,9 +99,9 @@ export function TrazabilidadPage() {
           </select>
         </div>
         <div className="field">
-          <label htmlFor="sedeTraza">Sede</label>
+          <label htmlFor="sedeTraza">Location</label>
           <select id="sedeTraza" value={idSede} onChange={(e) => setIdSede(e.target.value)}>
-            <option value="">Todas</option>
+            <option value="">All</option>
             {sedes.map((s) => (
               <option key={s.idSede} value={s.idSede}>
                 {s.nombre}
@@ -110,9 +110,9 @@ export function TrazabilidadPage() {
           </select>
         </div>
         <div className="field">
-          <label htmlFor="tipoTraza">¿Qué pasó?</label>
+          <label htmlFor="tipoTraza">What happened?</label>
           <select id="tipoTraza" value={tipoEvento} onChange={(e) => setTipoEvento(e.target.value)}>
-            <option value="">Todos</option>
+            <option value="">All</option>
             {tiposPorCategoria(tiposEvento).map((g) => (
               <optgroup key={g.categoria} label={g.categoria}>
                 {g.tipos.map((t) => (
@@ -125,38 +125,38 @@ export function TrazabilidadPage() {
           </select>
         </div>
         <div className="field">
-          <label htmlFor="desdeTraza">Desde</label>
+          <label htmlFor="desdeTraza">From</label>
           <input id="desdeTraza" type="date" value={desde} onChange={(e) => setDesde(e.target.value)} />
         </div>
         <div className="field">
-          <label htmlFor="hastaTraza">Hasta</label>
+          <label htmlFor="hastaTraza">To</label>
           <input id="hastaTraza" type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
         </div>
         <button type="submit" className="btn-secondary">
-          Filtrar
+          Filter
         </button>
       </form>
 
       {error && <div className="alert alert-error">{error}</div>}
 
       {cargando ? (
-        <p className="empty-state">Cargando...</p>
+        <p className="empty-state">Loading...</p>
       ) : eventos.length === 0 ? (
-        <p className="empty-state">No hay eventos que coincidan con los filtros.</p>
+        <p className="empty-state">No events match the filters.</p>
       ) : (
         <>
           <p className="field-hint">
-            Se muestran los {eventos.length} eventos más recientes (máximo 250). Usa los filtros para encontrar
-            algo más antiguo.
+            Showing the {eventos.length} most recent events (maximum 250). Use the filters to find
+            something older.
           </p>
           <div className="table-scroll">
             <table>
               <thead>
                 <tr>
-                  <th>Fecha y hora</th>
-                  <th>Quién</th>
-                  <th>Qué pasó</th>
-                  <th>Sede</th>
+                  <th>Date and time</th>
+                  <th>Who</th>
+                  <th>What happened</th>
+                  <th>Location</th>
                 </tr>
               </thead>
               <tbody>
@@ -173,7 +173,7 @@ export function TrazabilidadPage() {
                             <small className="detalle-clave">{ev.codigoUsuario}</small>
                           </>
                         ) : (
-                          "Sistema"
+                          "System"
                         )}
                       </td>
                       <td>

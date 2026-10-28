@@ -45,7 +45,7 @@ export async function aplicarMovimientoInventario(
   client: PoolClient
 ): Promise<ResultadoMovimiento> {
   if (input.cantidad === 0) {
-    throw ApiError.badRequest("La cantidad del movimiento no puede ser cero.");
+    throw ApiError.badRequest("The movement quantity cannot be zero.");
   }
 
   await client.query(
@@ -67,8 +67,8 @@ export async function aplicarMovimientoInventario(
   if (cantidadResultante < 0) {
     throw ApiError.conflict(
       input.tipoMovimiento === "AJUSTE"
-        ? "El ajuste dejaría el inventario en un valor negativo: no puede ser mayor a la existencia actual."
-        : "No hay suficiente existencia disponible para esta operación.",
+        ? "The adjustment would leave inventory at a negative value: it cannot exceed current stock."
+        : "There is not enough stock available for this operation.",
       "INVENTARIO_INSUFICIENTE"
     );
   }

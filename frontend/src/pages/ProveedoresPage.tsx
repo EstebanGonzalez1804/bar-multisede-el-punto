@@ -39,7 +39,7 @@ export function ProveedoresPage() {
       const data = await proveedoresApi.listarProveedores();
       setProveedores(data);
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudieron cargar los proveedores."));
+      setError(getApiErrorMessage(err, "Suppliers could not be loaded."));
     } finally {
       setCargando(false);
     }
@@ -54,9 +54,9 @@ export function ProveedoresPage() {
     if (
       nuevoEstado === "INACTIVO" &&
       !(await confirmar({
-        titulo: `¿Inactivar a ${proveedor.nombre}?`,
-        mensaje: "No se podrán registrar nuevas recepciones de este proveedor. Su historial se conserva y puedes activarlo de nuevo.",
-        textoConfirmar: "Inactivar proveedor",
+        titulo: `Deactivate ${proveedor.nombre}?`,
+        mensaje: "New receipts from this supplier can no longer be recorded. Its history is kept and you can activate it again.",
+        textoConfirmar: "Deactivate supplier",
         peligro: true,
       }))
     ) {
@@ -65,10 +65,10 @@ export function ProveedoresPage() {
     setError(null);
     try {
       await proveedoresApi.cambiarEstadoProveedor(proveedor.idProveedor, nuevoEstado);
-      setMensaje(nuevoEstado === "ACTIVO" ? "Proveedor activado." : "Proveedor inactivado.");
+      setMensaje(nuevoEstado === "ACTIVO" ? "Supplier activated." : "Supplier deactivated.");
       await cargarProveedores();
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo cambiar el estado del proveedor."));
+      setError(getApiErrorMessage(err, "The supplier status could not be changed."));
     }
   }
 
@@ -99,11 +99,11 @@ export function ProveedoresPage() {
     setError(null);
 
     if (!formulario.nombre.trim()) {
-      setError("El nombre del proveedor es obligatorio.");
+      setError("The supplier name is required.");
       return;
     }
     if (!formulario.informacionContacto.trim()) {
-      setError("La información de contacto es obligatoria.");
+      setError("The contact information is required.");
       return;
     }
 
@@ -116,15 +116,15 @@ export function ProveedoresPage() {
     try {
       if (editandoId === null) {
         await proveedoresApi.crearProveedor(datos);
-        setMensaje("Proveedor creado correctamente.");
+        setMensaje("Supplier created successfully.");
       } else {
         await proveedoresApi.modificarProveedor(editandoId, datos);
-        setMensaje("Proveedor actualizado correctamente.");
+        setMensaje("Supplier updated successfully.");
       }
       cerrarFormulario();
       await cargarProveedores();
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo guardar el proveedor."));
+      setError(getApiErrorMessage(err, "The supplier could not be saved."));
     } finally {
       setGuardando(false);
     }
@@ -134,10 +134,10 @@ export function ProveedoresPage() {
     <div>
       <div className="panel">
         <div className="panel-header">
-          <h1 className="page-title">Proveedores</h1>
+          <h1 className="page-title">Suppliers</h1>
           {esAdministrador && !mostrarFormulario && (
             <button className="btn-secondary" onClick={abrirCreacion}>
-              + Nuevo proveedor
+              + New supplier
             </button>
           )}
         </div>
@@ -147,53 +147,53 @@ export function ProveedoresPage() {
 
         {mostrarFormulario && (
           <form ref={formRef} className="row-subform" onSubmit={handleSubmit}>
-            <h2 className="subform-title">{editandoId === null ? "Nuevo proveedor" : "Editar proveedor"}</h2>
+            <h2 className="subform-title">{editandoId === null ? "New supplier" : "Edit supplier"}</h2>
             <div className="inline-form">
               <div className="field">
-                <label htmlFor="nombreProveedor">Nombre</label>
+                <label htmlFor="nombreProveedor">Name</label>
                 <input
                   id="nombreProveedor"
                   type="text"
                   value={formulario.nombre}
                   onChange={(e) => setFormulario((f) => ({ ...f, nombre: e.target.value }))}
-                  placeholder="Distribuidora XYZ"
+                  placeholder="XYZ Distributors"
                 />
               </div>
               <div className="field">
-                <label htmlFor="contactoProveedor">Información de contacto</label>
+                <label htmlFor="contactoProveedor">Contact information</label>
                 <input
                   id="contactoProveedor"
                   type="text"
                   value={formulario.informacionContacto}
                   onChange={(e) => setFormulario((f) => ({ ...f, informacionContacto: e.target.value }))}
-                  placeholder="correo@proveedor.com / 300 123 4567"
+                  placeholder="email@supplier.com / 300 123 4567"
                 />
               </div>
             </div>
             <div className="form-actions">
               <button type="submit" className="btn-primary" disabled={guardando}>
-                {guardando ? "Guardando..." : "Guardar"}
+                {guardando ? "Saving..." : "Save"}
               </button>
               <button type="button" className="btn-secondary" onClick={cerrarFormulario}>
-                Cancelar
+                Cancel
               </button>
             </div>
           </form>
         )}
 
         {cargando ? (
-          <p className="empty-state">Cargando...</p>
+          <p className="empty-state">Loading...</p>
         ) : proveedores.length === 0 ? (
-          <p className="empty-state">Aún no hay proveedores registrados.</p>
+          <p className="empty-state">There are no registered suppliers yet.</p>
         ) : (
           <div className="table-scroll">
           <table>
             <thead>
               <tr>
-                <th>Nombre</th>
-                <th>Contacto</th>
-                <th>Estado</th>
-                {esAdministrador && <th>Acciones</th>}
+                <th>Name</th>
+                <th>Contact</th>
+                <th>Status</th>
+                {esAdministrador && <th>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -210,13 +210,13 @@ export function ProveedoresPage() {
                     <td>
                       <div className="table-actions">
                         <button className="btn-link" onClick={() => abrirEdicion(p)}>
-                          Editar
+                          Edit
                         </button>
                         <button
                           className={`btn-link ${p.estado === "ACTIVO" ? "danger" : ""}`}
                           onClick={() => void handleCambiarEstado(p)}
                         >
-                          {p.estado === "ACTIVO" ? "Inactivar" : "Activar"}
+                          {p.estado === "ACTIVO" ? "Deactivate" : "Activate"}
                         </button>
                       </div>
                     </td>

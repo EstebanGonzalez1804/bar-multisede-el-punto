@@ -45,7 +45,7 @@ export function LoginPage() {
       // el usuario existe o si fue la contraseña la incorrecta. Para los
       // casos de usuario inactivo/bloqueado el backend sí da un mensaje
       // específico, que se muestra tal cual.
-      setError(getApiErrorMessage(err, "Usuario o contraseña incorrectos."));
+      setError(getApiErrorMessage(err, "Incorrect user code or password."));
     } finally {
       setEnviando(false);
     }
@@ -72,38 +72,38 @@ export function LoginPage() {
         </div>
 
         <div>
-          <div className="login-hero-headline">El control de toda tu barra, en una sola pantalla.</div>
-          <p className="login-hero-sub">Mesas, inventario y pedidos de todas tus sedes, en tiempo real.</p>
-          <div className="login-hero-roles" aria-label="Perfiles de la plataforma">
+          <div className="login-hero-headline">Control of your whole bar, on a single screen.</div>
+          <p className="login-hero-sub">Tables, inventory and orders for all your locations, in real time.</p>
+          <div className="login-hero-roles" aria-label="Platform roles">
             <div className="login-hero-role">
               <Icon path={ICONS.usuarios} size={16} strokeWidth={2.2} />
-              Administrador
+              Administrator
             </div>
             <div className="login-hero-role">
               <Icon path={ICONS.inventario} size={16} strokeWidth={2.2} />
-              Cajero
+              Cashier
             </div>
             <div className="login-hero-role">
               <Icon path={ICONS.mesas} size={16} strokeWidth={2.2} />
-              Mesero
+              Waiter
             </div>
           </div>
         </div>
 
 
-        <div className="login-hero-footer">NOVATECH · Plataforma de Gestión Operativa</div>
+        <div className="login-hero-footer">NOVATECH · Operations Management Platform</div>
       </div>
 
       <div className="login-form-side">
         <div className="login-card">
-          <h1>Inicia sesión</h1>
-          <p className="login-subtitle">Ingresa con tu código de usuario y contraseña.</p>
+          <h1>Sign in</h1>
+          <p className="login-subtitle">Enter your user code and password.</p>
 
           {error && <Aviso tipo="error">{error}</Aviso>}
 
           <form onSubmit={handleSubmit}>
             <div className="field">
-              <label htmlFor="codigoUsuario">Código de usuario</label>
+              <label htmlFor="codigoUsuario">User code</label>
               <div className="field-with-icon">
                 <Icon path={ICONS.usuarios} size={16} strokeWidth={2} />
                 <input
@@ -118,7 +118,7 @@ export function LoginPage() {
               </div>
             </div>
             <div className="field">
-              <label htmlFor="password">Contraseña</label>
+              <label htmlFor="password">Password</label>
               <div className="field-with-icon">
                 <Icon path={ICONS.password} size={16} strokeWidth={2} />
                 <input
@@ -135,19 +135,19 @@ export function LoginPage() {
                   onClick={() => setVerPassword((v) => !v)}
                   aria-pressed={verPassword}
                 >
-                  {verPassword ? "Ocultar" : "Mostrar"}
+                  {verPassword ? "Hide" : "Show"}
                 </button>
               </div>
             </div>
             <button type="submit" className="btn-primary" disabled={enviando}>
-              {enviando ? "Ingresando..." : "Ingresar"}
+              {enviando ? "Signing in..." : "Sign in"}
               {!enviando && <Icon path={ICONS.arrowRight} size={16} strokeWidth={2.3} />}
             </button>
           </form>
 
           <div className="login-note">
             <Icon path={ICONS.warning} size={15} strokeWidth={2.1} />
-            <span>Tu sesión se cierra sola tras 3 minutos sin actividad, por seguridad.</span>
+            <span>For security, your session closes automatically after 3 minutes of inactivity.</span>
           </div>
         </div>
       </div>

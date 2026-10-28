@@ -67,7 +67,7 @@ async function obtenerProductoConTipo(idProducto: number, ejecutor: Queryable): 
     [idProducto]
   );
   if (!rows[0]) {
-    throw ApiError.notFound("Producto no encontrado.");
+    throw ApiError.notFound("Product not found.");
   }
   return mapRow(rows[0]);
 }
@@ -102,7 +102,7 @@ export async function crearProducto(admin: JwtPayload, datos: DatosCrearProducto
       [datos.idTipoProducto]
     );
     if (!tipoRows[0]) {
-      throw ApiError.notFound("El tipo de producto indicado no existe.");
+      throw ApiError.notFound("The specified product type does not exist.");
     }
     await exigirTipoProductoActivo(datos.idTipoProducto, client);
 
@@ -121,7 +121,7 @@ export async function crearProducto(admin: JwtPayload, datos: DatosCrearProducto
       if (esViolacionUnicidad(err)) {
         // Solo podría pasar si un producto anterior (de antes de este
         // ajuste) ya tenía escrito a mano justo este mismo código.
-        throw ApiError.conflict("Se generó un código que ya existe; intenta guardar de nuevo.");
+        throw ApiError.conflict("A code that already exists was generated; try saving again.");
       }
       throw err;
     }
@@ -173,7 +173,7 @@ export async function modificarProducto(
     );
     const actual = rows[0];
     if (!actual) {
-      throw ApiError.notFound("Producto no encontrado.");
+      throw ApiError.notFound("Product not found.");
     }
 
     const { rows: tipoRows } = await client.query(
@@ -181,7 +181,7 @@ export async function modificarProducto(
       [datos.idTipoProducto]
     );
     if (!tipoRows[0]) {
-      throw ApiError.notFound("El tipo de producto indicado no existe.");
+      throw ApiError.notFound("The specified product type does not exist.");
     }
     // Solo se exige tipo activo si el producto cambia de tipo.
     if (actual.id_tipo_producto !== datos.idTipoProducto) {
@@ -241,10 +241,10 @@ export async function cambiarEstadoProducto(
     );
     const producto = rows[0];
     if (!producto) {
-      throw ApiError.notFound("Producto no encontrado.");
+      throw ApiError.notFound("Product not found.");
     }
     if (producto.estado === estado) {
-      throw ApiError.conflict(`El producto ya está en estado ${estado}.`);
+      throw ApiError.conflict(`The product is already ${estado === "ACTIVO" ? "active" : "inactive"}.`);
     }
 
     await client.query(`UPDATE producto SET estado = $1, actualizado_en = now() WHERE id_producto = $2`, [
@@ -326,7 +326,7 @@ export async function listarHistorialPrecios(idProducto: number): Promise<Histor
     idProducto,
   ]);
   if (!productoRows[0]) {
-    throw ApiError.notFound("Producto no encontrado.");
+    throw ApiError.notFound("Product not found.");
   }
 
   const { rows } = await pool.query<HistorialPrecioRow>(

@@ -7,7 +7,7 @@ import * as proveedoresService from "./proveedores.service";
 function parseIdProveedor(req: Request): number {
   const idProveedor = Number(req.params.idProveedor);
   if (!Number.isInteger(idProveedor)) {
-    throw ApiError.badRequest("El id de proveedor no es válido.");
+    throw ApiError.badRequest("The supplier id is not valid.");
   }
   return idProveedor;
 }
@@ -18,14 +18,14 @@ export const getProveedores = asyncHandler(async (_req: Request, res: Response) 
 });
 
 export const postProveedor = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const datos = datosProveedorSchema.parse(req.body);
   const proveedor = await proveedoresService.crearProveedor(req.usuarioActual, datos);
   res.status(201).json({ proveedor });
 });
 
 export const putProveedor = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const idProveedor = parseIdProveedor(req);
   const datos = datosProveedorSchema.parse(req.body);
   const proveedor = await proveedoresService.modificarProveedor(req.usuarioActual, idProveedor, datos);
@@ -33,7 +33,7 @@ export const putProveedor = asyncHandler(async (req: Request, res: Response) => 
 });
 
 export const putEstadoProveedor = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const idProveedor = parseIdProveedor(req);
   const { estado } = cambiarEstadoProveedorSchema.parse(req.body);
   const proveedor = await proveedoresService.cambiarEstadoProveedor(req.usuarioActual, idProveedor, estado);

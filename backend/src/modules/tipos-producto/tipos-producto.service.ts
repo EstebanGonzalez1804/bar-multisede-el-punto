@@ -62,7 +62,7 @@ async function generarAbreviacion(nombre: string, client: PoolClient): Promise<s
   const normalizado = normalizarTexto(nombre);
   if (normalizado.length < 3) {
     throw ApiError.badRequest(
-      "El nombre debe tener al menos 3 letras (sin tildes) para generar la abreviación del tipo de producto.",
+      "The name must have at least 3 letters (without accents) to generate the product type abbreviation.",
       "NOMBRE_TIPO_PRODUCTO_MUY_CORTO"
     );
   }
@@ -72,7 +72,7 @@ async function generarAbreviacion(nombre: string, client: PoolClient): Promise<s
     if (rows.length === 0) return candidato;
   }
   throw ApiError.conflict(
-    "No fue posible generar una abreviación única de 3 letras a partir de ese nombre; prueba con otro nombre.",
+    "A unique 3-letter abbreviation could not be generated from that name; try another name.",
     "ABREVIACION_NO_DISPONIBLE"
   );
 }
@@ -97,12 +97,12 @@ export async function crearTipoProducto(admin: JwtPayload, nombre: string): Prom
         // improbable (ya se validó dentro de esta misma transacción), pero
         // se informa en vez de dejarlo como un 500.
         throw ApiError.conflict(
-          "Ya se generó esa abreviación para otro tipo de producto justo ahora; intenta guardar de nuevo.",
+          "That abbreviation was just generated for another product type; try saving again.",
           "ABREVIACION_EN_CONFLICTO"
         );
       }
       if (constraint !== null) {
-        throw ApiError.conflict("Ya existe un tipo de producto con ese nombre.");
+        throw ApiError.conflict("A product type with that name already exists.");
       }
       throw err;
     }
@@ -137,12 +137,12 @@ export async function modificarTipoProducto(
     tipo = rows[0];
   } catch (err) {
     if (obtenerConstraintViolado(err) !== null) {
-      throw ApiError.conflict("Ya existe un tipo de producto con ese nombre.");
+      throw ApiError.conflict("A product type with that name already exists.");
     }
     throw err;
   }
   if (!tipo) {
-    throw ApiError.notFound("Tipo de producto no encontrado.");
+    throw ApiError.notFound("Product type not found.");
   }
 
   await registrarEvento({
@@ -174,7 +174,7 @@ export async function obtenerTipoProductoConProductos(idTipoProducto: number): P
   );
   const tipo = tipoRows[0];
   if (!tipo) {
-    throw ApiError.notFound("Tipo de producto no encontrado.");
+    throw ApiError.notFound("Product type not found.");
   }
 
   const { rows: productoRows } = await pool.query<{
@@ -214,10 +214,10 @@ export async function cambiarEstadoTipoProducto(
       [idTipoProducto]
     );
     if (!rows[0]) {
-      throw ApiError.notFound("Tipo de producto no encontrado.");
+      throw ApiError.notFound("Product type not found.");
     }
     if (rows[0].estado === estado) {
-      throw ApiError.conflict(`El tipo de producto ya está en estado ${estado}.`);
+      throw ApiError.conflict(`The product type is already ${estado === "ACTIVO" ? "active" : "inactive"}.`);
     }
 
     const { rows: actualizados } = await client.query<TipoProductoRow>(

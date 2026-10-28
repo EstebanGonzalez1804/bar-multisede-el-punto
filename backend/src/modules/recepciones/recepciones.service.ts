@@ -92,7 +92,7 @@ export async function crearRecepcion(usuario: JwtPayload, datos: DatosRecepcion)
         [linea.idProducto]
       );
       if (!productoRows[0]) {
-        throw ApiError.notFound(`El producto con id ${linea.idProducto} no existe.`);
+        throw ApiError.notFound(`The product with id ${linea.idProducto} does not exist.`);
       }
 
       await aplicarMovimientoInventario(
@@ -141,7 +141,7 @@ async function obtenerRecepcionConLineas(idRecepcion: number, ejecutor: Queryabl
     [idRecepcion]
   );
   if (!rows[0]) {
-    throw ApiError.notFound("Recepción no encontrada.");
+    throw ApiError.notFound("Receipt not found.");
   }
 
   const { rows: lineaRows } = await ejecutor.query<LineaRow>(

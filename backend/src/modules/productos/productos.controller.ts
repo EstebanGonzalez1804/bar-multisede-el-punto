@@ -12,7 +12,7 @@ import * as productosService from "./productos.service";
 function parseIdProducto(req: Request): number {
   const id = Number(req.params.idProducto);
   if (!Number.isInteger(id)) {
-    throw ApiError.badRequest("El id de producto no es válido.");
+    throw ApiError.badRequest("The product id is not valid.");
   }
   return id;
 }
@@ -42,14 +42,14 @@ export const getHistorialPrecios = asyncHandler(async (req: Request, res: Respon
 });
 
 export const postProducto = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const datos = crearProductoSchema.parse(req.body);
   const producto = await productosService.crearProducto(req.usuarioActual, datos);
   res.status(201).json({ producto });
 });
 
 export const putProducto = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const idProducto = parseIdProducto(req);
   const datos = modificarProductoSchema.parse(req.body);
   const producto = await productosService.modificarProducto(req.usuarioActual, idProducto, datos);
@@ -57,7 +57,7 @@ export const putProducto = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const putEstadoProducto = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const idProducto = parseIdProducto(req);
   const { estado } = cambiarEstadoProductoSchema.parse(req.body);
   const producto = await productosService.cambiarEstadoProducto(req.usuarioActual, idProducto, estado);

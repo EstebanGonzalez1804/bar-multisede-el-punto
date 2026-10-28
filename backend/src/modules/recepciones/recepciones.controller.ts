@@ -6,7 +6,7 @@ import { crearRecepcionSchema, listarRecepcionesQuerySchema } from "./recepcione
 import * as recepcionesService from "./recepciones.service";
 
 export const getRecepciones = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const query = listarRecepcionesQuerySchema.parse(req.query);
   const idSedeEfectiva = resolveSedeScope(req.usuarioActual, query.idSede ?? null);
   const recepciones = await recepcionesService.listarRecepciones({
@@ -19,14 +19,14 @@ export const getRecepciones = asyncHandler(async (req: Request, res: Response) =
 });
 
 export const postRecepcion = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const datos = crearRecepcionSchema.parse(req.body);
 
   // CA-03 HU-021: Cajero solo puede registrar recepciones de su propia sede,
   // sin importar qué idSede haya enviado el formulario.
   const idSedeEfectiva = resolveSedeScope(req.usuarioActual, datos.idSede);
   if (idSedeEfectiva === null) {
-    throw ApiError.badRequest("Debes indicar la sede de la recepción.");
+    throw ApiError.badRequest("You must specify the location of the receipt.");
   }
 
   const recepcion = await recepcionesService.crearRecepcion(req.usuarioActual, {

@@ -6,7 +6,7 @@ import { listarInventarioQuerySchema, registrarAjusteSchema } from "./inventario
 import * as inventarioService from "./inventario.service";
 
 export const getInventario = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const { idSede } = listarInventarioQuerySchema.parse(req.query);
   const idSedeEfectiva = resolveSedeScope(req.usuarioActual, idSede ?? null);
   const inventario = await inventarioService.listarInventario(idSedeEfectiva);
@@ -14,13 +14,13 @@ export const getInventario = asyncHandler(async (req: Request, res: Response) =>
 });
 
 export const postAjuste = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const datos = registrarAjusteSchema.parse(req.body);
 
   // CA-05 HU-022: Cajero solo puede ajustar inventario de su propia sede.
   const idSedeEfectiva = resolveSedeScope(req.usuarioActual, datos.idSede);
   if (idSedeEfectiva === null) {
-    throw ApiError.badRequest("Debes indicar la sede del ajuste.");
+    throw ApiError.badRequest("You must specify the location of the adjustment.");
   }
 
   const item = await inventarioService.registrarAjuste(req.usuarioActual, {

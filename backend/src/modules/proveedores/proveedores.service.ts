@@ -40,7 +40,7 @@ async function obtenerProveedor(idProveedor: number, ejecutor: Queryable): Promi
     idProveedor,
   ]);
   if (!rows[0]) {
-    throw ApiError.notFound("Proveedor no encontrado.");
+    throw ApiError.notFound("Supplier not found.");
   }
   return mapRow(rows[0]);
 }
@@ -85,7 +85,7 @@ export async function modificarProveedor(
       [idProveedor]
     );
     if (!rows[0]) {
-      throw ApiError.notFound("Proveedor no encontrado.");
+      throw ApiError.notFound("Supplier not found.");
     }
 
     await client.query(
@@ -134,10 +134,10 @@ export async function cambiarEstadoProveedor(
       [idProveedor]
     );
     if (!rows[0]) {
-      throw ApiError.notFound("Proveedor no encontrado.");
+      throw ApiError.notFound("Supplier not found.");
     }
     if (rows[0].estado === estado) {
-      throw ApiError.conflict(`El proveedor ya está en estado ${estado}.`);
+      throw ApiError.conflict(`The supplier is already ${estado === "ACTIVO" ? "active" : "inactive"}.`);
     }
 
     await client.query(`UPDATE proveedor SET estado = $1, actualizado_en = now() WHERE id_proveedor = $2`, [

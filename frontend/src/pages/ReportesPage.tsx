@@ -35,11 +35,11 @@ export function ReportesPage() {
 
   const validar = useCallback((): boolean => {
     if (!desde || !hasta) {
-      setError("Selecciona el rango de fechas.");
+      setError("Select the date range.");
       return false;
     }
     if (desde > hasta) {
-      setError("La fecha inicial no puede ser posterior a la final.");
+      setError("The start date cannot be later than the end date.");
       return false;
     }
     return true;
@@ -52,7 +52,7 @@ export function ReportesPage() {
     try {
       setReporte(await reportesApi.generarReporteVentas(desde, hasta, idSede ? Number(idSede) : undefined));
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo generar el reporte."));
+      setError(getApiErrorMessage(err, "The report could not be generated."));
     } finally {
       setGenerando(false);
     }
@@ -67,7 +67,7 @@ export function ReportesPage() {
     try {
       await reportesApi.exportarReporteVentas(desde, hasta, idSede ? Number(idSede) : undefined);
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo exportar el reporte."));
+      setError(getApiErrorMessage(err, "The report could not be exported."));
     } finally {
       setExportando(false);
     }
@@ -78,23 +78,23 @@ export function ReportesPage() {
   return (
     <div className="panel">
       <div className="panel-header">
-        <h1 className="page-title">Reporte de ventas y ganancias</h1>
+        <h1 className="page-title">Sales and profit report</h1>
       </div>
 
       <div className="toolbar">
         <div className="field">
-          <label htmlFor="desde">Desde</label>
+          <label htmlFor="desde">From</label>
           <input id="desde" type="date" max={hasta || undefined} value={desde} onChange={(e) => setDesde(e.target.value)} />
         </div>
         <div className="field">
-          <label htmlFor="hasta">Hasta</label>
+          <label htmlFor="hasta">To</label>
           <input id="hasta" type="date" max={hoyBogota()} value={hasta} onChange={(e) => setHasta(e.target.value)} />
         </div>
         {esAdministrador && (
           <div className="field">
-            <label htmlFor="sedeReporte">Sede</label>
+            <label htmlFor="sedeReporte">Location</label>
             <select id="sedeReporte" value={idSede} onChange={(e) => setIdSede(e.target.value)}>
-              <option value="">Todas las sedes</option>
+              <option value="">All locations</option>
               {sedes.map((s) => (
                 <option key={s.idSede} value={s.idSede}>
                   {s.nombre}
@@ -109,35 +109,35 @@ export function ReportesPage() {
           disabled={exportando || !reporte || reporte.filas.length === 0}
           onClick={() => void handleExportar()}
         >
-          {exportando ? "Exportando..." : "Exportar a Excel"}
+          {exportando ? "Exporting..." : "Export to Excel"}
         </button>
       </div>
 
       {error && <Aviso tipo="error">{error}</Aviso>}
 
-      {generando && !reporte && <p className="empty-state">Generando reporte...</p>}
+      {generando && !reporte && <p className="empty-state">Generating report...</p>}
 
       {reporte && (
         <>
           <p className="field-hint nota-lista">
-            Ventas de cuentas pagadas por completo, con el costo y el precio vigentes cuando se registró cada consumo.
-            Ganancia = (precio − costo) × cantidad.
+            Sales from fully paid bills, using the cost and price in effect when each item was ordered.
+            Profit = (price − cost) × quantity.
           </p>
           {reporte.filas.length === 0 ? (
-            <p className="empty-state">No hay ventas en el periodo seleccionado.</p>
+            <p className="empty-state">There are no sales in the selected period.</p>
           ) : (
             <div className="table-scroll">
               <table>
                 <thead>
                   <tr>
-                    <th>Fecha</th>
-                    <th>Producto</th>
-                    <th>Código</th>
-                    <th className="num">Cantidad</th>
-                    <th className="num">Costo unitario</th>
-                    <th className="num">Precio unitario</th>
-                    <th className="num">Ganancia</th>
-                    {mostrarSede && <th>Sede</th>}
+                    <th>Date</th>
+                    <th>Product</th>
+                    <th>Code</th>
+                    <th className="num">Quantity</th>
+                    <th className="num">Unit cost</th>
+                    <th className="num">Unit price</th>
+                    <th className="num">Profit</th>
+                    {mostrarSede && <th>Location</th>}
                   </tr>
                 </thead>
                 <tbody>
@@ -156,21 +156,21 @@ export function ReportesPage() {
                 </tbody>
                 <tfoot>
                   <tr className="fila-totales">
-                    <td colSpan={3}>Totales del periodo</td>
+                    <td colSpan={3}>Period totals</td>
                     <td className="num">
-                      <span className="tfoot-etiqueta">Unidades</span>
+                      <span className="tfoot-etiqueta">Units</span>
                       {reporte.totales.unidadesVendidas}
                     </td>
                     <td className="num">
-                      <span className="tfoot-etiqueta">Costo total</span>
+                      <span className="tfoot-etiqueta">Total cost</span>
                       {pesos(reporte.totales.costosCompra)}
                     </td>
                     <td className="num">
-                      <span className="tfoot-etiqueta">Venta total</span>
+                      <span className="tfoot-etiqueta">Total sales</span>
                       {pesos(reporte.totales.ventas)}
                     </td>
                     <td className="num">
-                      <span className="tfoot-etiqueta">Ganancia</span>
+                      <span className="tfoot-etiqueta">Profit</span>
                       {pesos(reporte.totales.gananciaTotal)}
                     </td>
                     {mostrarSede && <td />}

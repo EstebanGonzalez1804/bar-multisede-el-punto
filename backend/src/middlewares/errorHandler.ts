@@ -17,15 +17,15 @@ export function errorHandler(
     return res.status(400).json({
       error: {
         code: "VALIDACION",
-        message: "Los datos enviados no son válidos.",
+        message: "The submitted data is not valid.",
         detalles: err.issues.map((i) => ({ campo: i.path.join("."), mensaje: i.message })),
       },
     });
   }
 
   // eslint-disable-next-line no-console
-  console.error("Error no controlado:", err);
+  console.error("Unhandled error:", err);
   return res.status(500).json({
-    error: { code: "ERROR_INTERNO", message: "Ocurrió un error inesperado en el servidor." },
+    error: { code: "ERROR_INTERNO", message: "An unexpected server error occurred." },
   });
 }

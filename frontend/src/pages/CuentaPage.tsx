@@ -30,7 +30,7 @@ export function CuentaPage() {
     pedidosApi
       .obtenerPedido(Number(idPedido))
       .then((p) => activo && setPedido(p))
-      .catch((err) => activo && setError(getApiErrorMessage(err, "No se pudo cargar la cuenta.")))
+      .catch((err) => activo && setError(getApiErrorMessage(err, "The bill could not be loaded.")))
       .finally(() => activo && setCargando(false));
     return () => {
       activo = false;
@@ -42,9 +42,9 @@ export function CuentaPage() {
     setError(null);
     setDescargando(true);
     try {
-      await pedidosApi.descargarCuentaPdf(pedido.idPedido, `cuenta-${pedido.identificadorPedido}.pdf`);
+      await pedidosApi.descargarCuentaPdf(pedido.idPedido, `bill-${pedido.identificadorPedido}.pdf`);
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo descargar la cuenta."));
+      setError(getApiErrorMessage(err, "The bill could not be downloaded."));
     } finally {
       setDescargando(false);
     }
@@ -53,7 +53,7 @@ export function CuentaPage() {
   if (cargando) {
     return (
       <div className="panel">
-        <p className="empty-state">Cargando...</p>
+        <p className="empty-state">Loading...</p>
       </div>
     );
   }
@@ -63,7 +63,7 @@ export function CuentaPage() {
       <div className="panel">
         {error && <Aviso tipo="error">{error}</Aviso>}
         <Link to="/pedidos" className="btn-secondary">
-          Volver a Pedidos
+          Back to Orders
         </Link>
       </div>
     );
@@ -75,13 +75,13 @@ export function CuentaPage() {
     <div className="panel">
       <div className="panel-header no-print">
         <div>
-          <h1 className="page-title">Cuenta · {pedido.identificadorMesa}</h1>
+          <h1 className="page-title">Bill · {pedido.identificadorMesa}</h1>
           <p className="page-sub">
-            Pedido {pedido.identificadorPedido} · {pedido.nombreSede}
+            Order {pedido.identificadorPedido} · {pedido.nombreSede}
           </p>
         </div>
         <button type="button" className="btn-secondary" onClick={() => navigate(-1)}>
-          Volver
+          Back
         </button>
       </div>
 
@@ -89,20 +89,20 @@ export function CuentaPage() {
 
       {!cerrado ? (
         <Aviso tipo="info" className="no-print">
-          El pedido sigue abierto. La cuenta se genera cuando el mesero lo cierra.
+          The order is still open. The bill is generated when the waiter closes it.
         </Aviso>
       ) : (
         <>
           <div className="form-actions no-print" style={{ marginBottom: "1rem" }}>
             <button type="button" className="btn-secondary" onClick={() => window.print()}>
-              Imprimir tirilla
+              Print receipt
             </button>
             <button type="button" className="btn-secondary" disabled={descargando} onClick={() => void handleDescargar()}>
-              {descargando ? "Descargando..." : "Descargar PDF"}
+              {descargando ? "Downloading..." : "Download PDF"}
             </button>
             {puedeCobrar && pedido.estadoPago !== "PAGADO" && (
               <Link to={`/cobro/${pedido.idPedido}`} className="btn-primary">
-                Cobrar
+                Charge
               </Link>
             )}
           </div>
@@ -111,14 +111,14 @@ export function CuentaPage() {
             <div className="ticket">
               <div className="ticket-title">EL PUNTO</div>
               <div className="ticket-center">{pedido.nombreSede}</div>
-              <div className="ticket-center ticket-strong">CUENTA DE CONSUMO</div>
-              <div className="ticket-center ticket-small">Documento interno · no es factura electrónica</div>
+              <div className="ticket-center ticket-strong">CONSUMPTION BILL</div>
+              <div className="ticket-center ticket-small">Internal document · not an electronic invoice</div>
               <hr />
-              <div>Pedido: {pedido.identificadorPedido}</div>
-              <div>Mesa: {pedido.identificadorMesa}</div>
-              <div>Atendió: {pedido.nombreMesero}</div>
-              <div>Apertura: {fechaHoraCompleta(pedido.fechaApertura)}</div>
-              {pedido.fechaCierre && <div>Cierre: {fechaHoraCompleta(pedido.fechaCierre)}</div>}
+              <div>Order: {pedido.identificadorPedido}</div>
+              <div>Table: {pedido.identificadorMesa}</div>
+              <div>Served by: {pedido.nombreMesero}</div>
+              <div>Opened: {fechaHoraCompleta(pedido.fechaApertura)}</div>
+              {pedido.fechaCierre && <div>Closed: {fechaHoraCompleta(pedido.fechaCierre)}</div>}
               <hr />
               {agruparLineas(pedido.lineas).map((g) => (
                 <div key={g.clave} className="ticket-line">
@@ -133,17 +133,17 @@ export function CuentaPage() {
               {pedido.pagos.length > 0 && (
                 <>
                   <hr />
-                  <div className="ticket-strong">Pagos registrados</div>
+                  <div className="ticket-strong">Recorded payments</div>
                   {pedido.pagos.map((p) => (
                     <div key={p.idPago}>
                       {ETIQUETAS_METODO[p.metodo]}: {pesos(p.valor)}
                     </div>
                   ))}
-                  <div className="ticket-strong">Saldo pendiente: {pesos(pedido.saldoPendiente)}</div>
+                  <div className="ticket-strong">Pending balance: {pesos(pedido.saldoPendiente)}</div>
                 </>
               )}
               <hr />
-              <div className="ticket-center">¡Gracias por visitarnos!</div>
+              <div className="ticket-center">Thank you for visiting!</div>
             </div>
           </div>
         </>

@@ -3,7 +3,7 @@ import { z } from "zod";
 import { asyncHandler } from "../../utils/asyncHandler";
 import * as trazabilidadService from "./trazabilidad.service";
 
-const fecha = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Las fechas deben tener el formato AAAA-MM-DD.");
+const fecha = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Dates must use the YYYY-MM-DD format.");
 
 const querySchema = z.object({
   idUsuario: z.coerce.number().int().positive().optional(),

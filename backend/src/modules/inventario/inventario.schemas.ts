@@ -19,7 +19,7 @@ export const registrarAjusteSchema = z.object({
   idSede: z.number().int().positive(),
   cantidadAjuste: z
     .number()
-    .int("El ajuste debe ser un número entero.")
-    .refine((n) => n !== 0, "El ajuste debe ser distinto de cero."),
+    .int("The adjustment must be a whole number.")
+    .refine((n) => n !== 0, "The adjustment must be non-zero."),
   motivo: motivoAjusteSchema,
 });

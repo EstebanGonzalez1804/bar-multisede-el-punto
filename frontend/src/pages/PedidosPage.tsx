@@ -12,17 +12,17 @@ import { fechaHora, pesos } from "../utils/format";
 type Vista = "PENDIENTE" | "PAGADO" | "TODOS";
 
 const VISTAS: { value: Vista; etiqueta: string }[] = [
-  { value: "PENDIENTE", etiqueta: "En curso" },
-  { value: "PAGADO", etiqueta: "Pagados" },
-  { value: "TODOS", etiqueta: "Todos" },
+  { value: "PENDIENTE", etiqueta: "In progress" },
+  { value: "PAGADO", etiqueta: "Paid" },
+  { value: "TODOS", etiqueta: "All" },
 ];
 
 /** Un solo estado legible que combina estado del pedido y estado de pago. */
 function estadoCombinado(p: ResumenPedido): { texto: string; clase: string } {
-  if (p.estadoPedido === "ABIERTO") return { texto: "Abierto", clase: "badge-success" };
-  if (p.estadoPago === "PAGADO") return { texto: "Pagado", clase: "badge-muted" };
-  if (p.estadoPago === "PARCIAL") return { texto: "Pago parcial", clase: "badge-warning" };
-  return { texto: "Por cobrar", clase: "badge-warning" };
+  if (p.estadoPedido === "ABIERTO") return { texto: "Open", clase: "badge-success" };
+  if (p.estadoPago === "PAGADO") return { texto: "Paid", clase: "badge-muted" };
+  if (p.estadoPago === "PARCIAL") return { texto: "Partially paid", clase: "badge-warning" };
+  return { texto: "To be charged", clase: "badge-warning" };
 }
 
 /**
@@ -59,7 +59,7 @@ export function PedidosPage() {
       });
       setPedidos(data);
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudieron cargar los pedidos."));
+      setError(getApiErrorMessage(err, "Orders could not be loaded."));
     } finally {
       setCargando(false);
     }
@@ -76,8 +76,8 @@ export function PedidosPage() {
   return (
     <div className="panel">
       <div className="panel-header">
-        <h1 className="page-title">Pedidos</h1>
-        <div className="segmentado" role="radiogroup" aria-label="Qué pedidos mostrar">
+        <h1 className="page-title">Orders</h1>
+        <div className="segmentado" role="radiogroup" aria-label="Which orders to show">
           {VISTAS.map((v) => (
             <label key={v.value} className={vista === v.value ? "activo" : ""}>
               <input type="radio" name="vistaPedidos" value={v.value} checked={vista === v.value} onChange={() => setVista(v.value)} />
@@ -89,28 +89,28 @@ export function PedidosPage() {
 
       <div className="toolbar">
         <div className="field field-busqueda">
-          <label htmlFor="busquedaPedido">Buscar</label>
+          <label htmlFor="busquedaPedido">Search</label>
           <input
             id="busquedaPedido"
             type="search"
             value={filtroBusqueda}
             onChange={(e) => setFiltroBusqueda(e.target.value)}
-            placeholder="Mesa o n.º de pedido, p. ej. Mesa 3"
+            placeholder="Table or order no., e.g. Mesa 3"
           />
         </div>
         <div className="field">
-          <label htmlFor="estadoPedido">Estado del pedido</label>
+          <label htmlFor="estadoPedido">Order status</label>
           <select id="estadoPedido" value={filtroEstadoPedido} onChange={(e) => setFiltroEstadoPedido(e.target.value)}>
-            <option value="">Todos</option>
-            <option value="ABIERTO">Abiertos</option>
-            <option value="CERRADO">Cerrados</option>
+            <option value="">All</option>
+            <option value="ABIERTO">Open</option>
+            <option value="CERRADO">Closed</option>
           </select>
         </div>
         {esAdministrador && (
           <div className="field">
-            <label htmlFor="sedePedido">Sede</label>
+            <label htmlFor="sedePedido">Location</label>
             <select id="sedePedido" value={filtroSede} onChange={(e) => setFiltroSede(e.target.value)}>
-              <option value="">Todas</option>
+              <option value="">All</option>
               {sedes.map((s) => (
                 <option key={s.idSede} value={s.idSede}>
                   {s.nombre}
@@ -123,30 +123,30 @@ export function PedidosPage() {
 
       {vista === "PENDIENTE" && (
         <p className="field-hint nota-lista">
-          Los pedidos pagados no se eliminan: quedan archivados en “Pagados”.
+          Paid orders are not deleted: they are archived under “Paid”.
         </p>
       )}
 
       {error && <Aviso tipo="error">{error}</Aviso>}
 
       {cargando ? (
-        <p className="empty-state">Cargando...</p>
+        <p className="empty-state">Loading...</p>
       ) : pedidos.length === 0 ? (
-        <p className="empty-state">No hay pedidos que coincidan con la búsqueda.</p>
+        <p className="empty-state">No orders match the search.</p>
       ) : (
         <div className="table-scroll">
           <table className="tabla-apilada">
             <thead>
               <tr>
-                <th>Mesa</th>
-                <th>Pedido</th>
-                {esAdministrador && <th>Sede</th>}
-                <th>Estado</th>
-                <th>Apertura</th>
+                <th>Table</th>
+                <th>Order</th>
+                {esAdministrador && <th>Location</th>}
+                <th>Status</th>
+                <th>Opened</th>
                 <th className="num">Total</th>
-                <th className="num">Saldo</th>
+                <th className="num">Balance</th>
                 <th>
-                  <span className="sr-only">Acciones</span>
+                  <span className="sr-only">Actions</span>
                 </th>
               </tr>
             </thead>
@@ -156,36 +156,36 @@ export function PedidosPage() {
                 const cerrado = p.estadoPedido === "CERRADO";
                 return (
                   <tr key={p.idPedido}>
-                    <td data-label="Mesa" className="celda-titulo">
+                    <td data-label="Table" className="celda-titulo">
                       {p.identificadorMesa}
                     </td>
-                    <td data-label="Pedido">{p.identificadorPedido}</td>
-                    {esAdministrador && <td data-label="Sede">{p.nombreSede}</td>}
-                    <td data-label="Estado">
+                    <td data-label="Order">{p.identificadorPedido}</td>
+                    {esAdministrador && <td data-label="Location">{p.nombreSede}</td>}
+                    <td data-label="Status">
                       <span className={`badge ${estado.clase}`}>{estado.texto}</span>
                     </td>
-                    <td data-label="Apertura">{fechaHora(p.fechaApertura)}</td>
+                    <td data-label="Opened">{fechaHora(p.fechaApertura)}</td>
                     <td data-label="Total" className="num">
                       {pesos(p.total)}
                     </td>
-                    <td data-label="Saldo" className="num">
+                    <td data-label="Balance" className="num">
                       {cerrado ? pesos(p.saldoPendiente) : "—"}
                     </td>
                     <td data-label="" className="celda-acciones">
                       <div className="table-actions">
                         {esMesero && !cerrado && (
                           <Link className="btn-link" to={`/pedidos/mesa/${p.idMesa}`}>
-                            Ver pedido
+                            View order
                           </Link>
                         )}
                         {cerrado && (
                           <Link className="btn-link" to={`/cuenta/${p.idPedido}`}>
-                            Ver cuenta
+                            View bill
                           </Link>
                         )}
                         {puedeCobrar && cerrado && p.estadoPago !== "PAGADO" && (
                           <Link className="btn-link" to={`/cobro/${p.idPedido}`}>
-                            Cobrar
+                            Charge
                           </Link>
                         )}
                       </div>

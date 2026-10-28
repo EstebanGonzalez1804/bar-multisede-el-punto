@@ -18,15 +18,15 @@ export function CambiarPasswordPage() {
 
     // CA-03: el campo de nueva contraseña no puede quedar vacío.
     if (!passwordNueva) {
-      setError("Debes indicar la nueva contraseña.");
+      setError("You must enter the new password.");
       return;
     }
     if (passwordNueva.length < 8) {
-      setError("La nueva contraseña debe tener al menos 8 caracteres.");
+      setError("The new password must be at least 8 characters long.");
       return;
     }
     if (passwordNueva !== confirmacion) {
-      setError("La confirmación no coincide con la nueva contraseña.");
+      setError("The confirmation does not match the new password.");
       return;
     }
 
@@ -38,7 +38,7 @@ export function CambiarPasswordPage() {
       setPasswordNueva("");
       setConfirmacion("");
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo cambiar la contraseña."));
+      setError(getApiErrorMessage(err, "The password could not be changed."));
     } finally {
       setEnviando(false);
     }
@@ -46,14 +46,14 @@ export function CambiarPasswordPage() {
 
   return (
     <div className="panel panel-angosto">
-      <h1 className="page-title">Cambiar mi contraseña</h1>
+      <h1 className="page-title">Change my password</h1>
 
       {error && <Aviso tipo="error">{error}</Aviso>}
-      {exito && <Aviso tipo="exito">Tu contraseña se actualizó correctamente.</Aviso>}
+      {exito && <Aviso tipo="exito">Your password was updated successfully.</Aviso>}
 
       <form onSubmit={handleSubmit}>
         <div className="field">
-          <label htmlFor="passwordActual">Contraseña actual</label>
+          <label htmlFor="passwordActual">Current password</label>
           <input
             id="passwordActual"
             type="password"
@@ -64,7 +64,7 @@ export function CambiarPasswordPage() {
           />
         </div>
         <div className="field">
-          <label htmlFor="passwordNueva">Nueva contraseña</label>
+          <label htmlFor="passwordNueva">New password</label>
           <input
             id="passwordNueva"
             type="password"
@@ -75,11 +75,11 @@ export function CambiarPasswordPage() {
             required
           />
           <div id="ayudaPassword" className="field-hint">
-            Mínimo 8 caracteres.
+            At least 8 characters.
           </div>
         </div>
         <div className="field">
-          <label htmlFor="confirmacion">Confirmar nueva contraseña</label>
+          <label htmlFor="confirmacion">Confirm new password</label>
           <input
             id="confirmacion"
             type="password"
@@ -90,7 +90,7 @@ export function CambiarPasswordPage() {
           />
         </div>
         <button type="submit" className="btn-primary" disabled={enviando}>
-          {enviando ? "Guardando..." : "Guardar nueva contraseña"}
+          {enviando ? "Saving..." : "Save new password"}
         </button>
       </form>
     </div>

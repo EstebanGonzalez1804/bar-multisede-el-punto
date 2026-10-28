@@ -62,7 +62,7 @@ export function ProductosPage() {
       });
       setProductos(data);
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudieron cargar los productos."));
+      setError(getApiErrorMessage(err, "Products could not be loaded."));
     } finally {
       setCargando(false);
     }
@@ -113,21 +113,21 @@ export function ProductosPage() {
     setError(null);
 
     if (!formulario.nombre.trim()) {
-      setError("El nombre es obligatorio.");
+      setError("The name is required.");
       return;
     }
     if (!formulario.idTipoProducto) {
-      setError("Debes seleccionar un tipo de producto.");
+      setError("You must select a product type.");
       return;
     }
     const valorCompra = Number(formulario.valorCompra);
     const valorVenta = Number(formulario.valorVenta);
     if (Number.isNaN(valorCompra) || valorCompra < 0 || Number.isNaN(valorVenta) || valorVenta < 0) {
-      setError("Los valores de compra y venta deben ser números válidos mayores o iguales a 0.");
+      setError("Purchase and sale values must be valid numbers greater than or equal to 0.");
       return;
     }
     if (valorVenta < valorCompra) {
-      setError("El valor de venta no puede ser menor que el valor de compra.");
+      setError("The sale value cannot be lower than the purchase value.");
       return;
     }
 
@@ -140,7 +140,7 @@ export function ProductosPage() {
           valorCompra,
           valorVenta,
         });
-        setMensaje("Producto creado correctamente.");
+        setMensaje("Product created successfully.");
       } else {
         await productosApi.modificarProducto(editandoId, {
           nombre: formulario.nombre.trim(),
@@ -148,12 +148,12 @@ export function ProductosPage() {
           valorCompra,
           valorVenta,
         });
-        setMensaje("Producto actualizado correctamente.");
+        setMensaje("Product updated successfully.");
       }
       cerrarFormulario();
       await cargarProductos();
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo guardar el producto."));
+      setError(getApiErrorMessage(err, "The product could not be saved."));
     } finally {
       setGuardando(false);
     }
@@ -164,9 +164,9 @@ export function ProductosPage() {
     if (
       nuevoEstado === "INACTIVO" &&
       !(await confirmar({
-        titulo: `¿Inactivar ${producto.nombre}?`,
-        mensaje: "Deja de aparecer para agregarlo a pedidos. Su historial e inventario se conservan.",
-        textoConfirmar: "Inactivar producto",
+        titulo: `Deactivate ${producto.nombre}?`,
+        mensaje: "It no longer appears for adding to orders. Its history and inventory are kept.",
+        textoConfirmar: "Deactivate product",
         peligro: true,
       }))
     ) {
@@ -176,10 +176,10 @@ export function ProductosPage() {
     setError(null);
     try {
       await productosApi.cambiarEstadoProducto(producto.idProducto, nuevoEstado);
-      setMensaje(nuevoEstado === "ACTIVO" ? "Producto activado." : "Producto inactivado.");
+      setMensaje(nuevoEstado === "ACTIVO" ? "Product activated." : "Product deactivated.");
       await cargarProductos();
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo cambiar el estado del producto."));
+      setError(getApiErrorMessage(err, "The product status could not be changed."));
     } finally {
       setAccionEnCurso(null);
     }
@@ -199,7 +199,7 @@ export function ProductosPage() {
       const data = await productosApi.obtenerHistorialPrecios(producto.idProducto);
       setHistorial(data);
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo cargar el historial de precios."));
+      setError(getApiErrorMessage(err, "The price history could not be loaded."));
     } finally {
       setCargandoHistorial(false);
     }
@@ -214,10 +214,10 @@ export function ProductosPage() {
     <div>
       <div className="panel">
         <div className="panel-header">
-          <h1 className="page-title">Productos</h1>
+          <h1 className="page-title">Products</h1>
           {esAdministrador && !mostrarFormulario && (
             <button className="btn-secondary" onClick={abrirCreacion}>
-              + Nuevo producto
+              + New product
             </button>
           )}
         </div>
@@ -227,19 +227,19 @@ export function ProductosPage() {
 
         <div className="toolbar">
           <div className="field field-busqueda">
-            <label htmlFor="busquedaProducto">Buscar</label>
+            <label htmlFor="busquedaProducto">Search</label>
             <input
               id="busquedaProducto"
               type="search"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Nombre o código, p. ej. PDT-CER o Club"
+              placeholder="Name or code, e.g. PDT-CER or Club"
             />
           </div>
           <div className="field">
-            <label htmlFor="filtroTipo">Tipo</label>
+            <label htmlFor="filtroTipo">Type</label>
             <select id="filtroTipo" value={filtroTipo} onChange={(e) => setFiltroTipo(e.target.value)}>
-              <option value="">Todos</option>
+              <option value="">All</option>
               {tipos.map((t) => (
                 <option key={t.idTipoProducto} value={t.idTipoProducto}>
                   {t.nombre}
@@ -248,41 +248,41 @@ export function ProductosPage() {
             </select>
           </div>
           <div className="field">
-            <label htmlFor="filtroEstadoProducto">Estado</label>
+            <label htmlFor="filtroEstadoProducto">Status</label>
             <select
               id="filtroEstadoProducto"
               value={filtroEstado}
               onChange={(e) => setFiltroEstado(e.target.value as Estado | "")}
             >
-              <option value="">Todos</option>
-              <option value="ACTIVO">Activo</option>
-              <option value="INACTIVO">Inactivo</option>
+              <option value="">All</option>
+              <option value="ACTIVO">Active</option>
+              <option value="INACTIVO">Inactive</option>
             </select>
           </div>
         </div>
 
         {mostrarFormulario && (
           <form ref={formRef} className="row-subform" onSubmit={handleSubmitFormulario}>
-            <h2 className="subform-title">{editandoId === null ? "Nuevo producto" : "Editar producto"}</h2>
+            <h2 className="subform-title">{editandoId === null ? "New product" : "Edit product"}</h2>
             <div className="inline-form">
               <div className="field">
-                <label htmlFor="nombreProducto">Nombre</label>
+                <label htmlFor="nombreProducto">Name</label>
                 <input
                   id="nombreProducto"
                   type="text"
                   value={formulario.nombre}
                   onChange={(e) => setFormulario((f) => ({ ...f, nombre: e.target.value }))}
-                  placeholder="Cerveza Águila 330ml"
+                  placeholder="Águila Beer 330ml"
                 />
               </div>
               <div className="field">
-                <label htmlFor="idTipoProducto">Tipo</label>
+                <label htmlFor="idTipoProducto">Type</label>
                 <select
                   id="idTipoProducto"
                   value={formulario.idTipoProducto}
                   onChange={(e) => setFormulario((f) => ({ ...f, idTipoProducto: e.target.value }))}
                 >
-                  <option value="">Selecciona un tipo</option>
+                  <option value="">Select a type</option>
                   {tipos.filter((x) => x.estado === "ACTIVO").map((t) => (
                     <option key={t.idTipoProducto} value={t.idTipoProducto}>
                       {t.nombre}
@@ -292,7 +292,7 @@ export function ProductosPage() {
               </div>
               <div className="field">
                 <label htmlFor="valorCompra">
-                  Valor de compra
+                  Purchase value
                   {Number(formulario.valorCompra) > 0 && <span className="etiqueta-valor"> · {pesos(formulario.valorCompra)}</span>}
                 </label>
                 <input
@@ -308,7 +308,7 @@ export function ProductosPage() {
               </div>
               <div className="field">
                 <label htmlFor="valorVenta">
-                  Valor de venta
+                  Sale value
                   {Number(formulario.valorVenta) > 0 && <span className="etiqueta-valor"> · {pesos(formulario.valorVenta)}</span>}
                 </label>
                 <input
@@ -324,50 +324,50 @@ export function ProductosPage() {
                 />
                 {ventaMenorQueCompra && (
                   <p className="field-error" role="alert">
-                    El valor de venta no puede ser menor que el valor de compra.
+                    The sale value cannot be lower than the purchase value.
                   </p>
                 )}
               </div>
             </div>
             {editandoId === null ? (
               <p className="field-hint">
-                El código se genera automáticamente a partir del tipo de producto (ej. tipo "Aguardiente" → código
+                The code is generated automatically from the product type (e.g. type "Aguardiente" → code
                 PDT-AGU-001).
               </p>
             ) : (
               <p className="field-hint">
-                Si cambias los valores de compra o venta, se registrará un nuevo historial de precios.
+                If you change the purchase or sale values, a new price history entry is recorded.
               </p>
             )}
             <div className="form-actions">
               <button type="submit" className="btn-primary" disabled={guardando}>
-                {guardando ? "Guardando..." : "Guardar"}
+                {guardando ? "Saving..." : "Save"}
               </button>
               <button type="button" className="btn-secondary" onClick={cerrarFormulario}>
-                Cancelar
+                Cancel
               </button>
             </div>
           </form>
         )}
 
         {cargando ? (
-          <p className="empty-state">Cargando...</p>
+          <p className="empty-state">Loading...</p>
         ) : productos.length === 0 ? (
-          <p className="empty-state">No hay productos que coincidan con la búsqueda.</p>
+          <p className="empty-state">No products match the search.</p>
         ) : (
           <div className="table-scroll">
           <table>
             <thead>
               <tr>
-                <th>Código</th>
-                <th>Nombre</th>
-                <th>Tipo</th>
-                {esAdministrador && <th className="num">Valor compra</th>}
-                <th className="num">Valor venta</th>
-                <th>Estado</th>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Type</th>
+                {esAdministrador && <th className="num">Purchase value</th>}
+                <th className="num">Sale value</th>
+                <th>Status</th>
                 {esAdministrador && (
                   <th>
-                    <span className="sr-only">Acciones</span>
+                    <span className="sr-only">Actions</span>
                   </th>
                 )}
               </tr>
@@ -390,7 +390,7 @@ export function ProductosPage() {
                     <td>
                       <div className="table-actions">
                         <button className="btn-link" onClick={() => void toggleHistorial(producto)}>
-                          {expandidoId === producto.idProducto ? "Ocultar precios" : "Historial de precios"}
+                          {expandidoId === producto.idProducto ? "Hide prices" : "Price history"}
                         </button>
                         <>
                             <button
@@ -398,14 +398,14 @@ export function ProductosPage() {
                               onClick={() => abrirEdicion(producto)}
                               disabled={accionEnCurso === producto.idProducto}
                             >
-                              Editar
+                              Edit
                             </button>
                             <button
                               className={`btn-link ${producto.estado === "ACTIVO" ? "danger" : ""}`}
                               onClick={() => void handleCambiarEstado(producto)}
                               disabled={accionEnCurso === producto.idProducto}
                             >
-                              {producto.estado === "ACTIVO" ? "Inactivar" : "Activar"}
+                              {producto.estado === "ACTIVO" ? "Deactivate" : "Activate"}
                             </button>
                         </>
                       </div>
@@ -416,17 +416,17 @@ export function ProductosPage() {
                     <tr>
                       <td colSpan={7}>
                         {cargandoHistorial ? (
-                          <p className="empty-state">Cargando historial...</p>
+                          <p className="empty-state">Loading history...</p>
                         ) : historial.length === 0 ? (
-                          <p className="empty-state">Sin historial de precios.</p>
+                          <p className="empty-state">No price history.</p>
                         ) : (
                           <div className="table-scroll">
                           <table>
                             <thead>
                               <tr>
-                                <th>Vigente desde</th>
-                                <th className="num">Valor compra</th>
-                                <th className="num">Valor venta</th>
+                                <th>Effective from</th>
+                                <th className="num">Purchase value</th>
+                                <th className="num">Sale value</th>
                               </tr>
                             </thead>
                             <tbody>

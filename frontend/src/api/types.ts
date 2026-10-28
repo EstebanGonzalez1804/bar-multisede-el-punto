@@ -2,9 +2,9 @@ export type Perfil = "ADMINISTRADOR" | "CAJERO" | "MESERO";
 export type Estado = "ACTIVO" | "INACTIVO";
 
 export const ETIQUETAS_PERFIL: Record<Perfil, string> = {
-  ADMINISTRADOR: "Administrador",
-  CAJERO: "Cajero",
-  MESERO: "Mesero",
+  ADMINISTRADOR: "Administrator",
+  CAJERO: "Cashier",
+  MESERO: "Waiter",
 };
 
 export interface UsuarioAutenticado {
@@ -50,8 +50,8 @@ export interface Mesa {
 export interface TipoProducto {
   idTipoProducto: number;
   nombre: string;
-  // 3 letras derivadas automáticamente del nombre (ej. "Aguardiente" -> "AGU");
-  // de aquí sale el segmento central del código de producto (PDT-AGU-001).
+  // 3 letters derived automatically from the name (e.g. "Aguardiente" -> "AGU");
+  // it is the middle segment of the product code (PDT-AGU-001).
   abreviacion: string;
   estado: Estado;
   creadoEn: string;
@@ -67,10 +67,10 @@ export interface Producto {
   nombre: string;
   idTipoProducto: number;
   nombreTipoProducto: string;
-  // Viajan como string (ver nota en el backend: NUMERIC de Postgres no se
-  // convierte a number para no perder precisión de dinero).
-  // valorCompra solo llega al Administrador (HU-017 CA-01: el catálogo de
-  // los demás perfiles muestra código, nombre, tipo y estado, sin costos).
+  // Sent as strings (see the backend note: Postgres NUMERIC is not converted
+  // to number to avoid losing money precision).
+  // valorCompra is only sent to the Administrator (HU-017 CA-01: other roles
+  // see code, name, type and status, without costs).
   valorCompra?: string;
   valorVenta: string;
   estado: Estado;
@@ -128,12 +128,12 @@ export interface ItemInventario {
 export type MotivoAjuste = "PERDIDA" | "DANO" | "ROTURA" | "DIFERENCIA_FISICA" | "ERROR_REGISTRO" | "OTRO";
 
 export const MOTIVOS_AJUSTE: { value: MotivoAjuste; label: string }[] = [
-  { value: "PERDIDA", label: "Pérdida" },
-  { value: "DANO", label: "Daño" },
-  { value: "ROTURA", label: "Rotura" },
-  { value: "DIFERENCIA_FISICA", label: "Diferencia física" },
-  { value: "ERROR_REGISTRO", label: "Error de registro" },
-  { value: "OTRO", label: "Otro" },
+  { value: "PERDIDA", label: "Loss" },
+  { value: "DANO", label: "Damage" },
+  { value: "ROTURA", label: "Breakage" },
+  { value: "DIFERENCIA_FISICA", label: "Physical count difference" },
+  { value: "ERROR_REGISTRO", label: "Data entry error" },
+  { value: "OTRO", label: "Other" },
 ];
 
 export type EstadoPedido = "ABIERTO" | "CERRADO";
@@ -145,11 +145,11 @@ export interface LineaPedido {
   codigoProducto: string;
   nombreProducto: string;
   cantidad: number;
-  // Viajan como string, igual que Producto.valorVenta/valorCompra.
+  // Sent as strings, same as Producto.valorVenta/valorCompra.
   precioVentaCongelado: string;
   precioCompraCongelado: string;
   creadoEn: string;
-  /** Unidades ya cubiertas por pagos por productos (HU-036). */
+  /** Units already covered by per-product payments (HU-036). */
   cantidadPagada: number;
   cantidadPendiente: number;
   pagada: boolean;
@@ -159,9 +159,9 @@ export type MetodoPago = "EFECTIVO" | "TARJETA_CREDITO" | "TARJETA_DEBITO";
 export type ModalidadPago = "TOTAL" | "ABONO" | "PRODUCTOS";
 
 export const ETIQUETAS_METODO: Record<MetodoPago, string> = {
-  EFECTIVO: "Efectivo",
-  TARJETA_CREDITO: "Tarjeta de crédito",
-  TARJETA_DEBITO: "Tarjeta débito",
+  EFECTIVO: "Cash",
+  TARJETA_CREDITO: "Credit card",
+  TARJETA_DEBITO: "Debit card",
 };
 
 export interface PagoRegistrado {

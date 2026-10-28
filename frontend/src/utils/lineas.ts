@@ -12,11 +12,11 @@ export interface GrupoLineas {
 }
 
 /**
- * Agrupa para mostrar las líneas del mismo producto AL MISMO PRECIO
- * ("3 + 2 Club Colombia" -> "5 × Club Colombia"). Solo cambia la
- * presentación: en la base de datos cada tanda sigue siendo su propia línea,
- * inmutable, con su precio congelado (HU-026 CA-05). Si el precio cambió
- * entre una tanda y otra, quedan como grupos separados.
+ * Groups lines of the same product AT THE SAME PRICE for display
+ * ("3 + 2 Club Colombia" -> "5 × Club Colombia"). Presentation only: in the
+ * database each batch remains its own immutable line with its frozen price
+ * (HU-026 CA-05). If the price changed between batches, they stay as
+ * separate groups.
  */
 export function agruparLineas(lineas: LineaPedido[]): GrupoLineas[] {
   const grupos: GrupoLineas[] = [];

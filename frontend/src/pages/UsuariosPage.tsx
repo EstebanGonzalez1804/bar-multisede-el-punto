@@ -66,7 +66,7 @@ export function UsuariosPage() {
       });
       setUsuarios(data);
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudieron cargar los usuarios."));
+      setError(getApiErrorMessage(err, "Users could not be loaded."));
     } finally {
       setCargando(false);
     }
@@ -125,15 +125,15 @@ export function UsuariosPage() {
     setError(null);
 
     if (!formulario.nombre.trim()) {
-      setError("El nombre es obligatorio.");
+      setError("The name is required.");
       return;
     }
     if (formulario.perfil !== "ADMINISTRADOR" && !formulario.idSede) {
-      setError("Los perfiles Cajero y Mesero requieren una sede.");
+      setError("Cashier and Waiter profiles require a location.");
       return;
     }
     if (editandoId === null && formulario.password.trim().length < 8) {
-      setError("La contraseña debe tener al menos 8 caracteres.");
+      setError("The password must be at least 8 characters long.");
       return;
     }
 
@@ -148,19 +148,19 @@ export function UsuariosPage() {
           idSede,
           password: formulario.password,
         });
-        setMensaje("Usuario creado correctamente.");
+        setMensaje("User created successfully.");
       } else {
         await usuariosApi.modificarUsuario(editandoId, {
           nombre: formulario.nombre.trim(),
           perfil: formulario.perfil,
           idSede,
         });
-        setMensaje("Usuario actualizado correctamente.");
+        setMensaje("User updated successfully.");
       }
       cerrarFormulario();
       await cargarUsuarios();
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo guardar el usuario."));
+      setError(getApiErrorMessage(err, "The user could not be saved."));
     } finally {
       setGuardando(false);
     }
@@ -171,9 +171,9 @@ export function UsuariosPage() {
     if (
       nuevoEstado === "INACTIVO" &&
       !(await confirmar({
-        titulo: `¿Inactivar a ${usuario.nombre}?`,
-        mensaje: "No podrá iniciar sesión hasta que lo actives de nuevo. Su historial se conserva.",
-        textoConfirmar: "Inactivar usuario",
+        titulo: `Deactivate ${usuario.nombre}?`,
+        mensaje: "They will not be able to sign in until you activate them again. Their history is kept.",
+        textoConfirmar: "Deactivate user",
         peligro: true,
       }))
     ) {
@@ -184,11 +184,11 @@ export function UsuariosPage() {
     try {
       await usuariosApi.cambiarEstadoUsuario(usuario.idUsuario, nuevoEstado);
       setMensaje(
-        nuevoEstado === "ACTIVO" ? "Usuario activado." : "Usuario inactivado."
+        nuevoEstado === "ACTIVO" ? "User activated." : "User deactivated."
       );
       await cargarUsuarios();
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo cambiar el estado del usuario."));
+      setError(getApiErrorMessage(err, "The user status could not be changed."));
     } finally {
       setAccionEnCurso(null);
     }
@@ -199,10 +199,10 @@ export function UsuariosPage() {
     setError(null);
     try {
       await authApi.desbloquearUsuario(usuario.idUsuario);
-      setMensaje(`${usuario.codigoUsuario} fue desbloqueado.`);
+      setMensaje(`${usuario.codigoUsuario} was unlocked.`);
       await cargarUsuarios();
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo desbloquear el usuario."));
+      setError(getApiErrorMessage(err, "The user could not be unlocked."));
     } finally {
       setAccionEnCurso(null);
     }
@@ -217,18 +217,18 @@ export function UsuariosPage() {
 
   async function handleGuardarPassword(usuario: Usuario) {
     if (nuevaPassword.trim().length < 8) {
-      setError("La nueva contraseña debe tener al menos 8 caracteres.");
+      setError("The new password must be at least 8 characters long.");
       return;
     }
     setAccionEnCurso(usuario.idUsuario);
     setError(null);
     try {
       await authApi.cambiarPasswordDeTercero(usuario.idUsuario, nuevaPassword);
-      setMensaje(`Contraseña de ${usuario.codigoUsuario} actualizada.`);
+      setMensaje(`Password for ${usuario.codigoUsuario} updated.`);
       setFilaPassword(null);
       setNuevaPassword("");
     } catch (err) {
-      setError(getApiErrorMessage(err, "No se pudo cambiar la contraseña."));
+      setError(getApiErrorMessage(err, "The password could not be changed."));
     } finally {
       setAccionEnCurso(null);
     }
@@ -238,10 +238,10 @@ export function UsuariosPage() {
     <div>
       <div className="panel">
         <div className="panel-header">
-          <h1 className="page-title">Usuarios</h1>
+          <h1 className="page-title">Users</h1>
           {!mostrarFormulario && (
             <button className="btn-secondary" onClick={abrirCreacion}>
-              + Nuevo usuario
+              + New user
             </button>
           )}
         </div>
@@ -251,23 +251,23 @@ export function UsuariosPage() {
 
         <div className="toolbar">
           <div className="field field-busqueda">
-            <label htmlFor="busqueda">Buscar</label>
+            <label htmlFor="busqueda">Search</label>
             <input
               id="busqueda"
               type="search"
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
-              placeholder="Nombre o código, p. ej. SE01-CAJ"
+              placeholder="Name or code, e.g. SE01-CAJ"
             />
           </div>
           <div className="field">
-            <label htmlFor="filtroPerfil">Perfil</label>
+            <label htmlFor="filtroPerfil">Role</label>
             <select
               id="filtroPerfil"
               value={filtroPerfil}
               onChange={(e) => setFiltroPerfil(e.target.value as Perfil | "")}
             >
-              <option value="">Todos</option>
+              <option value="">All</option>
               {PERFILES.map((p) => (
                 <option key={p} value={p}>
                   {ETIQUETAS_PERFIL[p]}
@@ -276,35 +276,35 @@ export function UsuariosPage() {
             </select>
           </div>
           <div className="field">
-            <label htmlFor="filtroEstado">Estado</label>
+            <label htmlFor="filtroEstado">Status</label>
             <select
               id="filtroEstado"
               value={filtroEstado}
               onChange={(e) => setFiltroEstado(e.target.value as Estado | "")}
             >
-              <option value="">Todos</option>
-              <option value="ACTIVO">Activo</option>
-              <option value="INACTIVO">Inactivo</option>
+              <option value="">All</option>
+              <option value="ACTIVO">Active</option>
+              <option value="INACTIVO">Inactive</option>
             </select>
           </div>
         </div>
 
         {mostrarFormulario && (
           <form ref={formRef} className="row-subform" onSubmit={handleSubmitFormulario}>
-            <h2 className="subform-title">{editandoId === null ? "Nuevo usuario" : "Editar usuario"}</h2>
+            <h2 className="subform-title">{editandoId === null ? "New user" : "Edit user"}</h2>
             <div className="inline-form">
               <div className="field">
-                <label htmlFor="nombre">Nombre</label>
+                <label htmlFor="nombre">Name</label>
                 <input
                   id="nombre"
                   type="text"
                   value={formulario.nombre}
                   onChange={(e) => setFormulario((f) => ({ ...f, nombre: e.target.value }))}
-                  placeholder="Juan Pérez"
+                  placeholder="John Smith"
                 />
               </div>
               <div className="field">
-                <label htmlFor="perfil">Perfil</label>
+                <label htmlFor="perfil">Role</label>
                 <select
                   id="perfil"
                   value={formulario.perfil}
@@ -318,7 +318,7 @@ export function UsuariosPage() {
                 </select>
               </div>
               <div className="field">
-                <label htmlFor="idSede">Sede</label>
+                <label htmlFor="idSede">Location</label>
                 <select
                   id="idSede"
                   value={formulario.idSede}
@@ -326,7 +326,7 @@ export function UsuariosPage() {
                   disabled={formulario.perfil === "ADMINISTRADOR"}
                 >
                   <option value="">
-                    {formulario.perfil === "ADMINISTRADOR" ? "No aplica" : "Selecciona una sede"}
+                    {formulario.perfil === "ADMINISTRADOR" ? "Not applicable" : "Select a location"}
                   </option>
                   {sedes.filter((x) => x.estado === "ACTIVO").map((s) => (
                     <option key={s.idSede} value={s.idSede}>
@@ -337,49 +337,49 @@ export function UsuariosPage() {
               </div>
               {editandoId === null && (
                 <div className="field">
-                  <label htmlFor="password">Contraseña</label>
+                  <label htmlFor="password">Password</label>
                   <input
                     id="password"
                     type="password"
                     value={formulario.password}
                     onChange={(e) => setFormulario((f) => ({ ...f, password: e.target.value }))}
-                    placeholder="Mínimo 8 caracteres"
+                    placeholder="At least 8 characters"
                   />
                 </div>
               )}
             </div>
             {editandoId === null && (
               <p className="field-hint">
-                El código de usuario se genera automáticamente al guardar (ej. SE01-CAJ-001).
+                The user code is generated automatically on save (e.g. SE01-CAJ-001).
               </p>
             )}
             <div className="form-actions">
               <button type="submit" className="btn-primary" disabled={guardando}>
-                {guardando ? "Guardando..." : "Guardar"}
+                {guardando ? "Saving..." : "Save"}
               </button>
               <button type="button" className="btn-secondary" onClick={cerrarFormulario}>
-                Cancelar
+                Cancel
               </button>
             </div>
           </form>
         )}
 
         {cargando ? (
-          <p className="empty-state">Cargando...</p>
+          <p className="empty-state">Loading...</p>
         ) : usuarios.length === 0 ? (
-          <p className="empty-state">No hay usuarios que coincidan con la búsqueda.</p>
+          <p className="empty-state">No users match the search.</p>
         ) : (
           <div className="table-scroll">
           <table>
             <thead>
               <tr>
-                <th>Código</th>
-                <th>Nombre</th>
-                <th>Sede</th>
-                <th>Perfil</th>
-                <th>Estado</th>
+                <th>Code</th>
+                <th>Name</th>
+                <th>Location</th>
+                <th>Role</th>
+                <th>Status</th>
                 <th>
-                  <span className="sr-only">Acciones</span>
+                  <span className="sr-only">Actions</span>
                 </th>
               </tr>
             </thead>
@@ -390,15 +390,15 @@ export function UsuariosPage() {
                     <td className="texto-suave">{usuario.codigoUsuario}</td>
                     <td className="celda-titulo">
                       {usuario.nombre}
-                      {usuario.idUsuario === usuarioActual?.idUsuario && <span className="texto-suave"> (tú)</span>}
+                      {usuario.idUsuario === usuarioActual?.idUsuario && <span className="texto-suave"> (you)</span>}
                     </td>
-                    <td>{usuario.nombreSede ?? "Todas"}</td>
+                    <td>{usuario.nombreSede ?? "All"}</td>
                     <td>{ETIQUETAS_PERFIL[usuario.perfil]}</td>
                     <td>
                       <span className={`badge ${usuario.estado === "ACTIVO" ? "badge-success" : "badge-muted"}`}>
                         {etiquetaEstado(usuario.estado)}
                       </span>{" "}
-                      {usuario.bloqueado && <span className="badge badge-danger">Bloqueado</span>}
+                      {usuario.bloqueado && <span className="badge badge-danger">Locked</span>}
                     </td>
                     <td>
                       <div className="table-actions">
@@ -407,14 +407,14 @@ export function UsuariosPage() {
                           onClick={() => abrirEdicion(usuario)}
                           disabled={accionEnCurso === usuario.idUsuario}
                         >
-                          Editar
+                          Edit
                         </button>
                         <button
                           className="btn-link"
                           onClick={() => abrirCambioPassword(usuario)}
                           disabled={accionEnCurso === usuario.idUsuario}
                         >
-                          Contraseña
+                          Password
                         </button>
                         {usuario.bloqueado && (
                           <button
@@ -422,7 +422,7 @@ export function UsuariosPage() {
                             onClick={() => void handleDesbloquear(usuario)}
                             disabled={accionEnCurso === usuario.idUsuario}
                           >
-                            Desbloquear
+                            Unlock
                           </button>
                         )}
                         {usuario.idUsuario !== usuarioActual?.idUsuario && (
@@ -431,7 +431,7 @@ export function UsuariosPage() {
                             onClick={() => void handleCambiarEstado(usuario)}
                             disabled={accionEnCurso === usuario.idUsuario}
                           >
-                            {usuario.estado === "ACTIVO" ? "Inactivar" : "Activar"}
+                            {usuario.estado === "ACTIVO" ? "Deactivate" : "Activate"}
                           </button>
                         )}
                       </div>
@@ -444,14 +444,14 @@ export function UsuariosPage() {
                           <div className="inline-form">
                             <div className="field">
                               <label htmlFor={`nueva-password-${usuario.idUsuario}`}>
-                                Nueva contraseña para {usuario.codigoUsuario}
+                                New password for {usuario.codigoUsuario}
                               </label>
                               <input
                                 id={`nueva-password-${usuario.idUsuario}`}
                                 type="password"
                                 value={nuevaPassword}
                                 onChange={(e) => setNuevaPassword(e.target.value)}
-                                placeholder="Mínimo 8 caracteres"
+                                placeholder="At least 8 characters"
                               />
                             </div>
                             <button
@@ -460,14 +460,14 @@ export function UsuariosPage() {
                               onClick={() => void handleGuardarPassword(usuario)}
                               disabled={accionEnCurso === usuario.idUsuario}
                             >
-                              Guardar
+                              Save
                             </button>
                             <button
                               type="button"
                               className="btn-secondary"
                               onClick={() => setFilaPassword(null)}
                             >
-                              Cancelar
+                              Cancel
                             </button>
                           </div>
                         </div>

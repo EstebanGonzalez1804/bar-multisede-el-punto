@@ -70,7 +70,7 @@ export function ConfirmacionProvider({ children }: { children: ReactNode }) {
             </div>
             <div className="dialogo-acciones">
               <button type="button" className="btn-secondary" onClick={() => cerrar(false)}>
-                Cancelar
+                Cancel
               </button>
               <button
                 ref={botonConfirmar}

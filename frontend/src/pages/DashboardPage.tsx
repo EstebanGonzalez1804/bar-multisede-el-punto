@@ -69,14 +69,14 @@ export function DashboardPage() {
 
   return (
     <div>
-      <h1 className="dashboard-heading">Hola, {primerNombre}</h1>
+      <h1 className="dashboard-heading">Hello, {primerNombre}</h1>
       <p className="dashboard-sub">
         {usuario ? ETIQUETAS_PERFIL[usuario.perfil] : ""}
-        {usuario?.idSede ? " · tu sede" : " · todas las sedes"} — esto es lo que está pasando ahora.
+        {usuario?.idSede ? " · your location" : " · all locations"} — this is what is happening right now.
       </p>
 
       {cargando ? (
-        <p className="empty-state">Cargando...</p>
+        <p className="empty-state">Loading...</p>
       ) : (
         <>
           <div className="kpi-grid">
@@ -87,7 +87,7 @@ export function DashboardPage() {
               <div className="kpi-card-value cond num">
                 {ocupadas} / {totalMesas}
               </div>
-              <div className="kpi-card-label">Mesas ocupadas</div>
+              <div className="kpi-card-label">Occupied tables</div>
             </Link>
 
             <Link to="/inventario" className="kpi-card">
@@ -95,7 +95,7 @@ export function DashboardPage() {
                 <Icon path={ICONS.warning} size={19} strokeWidth={1.9} />
               </div>
               <div className="kpi-card-value cond num">{agotados.length}</div>
-              <div className="kpi-card-label">Productos agotados</div>
+              <div className="kpi-card-label">Out-of-stock products</div>
             </Link>
 
             {!esMesero && (
@@ -104,16 +104,16 @@ export function DashboardPage() {
                   <Icon path={ICONS.recepciones} size={19} strokeWidth={1.9} />
                 </div>
                 <div className="kpi-card-value cond num">{recepcionesHoy ?? "—"}</div>
-                <div className="kpi-card-label">Recepciones hoy</div>
+                <div className="kpi-card-label">Receipts today</div>
               </Link>
             )}
           </div>
 
           <div className="dashboard-panels">
             <div className="panel panel-lista">
-              <div className="dashboard-panel-title">Mesas ocupadas ahora</div>
+              <div className="dashboard-panel-title">Tables occupied now</div>
               {mesasOcupadas.length === 0 ? (
-                <p className="empty-state dashboard-vacio">No hay mesas ocupadas en este momento.</p>
+                <p className="empty-state dashboard-vacio">There are no occupied tables right now.</p>
               ) : (
                 <>
                   {mesasOcupadas.slice(0, MAX_FILAS).map((m) => (
@@ -123,12 +123,12 @@ export function DashboardPage() {
                       to={esMesero ? `/pedidos/mesa/${m.idMesa}` : "/mesas"}
                     >
                       <span className="dashboard-row-titulo">{m.identificador}</span>
-                      <span className="dashboard-row-meta">{esMesero ? "Ver pedido" : m.nombreSede}</span>
+                      <span className="dashboard-row-meta">{esMesero ? "View order" : m.nombreSede}</span>
                     </Link>
                   ))}
                   {mesasOcupadas.length > 0 && (
                     <Link className="dashboard-panel-row dashboard-ver-todos" to="/mesas">
-                      Ver las {mesasOcupadas.length} mesas ocupadas en Mesas
+                      View all {mesasOcupadas.length} occupied tables in Tables
                     </Link>
                   )}
                 </>
@@ -137,11 +137,11 @@ export function DashboardPage() {
 
             <div className="panel panel-lista">
               <div className="dashboard-panel-title dashboard-panel-title-flex">
-                <span>Productos agotados</span>
+                <span>Out-of-stock products</span>
                 {agotados.length > 0 && <span className="badge badge-danger">{agotados.length}</span>}
               </div>
               {agotados.length === 0 ? (
-                <p className="empty-state dashboard-vacio">No hay productos agotados.</p>
+                <p className="empty-state dashboard-vacio">There are no out-of-stock products.</p>
               ) : (
                 <>
                   {agotados.slice(0, MAX_FILAS).map((item) => (
@@ -152,7 +152,7 @@ export function DashboardPage() {
                   ))}
                   {agotados.length > 0 && (
                     <Link className="dashboard-panel-row dashboard-ver-todos" to="/inventario">
-                      Ver los {agotados.length} productos agotados en Inventario
+                      View all {agotados.length} out-of-stock products in Inventory
                     </Link>
                   )}
                 </>

@@ -128,7 +128,7 @@ export async function generarReporteVentas(
 export async function generarExcelVentas(reporte: ReporteVentas): Promise<Buffer> {
   const wb = new ExcelJS.Workbook();
   wb.creator = "El Punto";
-  const ws = wb.addWorksheet("Ventas y ganancias", {
+  const ws = wb.addWorksheet("Sales and profit", {
     views: [{ state: "frozen", ySplit: 2 }],
   });
 
@@ -145,7 +145,7 @@ export async function generarExcelVentas(reporte: ReporteVentas): Promise<Buffer
   // Fila 1: título combinado.
   ws.mergeCells(1, 1, 1, COLS);
   const titulo = ws.getCell(1, 1);
-  titulo.value = `Reporte de ventas y ganancias · ${reporte.desde} a ${reporte.hasta}`;
+  titulo.value = `Sales and profit report · ${reporte.desde} to ${reporte.hasta}`;
   titulo.font = { bold: true, size: 14, color: { argb: VERDE } };
   titulo.alignment = { horizontal: "center", vertical: "middle" };
   titulo.border = borde;
@@ -154,14 +154,14 @@ export async function generarExcelVentas(reporte: ReporteVentas): Promise<Buffer
   // Fila 2: encabezado con filtros.
   const encabezado = ws.getRow(2);
   [
-    "Fecha",
-    "Código",
-    "Producto",
-    "Cantidad vendida",
-    "Valor de compra",
-    "Valor de venta",
-    "Ganancia",
-    "Sede",
+    "Date",
+    "Code",
+    "Product",
+    "Quantity sold",
+    "Purchase value",
+    "Sale value",
+    "Profit",
+    "Location",
   ].forEach((texto, i) => {
     const c = encabezado.getCell(i + 1);
     c.value = texto;
@@ -202,7 +202,7 @@ export async function generarExcelVentas(reporte: ReporteVentas): Promise<Buffer
   // Fila en blanco y fila TOTALES (SUBTOTAL 109 = suma ignorando filas filtradas).
   const filaTotales = Math.max(ultima, 2) + 2;
   const totales = ws.getRow(filaTotales);
-  totales.getCell(1).value = "TOTALES";
+  totales.getCell(1).value = "TOTALS";
   // Valor de compra/venta son precios unitarios: el total es Σ(cantidad × precio)
   // solo de filas visibles, con SUMPRODUCT + SUBTOTAL(103) como máscara de visibilidad.
   const hay = reporte.filas.length > 0;
@@ -232,7 +232,7 @@ export async function generarExcelVentas(reporte: ReporteVentas): Promise<Buffer
   totales.getCell(1).alignment = { horizontal: "center" };
 
   const nota = ws.getCell(filaTotales + 2, 1);
-  nota.value = "Usa las flechas del encabezado para filtrar; la fila TOTALES se recalcula con las filas visibles.";
+  nota.value = "Use the header arrows to filter; the TOTALS row is recalculated with the visible rows.";
   nota.font = { italic: true, color: { argb: "FF5B6B64" }, size: 9 };
 
   [12, 14, 32, 18, 18, 18, 16, 22].forEach((w, i) => {

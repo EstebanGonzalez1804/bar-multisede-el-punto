@@ -52,7 +52,7 @@ export async function login(codigoUsuario: string, password: string) {
   // CA-04: mensaje genérico, sin indicar si el usuario existe o si fue la
   // contraseña la incorrecta.
   const credencialesInvalidas = () =>
-    ApiError.unauthorized("Usuario o contraseña incorrectos.", "CREDENCIALES_INVALIDAS");
+    ApiError.unauthorized("Incorrect user code or password.", "CREDENCIALES_INVALIDAS");
 
   if (!usuario) {
     throw credencialesInvalidas();
@@ -68,7 +68,7 @@ export async function login(codigoUsuario: string, password: string) {
       idSede: usuario.id_sede,
     });
     throw ApiError.forbidden(
-      "Tu usuario está inactivo. Contacta a un Administrador.",
+      "Your user is inactive. Contact an Administrator.",
       "USUARIO_INACTIVO"
     );
   }
@@ -83,7 +83,7 @@ export async function login(codigoUsuario: string, password: string) {
       idSede: usuario.id_sede,
     });
     throw ApiError.forbidden(
-      "Tu usuario está bloqueado por intentos fallidos. Contacta a un Administrador.",
+      "Your user is locked after failed attempts. Contact an Administrator.",
       "USUARIO_BLOQUEADO"
     );
   }
@@ -113,7 +113,7 @@ export async function login(codigoUsuario: string, password: string) {
     // se informa igual que a un usuario ya bloqueado.
     if (seBloquea) {
       throw ApiError.forbidden(
-        "Tu usuario quedó bloqueado por intentos fallidos. Contacta a un Administrador.",
+        "Your user was locked after failed attempts. Contact an Administrator.",
         "USUARIO_BLOQUEADO"
       );
     }
@@ -162,13 +162,13 @@ export async function cambiarPasswordPropia(
     );
     const actual = rows[0];
     if (!actual) {
-      throw ApiError.notFound("Usuario no encontrado.");
+      throw ApiError.notFound("User not found.");
     }
 
     const coincide = await verifyPassword(passwordActual, actual.password_hash);
     if (!coincide) {
       throw ApiError.badRequest(
-        "La contraseña actual no es correcta.",
+        "The current password is not correct.",
         "PASSWORD_ACTUAL_INCORRECTA"
       );
     }
@@ -205,7 +205,7 @@ export async function cambiarPasswordDeTercero(
       [idUsuarioObjetivo]
     );
     if (!rows[0]) {
-      throw ApiError.notFound("El usuario indicado no existe.");
+      throw ApiError.notFound("The specified user does not exist.");
     }
 
     const nuevoHash = await hashPassword(passwordNueva);
@@ -237,10 +237,10 @@ export async function desbloquearUsuario(admin: JwtPayload, idUsuarioObjetivo: n
     );
     const objetivo = rows[0];
     if (!objetivo) {
-      throw ApiError.notFound("El usuario indicado no existe.");
+      throw ApiError.notFound("The specified user does not exist.");
     }
     if (!objetivo.bloqueado) {
-      throw ApiError.conflict("Ese usuario no está bloqueado.");
+      throw ApiError.conflict("That user is not locked.");
     }
 
     await client.query(

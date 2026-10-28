@@ -9,7 +9,7 @@ pool.on("error", (err) => {
   // Error en un cliente ocioso del pool: no debe tumbar el proceso, pero sí
   // quedar visible, porque normalmente indica que la base de datos se cayó.
   // eslint-disable-next-line no-console
-  console.error("Error inesperado en el pool de PostgreSQL:", err);
+  console.error("Unexpected error in the PostgreSQL pool:", err);
 });
 
 export async function query<T extends QueryResultRow = QueryResultRow>(

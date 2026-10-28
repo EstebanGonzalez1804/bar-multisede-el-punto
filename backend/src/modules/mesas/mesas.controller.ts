@@ -8,13 +8,13 @@ import * as mesasService from "./mesas.service";
 function parseIdMesa(req: Request): number {
   const idMesa = Number(req.params.idMesa);
   if (!Number.isInteger(idMesa)) {
-    throw ApiError.badRequest("El id de mesa no es válido.");
+    throw ApiError.badRequest("The table id is not valid.");
   }
   return idMesa;
 }
 
 export const getMesas = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const { idSede } = listarMesasQuerySchema.parse(req.query);
   const idSedeEfectiva = resolveSedeScope(req.usuarioActual, idSede ?? null);
   const mesas = await mesasService.listarMesas(idSedeEfectiva);
@@ -22,14 +22,14 @@ export const getMesas = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const postMesa = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const datos = datosMesaSchema.parse(req.body);
   const mesa = await mesasService.crearMesa(req.usuarioActual, datos);
   res.status(201).json({ mesa });
 });
 
 export const putMesa = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const idMesa = parseIdMesa(req);
   const datos = datosMesaSchema.parse(req.body);
   const mesa = await mesasService.modificarMesa(req.usuarioActual, idMesa, datos);
@@ -37,14 +37,14 @@ export const putMesa = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const postInactivarMesa = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const idMesa = parseIdMesa(req);
   const mesa = await mesasService.inactivarMesa(req.usuarioActual, idMesa);
   res.status(200).json({ mesa });
 });
 
 export const postActivarMesa = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const idMesa = parseIdMesa(req);
   const mesa = await mesasService.activarMesa(req.usuarioActual, idMesa);
   res.status(200).json({ mesa });

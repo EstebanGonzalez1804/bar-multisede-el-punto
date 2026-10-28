@@ -16,29 +16,29 @@ export const postLogin = asyncHandler(async (req: Request, res: Response) => {
 });
 
 export const postLogout = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const { motivo } = logoutSchema.parse(req.body ?? {});
   await authService.logout(req.usuarioActual, motivo);
   res.status(204).send();
 });
 
 export const getMe = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   res.status(200).json({ usuario: req.usuarioActual });
 });
 
 export const putCambiarPasswordPropia = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const { passwordActual, passwordNueva } = cambiarPasswordPropiaSchema.parse(req.body);
   await authService.cambiarPasswordPropia(req.usuarioActual, passwordActual, passwordNueva);
   res.status(204).send();
 });
 
 export const putCambiarPasswordDeTercero = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const idUsuarioObjetivo = Number(req.params.idUsuario);
   if (!Number.isInteger(idUsuarioObjetivo)) {
-    throw ApiError.badRequest("El id de usuario no es válido.");
+    throw ApiError.badRequest("The user id is not valid.");
   }
   const { passwordNueva } = cambiarPasswordDeTerceroSchema.parse(req.body);
   await authService.cambiarPasswordDeTercero(req.usuarioActual, idUsuarioObjetivo, passwordNueva);
@@ -46,10 +46,10 @@ export const putCambiarPasswordDeTercero = asyncHandler(async (req: Request, res
 });
 
 export const postDesbloquearUsuario = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.usuarioActual) throw ApiError.unauthorized("Se requiere autenticación.");
+  if (!req.usuarioActual) throw ApiError.unauthorized("Authentication is required.");
   const idUsuarioObjetivo = Number(req.params.idUsuario);
   if (!Number.isInteger(idUsuarioObjetivo)) {
-    throw ApiError.badRequest("El id de usuario no es válido.");
+    throw ApiError.badRequest("The user id is not valid.");
   }
   await authService.desbloquearUsuario(req.usuarioActual, idUsuarioObjetivo);
   res.status(204).send();

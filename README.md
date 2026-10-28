@@ -275,6 +275,15 @@ a criterio técnico del proveedor:
     Mesas o Inventario. Trazabilidad conserva la presentación de la versión
     anterior (Oct 27, primera revisión).
 
+- **Interfaz en inglés (Oct 28).** Por indicación del cliente, todo lo que ve
+  el usuario está en inglés: pantallas, menús, formularios, avisos, mensajes de
+  error del servidor, perfiles (Administrator, Cashier, Waiter), estados,
+  trazabilidad, cuenta en PDF y Excel de reportes (nombres de archivo
+  `bill-…pdf` y `sales_…xlsx`). Montos con formato `$85,000` y fechas
+  `27/10/2026 · 8:15 PM` (hora de Colombia). Los datos cargados (nombres de
+  sedes, mesas, productos, usuarios) no se traducen; la documentación
+  técnica y los comentarios del código siguen en español.
+
 - **Regla de precios (Oct 28).** El valor de venta no puede ser menor que el
   de compra: se valida en el formulario (aviso en línea) y en el servidor
   (crear y modificar producto responden 400). Es regla de la aplicación, no
