@@ -6,4 +6,6 @@ export interface JwtPayload {
   nombre: string;
   perfil: Perfil;
   idSede: number | null;
+  /** Identificador de la sesión vigente del usuario (sesión única). Solo viaja en el token. */
+  sid?: string;
 }

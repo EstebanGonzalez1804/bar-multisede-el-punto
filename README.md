@@ -386,3 +386,12 @@ a criterio técnico del proveedor:
 
 Detalle completo de cada Historia de Usuario: ver `Historias_de_Usuario_Bar_Multisede.md`
 y `Product_Backlog_Bar_Multisede.docx` en los entregables del proyecto.
+
+## Sesión única por usuario (28 oct)
+
+Requisito del cliente: un usuario solo puede tener una sesión activa. Al iniciar sesión en un segundo dispositivo, **el inicio más reciente reemplaza al anterior**, que queda fuera automáticamente.
+
+- Migración `008_sesion_unica.sql`: columna `usuario.sesion_id`. Cada login genera un identificador nuevo (`sid`) que viaja dentro del JWT.
+- `authenticate` compara el `sid` del token con `usuario.sesion_id`; si no coincide responde 401 con código `SESION_REEMPLAZADA`.
+- Cerrar sesión (manual o por inactividad) libera la sesión. El login que reemplaza a otro queda en la trazabilidad.
+- Frontend: verifica la sesión cada 10 s; el dispositivo desplazado vuelve al login con el aviso "Your session was closed because this user signed in on another device."

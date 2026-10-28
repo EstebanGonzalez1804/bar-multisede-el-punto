@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
+import { pool } from "../config/db";
 import { env } from "../config/env";
 import { ApiError } from "../utils/ApiError";
 import type { JwtPayload, Perfil } from "../types/auth";
@@ -16,13 +17,29 @@ export function authenticate(req: Request, _res: Response, next: NextFunction) {
 
   const token = header.slice("Bearer ".length);
 
+  let payload: JwtPayload;
   try {
-    const payload = jwt.verify(token, env.jwtSecret) as JwtPayload;
-    req.usuarioActual = payload;
-    next();
+    payload = jwt.verify(token, env.jwtSecret) as JwtPayload;
   } catch {
     throw ApiError.unauthorized("Invalid or expired token. Please sign in again.");
   }
+
+  // Sesión única: el token solo vale mientras su `sid` sea la sesión vigente
+  // del usuario. Un inicio de sesión en otro dispositivo (o un cierre de
+  // sesión) cambia ese valor y deja fuera a los demás.
+  pool
+    .query<{ sesion_id: string | null }>(`SELECT sesion_id FROM usuario WHERE id_usuario = $1`, [payload.idUsuario])
+    .then(({ rows }) => {
+      if (!payload.sid || !rows[0] || rows[0].sesion_id !== payload.sid) {
+        throw ApiError.unauthorized(
+          "Your session was closed because this user signed in on another device.",
+          "SESION_REEMPLAZADA"
+        );
+      }
+      req.usuarioActual = payload;
+      next();
+    })
+    .catch(next);
 }
 
 /**

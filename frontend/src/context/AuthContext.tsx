@@ -19,6 +19,9 @@ const INACTIVIDAD_MS = 3 * 60 * 1000;
 // —mover el mouse, tocar o escribir— mantiene la sesión abierta).
 const AVISO_PREVIO_MS = 30 * 1000;
 
+// Frecuencia con la que se verifica que la sesión siga siendo la vigente.
+const LATIDO_SESION_MS = 10 * 1000;
+
 const EVENTOS_DE_ACTIVIDAD = ["mousemove", "mousedown", "keydown", "scroll", "touchstart"] as const;
 
 interface AuthContextValue {
@@ -117,6 +120,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.addEventListener(AUTH_UNAUTHORIZED_EVENT, onUnauthorized);
     return () => window.removeEventListener(AUTH_UNAUTHORIZED_EVENT, onUnauthorized);
   }, []);
+
+  // ---- Sesión única: si otro dispositivo ingresó con este usuario, este se
+  // entera en pocos segundos (el interceptor de axios cierra la sesión local
+  // al recibir SESION_REEMPLAZADA). Sin esto, solo se notaría al hacer clic.
+  useEffect(() => {
+    if (!usuario) return;
+    const id = setInterval(() => {
+      authApi.obtenerUsuarioActual().catch(() => undefined);
+    }, LATIDO_SESION_MS);
+    return () => clearInterval(id);
+  }, [usuario]);
 
   // ---- Restaurar sesión al recargar la página, si hay un token guardado ----
   useEffect(() => {

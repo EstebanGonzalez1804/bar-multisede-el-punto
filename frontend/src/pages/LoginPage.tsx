@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Navigate } from "react-router-dom";
-import { getApiErrorMessage } from "../api/client";
+import { AVISO_SESION_KEY, getApiErrorMessage } from "../api/client";
 import { useAuth } from "../context/AuthContext";
 import { Icon, ICONS } from "../components/icons";
 import { LogoMark, LogoWordmark } from "../components/Logo";
@@ -26,7 +26,16 @@ export function LoginPage() {
   const { usuario, iniciarSesion } = useAuth();
   const [codigoUsuario, setCodigoUsuario] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(() => {
+    // Aviso de sesión única: este usuario ingresó desde otro dispositivo.
+    try {
+      const aviso = sessionStorage.getItem(AVISO_SESION_KEY);
+      sessionStorage.removeItem(AVISO_SESION_KEY);
+      return aviso;
+    } catch {
+      return null;
+    }
+  });
   const [enviando, setEnviando] = useState(false);
   const [verPassword, setVerPassword] = useState(false);
 

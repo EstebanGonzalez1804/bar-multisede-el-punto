@@ -120,11 +120,18 @@ export async function login(codigoUsuario: string, password: string) {
     throw credencialesInvalidas();
   }
 
-  // Login exitoso: reinicia el contador de intentos fallidos (CA-02 de HU-003).
-  await pool.query(
-    `UPDATE usuario SET intentos_fallidos = 0, actualizado_en = now() WHERE id_usuario = $1`,
+  // Login exitoso: reinicia el contador de intentos fallidos (CA-02 de HU-003)
+  // y abre una sesión nueva. La sesión única reemplaza a la anterior: el
+  // dispositivo que la tenía queda fuera en su siguiente petición.
+  const sesion = await pool.query<{ anterior: string | null; sesion_id: string }>(
+    `UPDATE usuario u
+        SET intentos_fallidos = 0, sesion_id = gen_random_uuid(), actualizado_en = now()
+       FROM (SELECT id_usuario, sesion_id AS anterior FROM usuario WHERE id_usuario = $1) previo
+      WHERE u.id_usuario = previo.id_usuario
+      RETURNING previo.anterior, u.sesion_id`,
     [usuario.id_usuario]
   );
+  const { anterior, sesion_id: sid } = sesion.rows[0];
 
   await registrarEvento({
     idUsuario: usuario.id_usuario,
@@ -132,14 +139,20 @@ export async function login(codigoUsuario: string, password: string) {
     entidadAfectada: "USUARIO",
     idAfectado: usuario.id_usuario,
     idSede: usuario.id_sede,
+    detalle: anterior ? { sesionAnteriorCerrada: "Yes" } : undefined,
   });
 
   const payload = toJwtPayload(usuario);
-  return { token: emitirToken(payload), usuario: payload };
+  return { token: emitirToken({ ...payload, sid }), usuario: payload };
 }
 
 /** HU-006 — Cierre de sesión (manual o automático por inactividad). */
 export async function logout(usuario: JwtPayload, motivo: "MANUAL" | "INACTIVIDAD") {
+  // Libera la sesión única (solo si sigue siendo la vigente de este token).
+  await pool.query(`UPDATE usuario SET sesion_id = NULL WHERE id_usuario = $1 AND sesion_id = $2`, [
+    usuario.idUsuario,
+    usuario.sid ?? null,
+  ]);
   await registrarEvento({
     idUsuario: usuario.idUsuario,
     tipoEvento: motivo === "MANUAL" ? "LOGOUT_MANUAL" : "LOGOUT_POR_INACTIVIDAD",

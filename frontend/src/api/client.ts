@@ -6,6 +6,7 @@ export const apiClient = axios.create({
 });
 
 const TOKEN_STORAGE_KEY = "bar_multisede_token";
+export const AVISO_SESION_KEY = "bar_multisede_aviso_sesion";
 
 export function getStoredToken(): string | null {
   return localStorage.getItem(TOKEN_STORAGE_KEY);
@@ -35,6 +36,16 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error: AxiosError) => {
     if (error.response?.status === 401) {
+      // Sesión única: si otro dispositivo ingresó con este usuario, se avisa
+      // en la pantalla de inicio de sesión.
+      const apiError = (error.response.data as { error?: { code?: string; message?: string } } | undefined)?.error;
+      if (apiError?.code === "SESION_REEMPLAZADA") {
+        try {
+          sessionStorage.setItem(AVISO_SESION_KEY, apiError.message ?? "");
+        } catch {
+          /* sin sessionStorage: solo se pierde el aviso */
+        }
+      }
       setStoredToken(null);
       window.dispatchEvent(new Event(AUTH_UNAUTHORIZED_EVENT));
     }

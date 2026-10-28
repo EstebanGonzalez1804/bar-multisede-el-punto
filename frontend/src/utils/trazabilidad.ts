@@ -219,6 +219,7 @@ const ETIQUETAS_DETALLE: Record<string, string> = {
   codigoUsuario: "User code",
   perfil: "Role",
   abreviacion: "Abbreviation",
+  sesionAnteriorCerrada: "Previous session on another device closed",
   ejecutadoPor: "Performed by (user no.)",
   idProveedor: "Internal supplier no.",
   fechaRecepcion: "Receipt date",
